@@ -1,0 +1,805 @@
+<html>
+<head>
+<TITLE>SSM: Spectrum Surveillance Monitor</TITLE>
+<style type="text/css">
+body 
+{
+font-family:arial; font-size:12; font-weight:normal; color:black; margin-left:16px;
+}
+h2
+{
+font-family:arial; font-size:24; font-weight:bold; color:black;
+}
+pre
+{
+font-size:12; font-family:lucida console,courier; font-weight:normal; color:black;
+}
+.subhead
+{
+font-family:arial; font-size:14; font-style:italic; font-weight:bold; color:maroon;
+}
+</style>
+</head>
+<body>
+<img src="./ssm.gif" align=right hspace=8 vspace=8>
+<br>
+<br>
+<i><h2>A Real-Time Spectrum Surveillance Utility for HP, Tektronix, and Advantest Spectrum Analyzers</h2></i>
+<P>
+<br>
+<P>
+SSM.EXE is a graphical Win32 program that lets you acquire a succession
+of spectrum-analyzer display traces over time, with the option to save and replay
+the acquired data.  
+<P>
+Applications include long-term stability testing,
+RF interference and link-quality surveys, weak-signal communications, and 
+signal intelligence/TSCM work.
+<P>
+You can download a sample .SSM recording file <a href="http://www.thegleam.com/ke5fx/gpib/ssmdemo.zip">here</a> (10 MB).  The image
+at right was created by scrolling through this recording with the <i>Display->Accumulate maximum</i> and <i>Display->802.11 WLAN channel boundaries</i> options 
+enabled.
+<P>
+The current version of SSM supports the following spectrum analyzer models:
+<ul>
+<li>Tektronix 490P/2750P series
+<li>Tektronix 2782/2784
+<li>Tektronix 2710 series
+<li>HP 8566/8567/8568 series (both -A and -B models)
+<li>HP 8560/8590 series portables
+<li>HP 70000 series
+<li>HP 8569B/8570A
+<li>HP 3585A/B
+<li>HP 3588A/3589A
+<li>Advantest R3264, R3267, and R3273
+<li>Advantest R3463, R3465, R3263, and R3272
+<li>Advantest R3131, R3132, R3162, R3172, and R3182
+<li>Advantest R3261, R3361, R3265, and R3271
+<li>Agilent E4400 ESA and PSA series
+<li>Agilent E4406A VSA
+<li>Agilent N991x and N993x (FieldFox) series
+<li>Keysight N9010B
+<li>Rohde & Schwarz FSEA/B/M/K, FSIQ, FSP, and FSU
+<li>Anritsu MS8604A
+<li>Anritsu MS2650/MS2660 series
+<li>Signal Hound USB-SA44/B or USB-SA124A
+</ul>
+National Instruments GPIB adapters and Prologix GPIB-ETHERNET adapters are supported, as well as Prologix GPIB-USB adapters 
+(version 3.1 or later).
+<P>
+SSM.EXE is part of the <a href="./readme.htm">KE5FX GPIB Toolkit</a>.  The latest version of the Toolkit is downloadable <a href="http://www.thegleam.com/ke5fx/gpib/setup.exe">here</a>.
+<br clear=all>
+<br>
+<P class="subhead">Running SSM</P>
+Depending on the options you selected during installation, you can run SSM.EXE from the Start menu, by clicking on its desktop shortcut, or by
+using its Quick Launch icon on the taskbar.<P>You can also run SSM.EXE from a DOS-box command line or Windows Start->Run... command, optionally
+specifying a GPIB address from which to acquire data, or the name of an existing .SSM file.  Use quotes around filenames that contain 
+spaces.  Here are a few command-line examples that assume the analyzer's GPIB address is 18: 
+<P>
+
+<pre>
+	SSM "synth test.ssm"          ... Load <b>synth test.ssm</b> for playback
+	SSM 18                        ... Begin acquiring data from analyzer at GPIB address 18
+	SSM 18 -856xa                 ... Special option required for use with HP8566A-HP8568A models
+	SSM 18 -8569b                 ... Special option required for use with HP8569B/8570A
+	SSM 18 -358xa                 ... Special option required for use with HP3588A/3589A          
+	SSM 18 -3585                  ... Special option required for use with HP3585A/B          
+	SSM 18 -r3261                 ... Special option required for use with Advantest R3261/R3361/R3265/R3271 analyzers
+	SSM 18 -advantest             ... Special option required for use with other supported Advantest R3100/R3200/R3400-series analyzers
+	SSM 18 -scpi                  ... Special option required for use with Agilent E4400-series, R&S FSE/FSIQ/FSP/FSU, and other SCPI-compatible analyzers
+	SSM 18 -nmea:com2             ... Log GPS coordinates from NMEA receiver at COM2 
+	SSM 18 -pal:"xxx"             ... Specify palette filename (default = COLORS.BIN)
+	SSM 18 -f                     ... Favor speed over resolution or other factors (if supported)
+	SSM 18 -F                     ... Run in fullscreen mode
+	SSM 18 -m                     ... Enable max-hold in X/Y display
+	SSM 18 -M                     ... Enable max-accumulation trace in X/Y display
+	SSM 18 -n:320                 ... Record 320 spectral bins per sweep (instead of 640-bin default)
+	SSM 18 -ao:-7                 ... Add -7 dBm to all recorded amplitude values
+	SSM 18 -fo:1500000000         ... Add 1.5 GHz to all recorded frequency values
+	SSM 18 -cs                    ... Disable color-smoothing in waterfall display
+	SSM 18 -t                     ... Disable GPIB timeout checking during long sweeps
+	SSM 18 -w                     ... Display WiFi channel boundaries in sweeps containing 2.4 GHz spectrum
+	SSM 18 -g                     ... Display GPS L1 channel boundaries in sweeps containing 1575 MHz spectrum
+	SSM 18 -x -y                  ... Turn off graticule display (-x = X grid, -y = Y grid)
+	SSM 18 -spline                ... Resample trace using cubic-spline reconstruction
+	SSM 18 -point                 ... Resample trace using point-sampled values
+	SSM 18 -max                   ... Resample trace using maximum bin values
+	SSM 18 -min                   ... Resample trace using minimum bin values
+	SSM 18 -avg                   ... Resample trace using average bin values
+	SSM 18 -startup:"xxx"         ... Specify GPIB command string to be issued when connecting for the first time
+	SSM 18 -shutdown:"xxx"        ... Specify GPIB command string to be issued when exiting SSM
+	SSM 18 -connect:"xxx"         ... Specify GPIB command string to be issued when connecting to instrument
+	SSM 18 -disconnect:"xxx"      ... Specify GPIB command string to be issued when disconnecting from instrument
+	SSM 18 -856xa -f              ... Example using multiple options
+
+	SSM -sa44                     ... Special option required for use with Signal Hound USB-SA44/B or USB-SA124A.  No GPIB address is needed for this instrument.
+	SSM (no filename or address)  ... Open the application in offline mode
+</pre>
+For more details on trace resampling, see the <a href="./faq.htm#resamp">FAQ</a> ("<b><font color=BLUE>How do the trace-resampling options in SATRACE and SSM work?</font></b>").
+<br>
+<br clear=all>
+<P class="subhead">Controlling the Spectrum Analyzer</P>
+In most cases, SSM does not attempt to control or configure the spectrum analyzer.  Traces are acquired based on the current
+front-panel settings such as center frequency, reference level, resolution bandwidth, and so forth.  However, SSM does provide 
+limited control options for certain analyzer models.  These options are shown below.
+<pre>
+	-RL:-40                       ... Specify reference level in dBm (Signal Hound only, default = -30)
+	-CF:90.3E6                    ... Specify center frequency in Hz (Signal Hound and E4406A only, default = 98 MHz; requires -span: option to be specified)
+	-span:10E6                    ... Specify span in Hz (Signal Hound and E4406A only, mandatory if -CF option is used)
+	-start:88E6                   ... Specify sweep start frequency (Signal Hound and E4406A only, default = 88 MHz)
+	-stop:108E6                   ... Specify sweep stop frequency (Signal Hound and E4406A only, default = 108 MHz)
+	-bins:64                      ... Specify FFT kernel size (Signal Hound only, default = 128, must be power of 2 between 16 and 256 inclusive)
+	-sens:2                       ... Specify sensitivity factor (Signal Hound only, default = 2, range 0-2)
+	-RFATT:10                     ... Specify RF attenuation in dB (Signal Hound only, default = 0, range 0-15 dB in steps of 5 dB)
+	-logdiv:10                    ... Specify dB/division (Signal Hound only, default = 10)
+	-divs:10                      ... Specify # of divisions (Signal Hound only, default = 10)
+</pre>
+The -CF and -span options take precedence over -start and -stop.
+<P>
+<br>
+<P class="subhead">Menu Commands and Keyboard Shortcuts</P>
+
+<pre>
+     Key               Menu Command                                 Remarks
+     <hr align=left width=800>
+     s                 File->Save current acquisition to file       Saves all recorded data since the beginning of the
+                                                                    acquisition session to an .SSM file
+     
+     l                 File->Play recorded data from file           Loads an .SSM file and enables the navigation controls
+                                                                    (During playback of a saved .SSM file, you can 
+                                                                    also use the up/down arrows, Page Up/Page Down keys, 
+                                                                    and Home/End keys to scroll the display.)
+
+                       File->Export X/Y trace to .CSV file...       Saves the trace currently visible in the X/Y graph as a 
+                                                                    list of frequency/amplitude pairs in a comma-separated 
+                                                                    value (.CSV) file, readable by Excel and other applications.
+                                                                    Values are written as floating-point Hz,dBm pairs.
+                                                                    (Note that you can click on the waterfall display during 
+                                                                    playback to recall any recorded trace to the X/Y display for
+                                                                    viewing or exporting.)
+     
+     e                 File->Export individual X/Y points to .CSV file...       
+                                                                    Same as above, except that each Hz,dBm pair is written to its
+                                                                    own line
+
+     S                 File->Save .BMP, .GIF, .TGA, or .PCX screen shot...  
+                                                                    Saves <i>only</i> the current display as a bitmap image.
+                                                                    (Unlike .SSM files, the bitmap file will contain no
+                                                                    historical data other than whatever's displayed on the screen.)
+     
+     p                 File->Print screen image                     Sends the current display to the default Windows printer 
+     
+                       File->Load default palette                   Reloads the default color palette, abandoning any changes made
+                       File->Save default palette                   Saves the current palette as the default color palette         
+     
+     Esc               File->Quit
+     
+                       Points->4                                    These options adjust the number of visible trace "bins"
+                       Points->16                                   acquired from the spectrum analyzer.  In reality,
+                       Points->64                                   the analyzer's trace width is device-dependent, and
+                       Points->128                                  will rarely match any of these options.  SSM will resample
+                       Points->320                                  the physical trace points to the specified number of
+                       Points->640                                  output bins using the selected resampling algorithm below.
+     
+                       Points->Select minimum                       When the number of data points available from the analyzer
+                       Points->Select maximum                       trace is not the same as the number of bins selected above,
+                       Points->Select average                       these options determine how multiple adjacent trace points
+                       Points->Point-sample                         contribute to each visible bin.  The Min/max/avg options are
+                       Points->Cubic spline                         meaningful only when the trace width is greater than the
+                                                                    selected number of points.  See the <a href="./faq.htm#resamp">FAQ</a> for more information
+                                                                    on trace resampling.
+     
+                       Style->Connected lines                       These options control the appearance of the X-Y graph
+                       Style->Dots                                  at the bottom of the display.
+                       Style->Bars
+     
+                       Display->Accumulate minimum                  These options enable and disable various accumulation traces
+     M                 Display->Accumulate maximum                  that can be rendered on the X-Y graph.  They have no effect
+                       Display->Accumulate average                  on the data sent to the rising-raster display.
+     
+     m                 Display->X/Y max hold                        Toggles the max-hold feature on the X-Y graph, clearing any
+                                                                    accumulated data.  Has no effect on data sent to the 
+                                                                    rising-raster display.
+     
+                       Display->Smooth waterfall colors             Enables or disables color interpolation on the rising-raster
+                                                                    graph for amplitude values that fall between palette levels. 
+                                                                    When acquiring or playing back sweeps with wide dynamic range, 
+                                                                    small changes in signal levels may be more easily spotted 
+                                                                    with this option enabled.
+     
+     x                 Display->Graticule X                         Toggles graticule lines on the X-Y graph
+     y                 Display->Graticule Y
+            
+     w                 Display->802.11 WLAN channel boundaries      Toggles vertical frequency masks at channels 1, 6, and 11
+                                                                    in the 2.4-GHz WiFi band
+     
+     g                 Display->GPS channel boundaries              Toggles vertical frequency mask for major lobes in L1 GPS
+                                                                    allocation (1575.42 MHz +/- 1 MHz)
+
+                       Display->Show frame rate                     Toggles frames-per-second display
+
+                       Measure->Apply cursor thresholds             Causes SSM to clip data from the X/Y graph against the 
+                                                                    Y-threshold cursors before sending it to the rising-raster 
+                                                                    display.  When this option is turned off, the cursors serve 
+                                                                    only as markers.
+
+     o                 Measure->Edit frequency and amplitude offsets...
+                                                                    Allows you to specify correction factors to be added to all frequency
+                                                                    and amplitude values recorded by SSM.  Typical uses include compensating 
+                                                                    for external preamplifiers and downconverters.
+
+     r                 Measure->Edit composite sweep range...          
+                                                                    Allows sweeps to be generated by combining multiple spans acquired
+                                                                    from certain instruments (currently limited to the Agilent E4406A.)
+                                                                    Without this feature, the E4406A is limited to 10 MHz spans.
+
+     F5                Display->Recompose display                   In playback mode, forces SSM to reload the current file and
+                                                                    scroll it onto the waterfall display.  This can be helpful
+                                                                    after changing the accumulation or threshold-cursor options,
+                                                                    since they are not automatically applied to existing data
+                                                                    in the display.
+
+     Alt-Enter         Display->Toggle fullscreen mode              Switches between fullscreen and window mode.  Fullscreen mode
+                                                                    may be faster on some PCs, but the menu bar at top will not
+                                                                    be visible unless the mouse cursor is moved to the top of the
+                                                                    screen.  Fullscreen mode is not recommended if you use a software
+                                                                    mouse cursor.
+     
+     Space             Acquire->Stop/restart acquisition            This command causes SSM to toggle its GPIB connection to the
+                                                                    spectrum analyzer, allowing you to control the analyzer from
+                                                                    its front panel.  Upon (re)starting, any existing data in the
+                                                                    <b>session.ssm</b> temporary file will be overwritten with
+                                                                    incoming trace data.  If no GPIB connection has been established by 
+                                                                    use of the <i>Acquire</i> options below, an internally-simulated 
+                                                                    test signal will be rendered.
+
+     Scroll Lock       Acquire->Pause/resume acquisition            This command can be used to stop recording new traces while
+                                                                    remaining connected to the spectrum analyzer.  Upon resuming,
+                                                                    SSM will continue adding traces to the <b>session.ssm</b> recording in progress.
+                                                                    The spectrum analyzer will continue to sweep under program control
+                                                                    while the measurement is paused, with its front-panel controls locked out.
+     
+                       Acquire->Acquire data from supported device  These commands cause SSM to look for a supported spectrum analyzer
+                                                                    at the specified GPIB address and begin acquiring data from it.
+                                                                    Current supported models are listed in the table at the beginning of
+                                                                    this file.
+
+                       Acquire->Acquire data from Signal Hound      This command causes SSM to attempt to connect to a USB-SA44/B or
+                                                                    USB-SA124A Signal Hound spectrum analyzer.
+     
+                       Acquire->HP 8566A/8567A/8568A mode           This option MUST be selected prior to your first attempt to 
+                                                                    connect to an HP 8566A, 8567A, or 8568A spectrum analyzer.
+                                                                    (Alternatively, the -856xa option may be used on the SSM.EXE command line.)
+                                                                    This is necessary because these analyzers cannot be identified 
+                                                                    automatically by SSM.EXE, and because their GPIB implementations
+                                                                    are significantly different from the later B-series models.
+     
+                       Acquire->HP 3585A/B mode                     This option MUST be selected prior to your first attempt to 
+                                                                    connect to an HP 3585A or HP 3585B spectrum analyzer.
+                                                                    (Alternatively, the -3585 option may be used on the SSM.EXE command line.)
+
+                       Acquire->HP 3588A/3589A mode                 This option MUST be selected prior to your first attempt to 
+                                                                    connect to an HP 3588A or 3589A spectrum analyzer.
+                                                                    (Alternatively, the -358xa option may be used on the SSM.EXE command line.)
+     
+                       Acquire->HP 8569B/8570A mode                 This option MUST be selected prior to your first attempt to 
+                                                                    connect to an HP 8569B or HP 8570A spectrum analyzer.
+                                                                    (Alternatively, the -8569b option may be used on the SSM.EXE command line.)
+
+                       Acquire->Advantest R3261/R3361/R3265/R3271 mode   
+                                                                    This option MUST be selected prior to your first attempt to  
+                                                                    connect to an Advantest R3261/R3361-series spectrum analyzer,
+                                                                    including the R3265 and R3271 models.
+                                                                    (Alternatively, the -r3261 option may be used on the SSM.EXE command line.)
+
+                       Acquire->Advantest R3100/R3200/R3400 mode    This option MUST be selected prior to your first attempt to 
+                                                                    connect to all other supported Advantest spectrum analyzers.
+                                                                    (Alternatively, the -advantest option may be used on the SSM.EXE 
+                                                                    command line.)  See the instrument list at the top of this page for the
+                                                                    supported Advantest models.
+
+                       Acquire->SCPI-compatible analyzer mode       This option MUST be selected prior to your first attempt to 
+                                                                    connect to an Agilent E4400-series, FieldFox, N9010B, R&S FSEx/FSIQ/FSP/FSU, or other
+                                                                    SCPI-compatible spectrum analyzer that's not supported by a more specific menu option.
+                                                                    (Alternatively, the -scpi option may be used on the SSM.EXE command line.)
+
+                       Acquire->Acquire at maximum available speed
+                                                                    This option can be selected to improve acquisition speed on some instruments
+                                                                    by acquiring fewer data points per sweep, reducing the resolution of the 
+                                                                    collected data, disabling the front-panel display, or other actions.  It's disabled 
+                                                                    by default unless you use the -f (fast acquisition) option on the SSM.EXE command line.
+</pre>
+
+<P>
+<br>
+<P class="subhead">Keyboard-Only Controls</P>
+<P>
+<pre>
+     A/Z               Adjusts the border between X/Y and rising-raster display.  Usable only when not acquiring data.
+     
+     G/H               <i>Save your CRT!</i> During acquisition from the HP 8566/8567/8568 analyzers, you can turn the 
+                       analyzer's CRT power supply off and on at any time by pressing the uppercase G and H keys, 
+                       respectively.  These keys correspond to the Shift-G and Shift-H commands available via the 
+                       85662A display's front panel.  
+     
+                       HP analyzer CRTs tend to age by cathode poisoning.  Turning down the Intensity control during 
+                       unattended operation will prevent phosphor burn-in, but it will not necessarily extend the useful 
+                       life of your CRT!  The G/H commands will.
+     
+                       On Tektronix 490, 2750, and 2710-series analyzers, these commands will blank and unblank the CRT text readout.
+                       If you plan to use SSM on Tek 490/2750-series instruments, consider applying <a href="http://www.ke5fx.com/crt49x.html">this modification</a> to allow
+                       the READOUT button to blank the entire CRT.
+     
+     Up/down arrows    Scroll the rising-raster display up or down one row at a time when playing back a recording.
+     PgUp / PgDn       Scroll the rising-raster display up or down several rows at a time.
+     Home / End        Scroll to the beginning or end of the recorded data.
+
+</pre>
+<P>
+<br>
+<P class="subhead">Threshold Cursor Controls</P>
+<P>
+
+Two purple horizontal-line cursors in the X/Y display serve as handy amplitude-measurement markers.  
+<P>
+Optionally, when the <i>Measure->Apply cursor thresholds</i> option is selected, the cursors can be used
+to exclude data within a given amplitude range from the rising-raster display.  In this mode, when the solid 
+cursor is above the broken cursor, values that are below the solid line and above the broken 
+line will be <i>displayed</i>.  Otherwise, if the solid cursor is below the broken cursor, values that fall 
+between the two cursors will be <i>excluded</i>.  This feature can be helpful when you need to identify 
+amplitude values that fall either outside, or within, certain limits.  (All incoming data is still recorded;
+the cursor thresholds affect only the appearance of each row as it scrolls onto the rising-raster display.)
+<P>
+It's easier to adjust the cursors if you pause data acquisition (Space bar or <i>Acquire->Stop/restart</i>) first.
+<P>
+<br>
+<P class="subhead">Editing the Color Palette</P>
+<P>
+When you left-click any of the color palette blocks next to the rising-raster display, a color-selection dialog box will appear.  
+Any changes you make to the selected color will be copied to the palette block entry.
+<P>
+Normally, you'll use this feature to assign colors to the maximum and minimum amplitudes in a particular range of interest, then create a "gradient" in the palette 
+by left-clicking the entry at one end of the desired range and dragging the mouse cursor to the other before releasing the left button.  When you do this, SSM will 
+automatically fill the intervening palette entries with linearly-interpolated color values.  You can spread out all of the colors in the palette this way, 
+or create separate gradients between as many color pairs as you like.  
+<P>
+Changes to the palette will be saved with any current or future recording made in the session.  You can also select 
+<i>File->Save default palette</i> to write your changes to the default SSM palette file, or use <i>File->Load default palette</i> to roll back any
+changes you've made.
+<P>
+As with other mouse-oriented controls, it's much easier to edit palette colors and gradients if you pause the data-acquisition process first.
+<P>
+
+<P>
+<br>
+<P class="subhead">CONNECT.INI</P>
+<P>
+Your PC should also contain a file called CONNECT.INI, which tells the GPIB Toolkit how to
+take advantage of various GPIB connectivity options.  These include direct RS-232 or TCP/IP links, as well as 
+the Prologix GPIB-USB and GPIB-ETHERNET adapters.
+<P>If you have a Prologix adapter, you can review the comments in CONNECT.INI 
+to learn how to configure SSM and the other GPIB Toolkit applications to use it, 
+or you can simply select your adapter in the Prologix configurator application (PROLOGIX.EXE)
+and press "Update CONNECT.INI" to automate the configuration process.
+<P>
+If the COM port specification in CONNECT.INI is commented out with a 
+leading semicolon -- or if CONNECT.INI is missing entirely -- all GPIB Toolkit applications will attempt to 
+communicate with the GPIB0 device via the National Instruments NI488.2 programming interface instead.  This is the default behavior.
+<P>
+<b>Note that some versions of Windows hide .INI file suffixes by default.</b>  In Windows 2000 and XP, for instance, CONNECT.INI may appear simply as "CONNECT," with the type "Configuration Settings."  To
+turn off this behavior, go to the Tools->Folder Options->View tab in any Explorer window and deselect the "Hide file extensions for known file types" option.  The exact location of CONNECT.INI will vary from one 
+Windows installation to the next.  It's often easier to select the "Edit CONNECT.INI" button in the GPIB configurator application than to try to locate the file yourself.
+<P>
+<br>
+<P class="subhead">Instrument Configuration Notes</P>
+<P>
+
+<P>
+The default GPIB address for many of the HP analyzers supported by SSM.EXE is 18.  
+<P>
+Note that if you are using a Tektronix 490P/2750P 
+analyzer, you <b>must</b> set the rear-panel LF-or-EOI switch to '1' for use with the GPIB Toolkit applications.  You may also need to disable the 
+<i>Acquire->Acquire at maximum available resolution</i> feature (or use the <font color=RED><b>-f</b></font> command-line option) for 
+compatibility with older Tektronix 492P/496P models.
+<P>
+If your analyzer is an HP 8566A, 8567A, or 8568A, you <b>must</b> select the <i>Acquire->HP 8566A/8567A/8568A mode</i> menu option before
+trying to connect to the instrument.  Similarly, the <i>Acquire->HP 8569B/8570A mode</i> menu option enables support for the HP 8569B/8570A,
+while <i>Acquire->HP 3588A/3589A mode</i> enables support for the HP 3588A and HP 3589A analyzers.  <i>Acquire->HP 3585A/B mode</i> should
+be selected prior to connecting to an HP 3585A or HP 3585B.
+
+<P>Advantest R3261, R3361, R3265, and R3271 users must select <i>Acquire->Advantest R3261/R3361/R3265/R3271</i> mode prior to connection.  If you are using any other member of the Advantest R3100/R3200/R3400 families, you'll need to select <i>Acquire->Advantest R3100/R3200/R3400 mode</i> instead.
+<P>
+<P>If you are using a newer SCPI-compliant analyzer model such as the Agilent E4400 series or Rohde & Schwarz FSEA/B/M/K, FSIQ, FSP, or FSU, you'll need to select <i>Acquire->SCPI-compatible analyzer mode</i>.  This is also true for certain IEEE 488.2-compliant instruments
+that aren't compatible with the Agilent E4400 SCPI implementation, such as the Anritsu MS8604A and MS2650/MS2660 series.
+<P>
+Note that many newer analyzers have multiple modes and trace options that may need to be disabled.  SSM expects the instrument to be configured in spectrum analyzer mode with the factory-default trace width/point count. If the instrument is set up as a network analyzer or
+cellular service monitor, compatibility issues can be expected.
+<P>
+Finally, if you want to place the GPIB address on the command line when using an analyzer model with its own <i>Acquire</i> menu entry, you'll need to use the 
+equivalent -856xa, -8569b, -3585, -358xa, -r3261, -advantest, or -scpi command-line option (e.g., <font color=RED><b>c:\>ssm 18 -8569b</b></font>.)
+
+<P>
+<br>
+<P class="subhead">Release Notes</P>
+<P>
+Release 1.00 of 13-Dec-05
+<ul>
+<li>Initial release
+</ul>
+<P>
+
+Release 1.01 of 28-Dec-05
+<ul>
+<li>Windows desktop no longer used as the working directory when running from a desktop icon
+</ul>
+
+Release 1.02 of 3-Jan-06
+<ul>
+<li>Added support for HP 8566A / 8567A / 8568A spectrum analyzers
+<li>FPS display turned on by default
+</ul>
+
+Release 1.03 of 8-Jan-06
+<ul>
+<li>Added keyboard shortcut for S)ave command
+</ul>
+
+Release 1.04 of 14-Jan-06
+<ul>
+<li>HP 8590E-series analyzers now supported.  Tested with HP 8596E; other 8590-series analyzers may or may not work
+</ul>
+
+Release 1.05 of 18-Apr-06
+<ul>
+<li>Added <b>-f</b> command-line option (fast low-resolution acquisition)
+<li>Added <b>-856xa</b> command-line option (HP 8566A/8567A/8568A mode)
+<li>Lowered amplitude readout precision on vertical X/Y cursors
+<li>Don't pause acquisition when left-clicking in other application windows
+<li>Added support for software-based GPIB address-selection feature in new Prologix adapter firmware
+<ul> 
+<li>Moved controller_mode, device_addressable, and host_addressable fields from 7470.INI to CONNECT.INI.  These options now apply to all applications in the GPIB Toolkit, not just 7470.EXE.
+<li>Added reset_to_local field to CONNECT.INI.  This affects Prologix adapters only; see CONNECT.INI for more information
+<li>HP 8568A rev-B spectrum analyzer successfully tested with new software-addressable Prologix adapter
+</ul>
+</ul>
+
+Release 1.06 of 3-May-06
+<ul>
+<li>Added option to display boundaries of 802.11 channels 1, 6, and 11
+<li>Added <b>-m</b> and <b>-w</b> command-line options
+<li>All frequency/span values are now stored and processed at double precision.  <b>.RRT files saved with previous versions are no longer compatible.</b>
+</ul>
+
+Release 1.07 of 28-May-06
+<ul>
+<li>UI improvements
+<ul>
+<li>Home/End keys scroll to the first and last records in the recorded data
+<li>Added <b>-n</b> and <b>-F</b> command-line options
+<li>Added "m" shortcut key for X/Y max-hold toggle
+<li>Automatically switch to playback mode after stop-acquisition command
+<li>Show graph scale amplitude, not signal amplitude, when mouse pointer is in X/Y display area
+</ul>
+<li>Assorted bug fixes and minor changes
+<ul>
+<li>Handle quoted filenames properly
+<li>Avoid treating filenames beginning with digits as GPIB addresses
+<li>Default recording-session file is now named SESSION.RRT, and is no longer deleted by <i>File->Save</i> command
+<li>Recorded files limited to 2 GB in size (approximately 750,000 640-bin acquisitions)
+<li>Fixed error message when saving multiple copies of currently-loaded .RRT file
+<li>Fixed a couple of minor arithmetic-precision errors in X/Y graph scale
+</ul>
+</ul>
+
+Release 1.10 of 3-Jun-06
+<ul>
+<li>UI improvements
+<ul>
+<li>Analyzer display settings other than 10 dB/division are now supported
+<ul>
+<li>Palette legend automatically conforms to the analyzer's dynamic display range
+<li>Top and bottom palette entries are always 10 dB above and below the analyzer's display, for headroom
+</ul>
+<li>The standard recording file suffix has changed to .SSM, but .RRT files can still be loaded
+<li>.SSM files now include the color palette
+<li>Max-hold and accumulation traces are now brought up to date automatically when a file is loaded
+<li>Added a percent-complete display for lengthy scrolling/refresh operations
+<li>Added <i>File->Load default palette</i> option
+<li>Better management of amplitude cursor positions
+</ul>
+</ul>
+
+Release 1.11 of 18-Jun-06
+<ul>
+<li>Vertical X/Y scale is now annotated at each major division, not just its top and bottom
+<li>Added "M" shortcut key for X/Y accumulation toggle (which works like max-hold, but has its own outline-style trace)
+<li>Added <b>-M</b> command-line option to enable X/Y accumulation
+<li>Improved compatibility with ICS USB-488 GPIB interface
+</ul>
+
+Release 1.12 of 6-Jul-06
+<ul>
+<li>Always reset devices to local control at shutdown time when using NI-compatible GPIB interfaces
+</ul>
+
+Release 1.13 of 10-Jul-06
+<ul>
+<li>Added HP 8569B/8570A support via <i>Acquire->HP 8569B/8570A mode</i> and <b>-8569b</b> command-line options
+</ul>
+
+Release 1.14 of 24-Aug-06
+<ul>
+<li>Added HP 70000-series support
+<li>Added <b>-t</b> command-line option to disable timeout error-checking.  This option is useful when acquiring data at very slow analyzer sweep rates.
+<li>Fixed a bug that could cause the decimal portion of frequency-scale labels to be displayed improperly
+</ul>
+
+Release 1.15 of 10-Sep-06
+<ul>
+<li>Added <i>File->Save .BMP, .GIF, .TGA, or .PCX screen shot</i> command
+<li>Added <i>File->Print screen image</i> command
+<li>"G" and "H" keys now control the CRT readout when running on a Tektronix 490/2750-series analyzer
+</ul>
+
+Release 1.16 of 1-Oct-06
+<ul>
+<li>Serial ports beyond COM9 are now supported.  Thanks to Bill Tracey, <a href="http://www.ewjt.com/kd5tfd/">KD5TFD</a>, for this patch!
+<li>Made some improvements to color interpolation in the waterfall display
+</ul>
+
+Release 1.17 of 6-Oct-06
+<ul>
+<li>Added <b>-s</b> command-line option to disable color interpolation in the waterfall display
+</ul>
+
+Release 1.18 of 31-Dec-06
+<ul>
+<li>Assorted minor bug fixes
+<li>Added the ability to click on a row in the waterfall display to view it in the X/Y graph (even during acquisition!)
+<li>Improved threshold-cursor response and numeric accuracy.  
+<li>Threshold-cursor exclusion is now off by default, and may be enabled with <i>Measure->Apply threshold cursors</i>
+<li>Improved appearance of X/Y display graticule, which is now enabled by default
+<li>Added <b>-x</b> and <b>-y</b> command-line options and "x"/"y" keyboard shortcuts for graticule control
+<li>Added <b>-startup</b>, <b>-shutdown</b>, <b>-connect</b>, and <b>-disconnect</b> command-line options for user-specified GPIB command strings.  See <b>wifi_tek490.bat</b> for an example
+<li>Mouse-wheel scrolling supported in playback mode
+<li>Added <i>Display->Recompose display</i> and keyboard shortcut (F5)
+</ul>
+
+Release 1.19 of 4-Jan-07
+<ul>
+<li>Assorted minor bug fixes
+<li>Tektronix 2710-series analyzers supported
+</ul>
+
+Release 1.20 of 22-Jan-07
+<ul>
+<li>Fixed a bug that prevented palette and cursor changes from being saved to .SSM files when the filename didn't change
+<li>Improved color fidelity in saved .GIF and .PCX files
+</ul>
+
+Release 1.21 of 28-Jan-07
+<ul>
+<li>Fixed a bug that caused incorrect amplitude-scale calculations on HP 8590-series analyzers
+</ul>
+
+Release 1.22 of 20-Mar-07
+<ul>
+<li>Assorted minor bug fixes
+<li>Tektronix 2782/2784 analyzers supported
+<li>The <b>-a</b> and <b>-b</b> command-line options have been deprecated.  Use <b>-856xa</b> and <b>-8569b</b> to support the HP 8566A-8568A and HP 8569B/8570A analyzers, respectively
+</ul>
+
+Release 1.23 of 10-Apr-07
+<ul>
+<li>Added support for HP 3588A / HP 3589A spectrum analyzers
+<li>Added support for Agilent E4400-series and other SCPI-compatible spectrum analyzers (tested on Agilent E4402B)
+</ul>
+
+Release 1.24 of 4-Nov-07
+<ul>
+<li>Added support for HP 3585A/B spectrum analyzers
+<li>New code to center file dialogs within the main window
+<li>Prompt before overwriting existing files with the Save command
+<li>Avoid spurious errors when attempting to save .SSM file before any data is loaded or acquired
+</ul>
+
+Release 1.25 of 23-Nov-07
+<ul>
+<li>Added <i>Measure->Edit frequency and amplitude offsets</i> feature, as well as <b>-fo:</b> and <b>-ao:</b> command-line options
+<li>Fixed bug that allowed WiFi band-boundary markers to be rendered outside the X/Y graph area
+<li><b>-n:</b> command-line option now requires a colon, for consistency with other CLI options that specify numeric values
+</ul>
+
+Release 1.26 of 25-Jan-08
+<ul>
+<li>Added support for the Advantest R3267 family of spectrum analyzers (R3264, R3267, and R3273)
+</ul>
+
+Release 1.27 of 05-Apr-08
+<ul>
+<li>All Prologix adapters are now assumed to support software-controlled addressing.  Other serial controllers (including earlier Prologix boards)
+must be configured manually, with the <b>is_Prologix</b> field in CONNECT.INI set to 0
+</ul>
+
+Release 1.28 of 13-Apr-08
+<ul>
+<li>HP 8560/8590-series portables now support logarithmic display-scale factors other than 10 dB/division
+</ul>
+
+Release 1.29 of 11-May-08
+<ul>
+<li>Added support for the Advantest R3465 family of spectrum analyzers, including the R3463, R3465, R3263, and R3272 models
+<ul>
+<li>Removed the <b>-r3267</b> command-line option and its corresponding <i>Acquire->Advantest R3264, R3267, or R3273 mode</i> menu entry.  You'll need to use the new <b>-advantest</b> option or the <i>Acquire->Advantest R3200/R3400 mode</i> menu selection to enable support for spectrum analyzers in these families
+<li>All Advantest queries that follow commands flush the COM port buffer for better reliability with Prologix adapters
+</ul>
+<li>Removed the deprecated <b>-a</b> and <b>-b</b> command-line options
+<ul>
+<li>Any batch files or shortcuts incorporating these options should use <b>-856xa</b> and <b>-8569b</b> instead
+</ul>
+</ul>
+
+Release 1.30 of 14-Jul-08
+<ul>
+<li>Added <i>File->Export X/Y trace to .CSV file</i> feature
+<li>Fixed a bug that caused failures when using the <b>-t</b> command-line option with Prologix adapters
+<li>Acquired .SSM files are no longer saved in the Program Files subtree
+<li>Renamed SERIAL.INI to CONNECT.INI, and added TCP/IP support
+</ul>
+
+Release 1.31 of 20-Jul-08
+<ul>
+<li>Added <b>-min</b>, <b>-max</b>, <b>-avg</b>, <b>-spline</b>, and <b>-point</b> command-line equivalents for <i>Points</i> menu options
+</ul>
+
+Release 1.32 of 25-Jul-08
+<ul>
+<li>Tektronix 49x/275x analyzers now use low-resolution mode by default to avoid occasional checksum errors observed with Prologix adapters
+</ul>
+
+Release 1.33 of 8-Sep-08
+<ul>
+<li>Added support for MAX SPAN traces from Tektronix 49x/275x and 271x analyzers
+</ul>
+
+Release 1.34 of 20-Oct-08
+<ul>
+<li>Added support for the Advantest R3132 family of spectrum analyzers, including the R3132, R3162, R3172, and R3182 models
+<li>Fixed bug that could cause assertion failures on Agilent E4400-series instruments
+</ul>
+
+Release 1.35 of 8-Apr-09
+<ul>
+<li>Added support for the Advantest R3261/R3361/R3265/R3271 family of spectrum analyzers
+</ul>
+
+Release 1.36 of 28-Jul-10
+<ul>
+<li>Added support for Rohde & Schwarz FSIQ and FSEA/FSEB/FSEM/FSEK models (tested on FSIQ, FSEA, and FSEB)
+<li>Fixed bug introduced in 1.35 that could cause amplitude-scale compression when loading existing .SSM files
+</ul>
+
+Release 1.37 of 10-Sep-10
+<ul>
+<li>Added support for Anritsu MS8604A
+</ul>
+
+Release 1.38 of 29-May-11
+<ul>
+<li>Added support for Agilent E4406A VSA in basic spectrum-analyzer mode.  Use <i>Acquire->SCPI-compatible analyzer mode</i> or the <b>-scpi</b> command line option to enable E4406A support.  
+<li>Renamed <i>Acquire->Acquire at maximum available resolution</i> to <i>Acquire->Acquire at maximum available speed</i>, to reflect the fact that some analyzers can offer increased acquisition speed by means other than reduced resolution.  In particular, this option (or <b>-f</b>) can be used to disable local screen updates on the E4406A for very high GPIB throughput (up to 30 FPS or more!), with no change in resolution.
+<li>Changed the waterfall display's underrange color from white to black.  This was necessary for E4406A support, as its dynamic range can exceed the display range by 
+a substantial margin.
+</ul>
+
+Release 1.39 of 13-Nov-11
+<ul>
+<li>Instruments at GPIB address 0 supported
+</ul>
+
+Release 1.40 of 2-Jul-12
+<ul>
+<li>Added support for Anritsu MS2650/MS2660 series
+</ul>
+
+Release 1.41 of 31-Jul-12
+<ul>
+<li>Added <i>Display->GPS L1 boundaries</i> option
+<li>Added support for USB-SA44/B and USB-SA124A Signal Hound
+<li>Added <b>-RL</b>, <b>-CF</b>, <b>-span</b>, <b>-start</b>, <b>-stop</b>, <b>-bins</b>, <b>-RFATT</b>, and <b>-sens</b> options to control the Signal Hound
+</ul>
+
+Release 1.42 of 18-Aug-12
+<ul>
+<li>Added FTD2XX.DLL to fix missing-DLL error messages on systems without Prologix drivers
+<li>Added <b>-logdiv</b> and <b>-divs</b> options for the Signal Hound
+</ul>
+
+Release 1.43 of 26-Sep-12
+<ul>
+<li>Added <b>-nmea</b> command-line option to associate GPS coordinates with each sweep.  Tested with u-blox <a href="http://www.u-blox.com/en/gps-modules/pvt-modules/lea-6-family.html">LEA-6H</a> module
+<li>Added <b>-pal</b> command-line option to specify desired palette filename
+<li>Added <i>File->Launch Google Maps at cursor location</i> option
+<li>Added <i>File->Export GPS path to KML file</i> option
+</ul>
+
+Release 1.44 of 7-Dec-12
+<ul>
+<li>Added support for Rohde & Schwarz FSU (using SCPI option)
+</ul>
+
+Release 1.45 of 28-Aug-13
+<ul>
+<li>Added SCPI support for Agilent N9910-series FieldFox RF analyzers in spectrum analyzer mode (N9914 tested via direct Ethernet connection).  For more information on direct connectivity to Ethernet devices, search the <a href="http://www.ke5fx.com/gpib/faq.htm">FAQ</a> for <i>FieldFox</i>.
+</ul>
+
+Release 1.46 of 10-Jul-15
+<ul>
+<li>Local display is no longer blanked when acquiring data from Rohde & Schwarz analyzers
+<li>Added support for Rohde & Schwarz FSP (using SCPI option)
+</ul>
+
+Release 1.47 of 28-Jul-15
+<ul>
+<li>Fixed a byte-order issue that could cause invalid data to be acquired from a FieldFox N991x- or N993x-series analyzer
+</ul>
+
+Release 1.48 of 4-Aug-16
+<ul>
+<li>Added support for Advantest R3131 (requires -advantest CLI option or Advantest R3100 menu selection)
+</ul>
+
+Release 1.49 of 26-Aug-16
+<ul>
+<li>Fixed a bug that could cause a crash when connecting to a SCPI-compatible analyzer after acquiring data in unconnected (test) mode
+<li>Added experimental support for arbitrary span widths up to 4 GHz on the Agilent E4406A.  Some hints:
+<ul>
+<li>Use the 'r' key (<i>Measure->Edit composite sweep range</i>) to specify a span, then connect to the E4406A as usual after selecting <i>Acquire->SCPI-compatible analyzer mode</i> or using the <b>-scpi</b> command-line flag
+<li>Optionally, use the <b>-start</b> and <b>-stop</b> command-line options described above (or <b>-CF</b> and <b>-span</b>) to specify an extended span on the command line
+<li>Recommend using the -f option (<i>Acquire->Acquire at maximum available speed</i>) with this feature
+<li>Using a direct Ethernet connection to the E4406A rather than a GPIB adapter will also yield significantly better performance.  A typical CONNECT.INI configuration for direct E4406A access can be found <a href="http://www.ke5fx.com/gpib/E4406A_connect_INI_example.txt">here</a>.  (Don't forget to set <b>is_Prologix</b> to 0!) 
+<li>When using a direct Ethernet connection, you can select any GPIB address on the <i>Acquire</i> menu to initiate acquisition, but <i>Acquire->SCPI-compatible analyzer mode</i> must still be selected first. 
+</ul>
+</ul>
+
+Release 1.50 of 17-Feb-17
+<ul>
+<li>Added <i>Acquire->Pause/resume acquisition</i> option
+<li>Fixed bug introduced in V1.49 that could cause an incorrect frequency scale to be displayed after loading an existing .SSM file
+</ul>
+
+Release 1.51 of 28-Sep-17
+<ul>
+<li>Added <i>File->Export individual X/Y points to .CSV file</i> option, which inserts linefeeds between each frequency/amplitude pair
+</ul>
+
+<P>
+<br>
+<P class="subhead">Acknowledgements and Additional Notes</P>
+<P>
+The assistance (and patience) of Dave Robinson, WW2R is gratefully acknowledged.
+<P>
+Thanks to Geoff Bunza, AD7JP for the Tektronix 2710-series patch.
+<P>
+Thanks to Dr. Alfredo Rosati, <a href="http://i5uxj-2.cln.it">I5UXJ</a> for his contribution of the Tektronix 2782/2784 support code,
+to Ron Kittel, K8AQC, and Grant Hodgman, G8UBN for their extensive help with development and testing on the HP 3585A.  Matt Ettus
+of <a href="http://www.ettus.com">Ettus Research</a> provided access to the Advantest R3267, and Jack Smith, K8ZOA of <a href="http://www.cliftonlaboratories.com">Clifton Laboratories</a> provided access to the Advantest R3463.
+Darren Storer, G7LWT provided access to the Advantest R3361A, while Dimitry Borzenko, 4Z5CP, provided access to the Anritsu MS8604A.
+<P>
+The assistance of Had Allhands, K7MLR with the HP 3588A, and of Abdul Nizar of Synapse Product Development with the Agilent E4402B, is greatly appreciated.
+<br>
+<br>
+<br>
+<hr>
+<B>
+Released into the public domain 13-Dec-05 by John Miles, KE5FX.
+<br>
+Please contact <a href="mailto:john@miles.io?subject=SSM.EXE">john@miles.io</a> with feedback and enhancements!
+<P>
+Source code compilable with the free <a href="http://msdn.microsoft.com/vstudio/express/default.aspx">Microsoft Visual Studio Express</a> package 
+<br>
+No warranties, expressed or implied, are offered with this program. 
+<br>
+Use at your own risk!
+</body>
+</html>

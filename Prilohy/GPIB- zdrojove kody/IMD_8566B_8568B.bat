@@ -1,0 +1,138 @@
+@echo off
+echo.
+echo This batch file transmits the downloadable program T_HIRDIMOD
+echo (25.12.84) to the nonvolatile user RAM on an HP 8566B or 8568B 
+echo spectrum analyzer.  
+echo.
+echo See HP product note 8566B/8568B-1 for more information.
+echo.
+echo Ensure that spectrum analyzer is available at GPIB address 18!
+pause
+echo.
+echo Uploading...
+echo.
+talk 18 "VARDEF O_PTRANGE,0;VARDEF T_ONE,0;VARDEF T_TWO,0;"
+talk 18 "VARDEF O_PTRANGE,0;VARDEF T_ONE,0;VARDEF T_TWO,0;"
+talk 18 "VARDEF T_ONEAMP,0;VARDEF T_TWOAMP,0;VARDEF H_EIGHT,0;" 
+talk 18 "VARDEF D_IFF,0;VARDEF N_OISE,0;" 
+talk 18 "VARDEF I_MRDBC,0;VARDEF I_MLDBC,0;" 
+talk 18 "VARDEF I_TOI,0;"
+talk 18 "VARDEF H_OLD,0;VARDEF L_EFT,0;" 
+talk 18 "TRDEF S_TORE,1008;" 
+
+talk 18 "FUNCDEF T_ESTTONES, @" 
+talk 18 "IP;SNGLS;EM;FA 10 MZ;FB 500 MZ;" 
+talk 18 "TS;MKPK HI;MKTRACK ON;" 
+talk 18 "SP30KZ;VB300HZ;TS;" 
+talk 18 "MKTRACK OFF;TS;MKPK HI;" 
+talk 18 "IF MA,GT,RL THEN;" 
+talk 18 " REPEAT;" 
+talk 18 " RL UP;TS;MKPK HI;" 
+talk 18 " UNTIL MA,LE,RL;" 
+talk 18 "ENDIF;" 
+talk 18 "ADD O_PTRANGE,MA,38;" 
+talk 18 "IF AT,LT,O_PTRANGE THEN;" 
+talk 18 " REPEAT;" 
+talk 18 " AT UP;" 
+talk 18 " UNTIL AT,GE,O_PTRANGE;" 
+talk 18 "ENDIF;" 
+talk 18 "MKRL;TS;" 
+talk 18 "MOV T_ONE,MF;" 
+talk 18 "MOV T_ONEAMP,MA;"
+talk 18 "MKPX 10DB;"
+talk 18 "MKPK NH;"
+talk 18 "MOV T_TWO,MF;"
+talk 18 "MOV T_TWOAMP,MA;" 
+talk 18 "@;" 
+
+talk 18 "FUNCDEF E_QUALAMP, @" 
+talk 18 "SUB H_EIGHT,T_ONEAMP,T_TWOAMP;" 
+talk 18 "IF H_EIGHT,LT,0;" 
+talk 18 " THEN SUB H_EIGHT,0,H_EIGHT;" 
+talk 18 "ENDIF;" 
+talk 18 "IF H_EIGHT,GT,2 THEN;" 
+talk 18 " CONTS;DA3072;D3;PU;PA100,600;TEXT /ADJUST TEST TONES FOR EQUAL/;" 
+talk 18 " PU;PA100,550;TEXT /AMPLITUDE AND PRESS THE HZ KEY/;" 
+talk 18 " PU;PA100,350;TEXT /(CURRENT LEVELS =      /;"
+talk 18 " PU;PA390,350;DSPLY T_ONEAMP,5.2;PU;PA 510,350;DSPLY T_TWOAMP,5.2;PU;PA 620,350;TEXT /)/; HD;" 
+talk 18 " SS EP;" 
+talk 18 " EM;SNGLS;TS;MKPK HI;" 
+talk 18 " MOV T_ONE,MF;"
+talk 18 " MOV T_ONEAMP,MA;" 
+talk 18 " MKPK NH;" 
+talk 18 " MOV T_TWO,MF;" 
+talk 18 " MOV T_TWOAMP,MA;" 
+talk 18 "ENDIF;" 
+talk 18 "@;" 
+
+talk 18 "FUNCDEF P_RODUCTS, @" 
+talk 18 "IF T_ONE,GE,T_TWO THEN ;" 
+talk 18 " XCH T_ONE,T_TWO;" 
+talk 18 " XCH T_ONEAMP,T_TWOAMP;" 
+talk 18 "ENDIF;" 
+talk 18 "SUB D_IFF,T_TWO,T_ONE;" 
+talk 18 "DIV H_OLD,D_IFF,2;" 
+talk 18 "ADD CF,T_ONE,H_OLD;" 
+talk 18 "IF D_IFF,LT,3000 THEN;" 
+talk 18 " SP DN;" 
+talk 18 "ENDIF;" 
+talk 18 "TS;MOV S_TORE,TRA;" 
+talk 18 "SAVES 2;" 
+talk 18 "@;" 
+
+talk 18 "FUNCDEF M_EASURE, @" 
+talk 18 "ADD CF,T_TWO,D_IFF;" 
+talk 18 "SP DN;SP DN;SP DN;TS;" 
+talk 18 "IF D_IFF,GE,3000 THEN;" 
+talk 18 " MKPK HI;MKRL;MOV VB,RB;" 
+talk 18 " VB;DN;TS;MKPK HI;" 
+talk 18 "ELSE MKN;SP DN;TS;MKPK HI;" 
+talk 18 " MKRL;VB;DN;TS;MKPK HI;" 
+talk 18 "ENDIF;" 
+talk 18 "SUB I_MRDBC,MA,T_TWOAMP;" 
+talk 18 "SUB CF,T_ONE,D_IFF;" 
+talk 18 "TS;MKPK HI;" 
+talk 18 "MOV L_EFT,MA;" 
+talk 18 "SUB I_MLDBC,MA,T_ONEAMP;" 
+talk 18 "@;" 
+
+talk 18 "FUNCDEF R_EPORT, @" 
+talk 18 "DIV I_TOI,I_MLDBC,-2;"
+talk 18 "ADD I_TOI,I_TOI,T_ONEAMP;"
+talk 18 "VIEW TRA;RCLS 2;MOV TRA,S_TORE;" 
+talk 18 "DA3072;D2;PU;PA260,800;TEXT /INTERMODULATION DISTORTION/;" 
+talk 18 "PU;PA200,730;TEXT /TEST TONE LEVEL =      /;PA590,730;DSPLY T_ONEAMP,5.2;PU;PA 700,730;TEXT /dBm/;" 
+talk 18 "PU;PA200,700;TEXT /TEST TONE SEPARATION = /;PA560,700;DSPLY D_IFF,6.0;PU;PA700,700;TEXT /Hz/;" 
+talk 18 "PU;PA200,630;TEXT /2F1-F2/;PU;PA 564,630;DSPLY I_MLDBC,5.2;PU;PA700,630;TEXT /dBc/;" 
+talk 18 "PU;PA200,600;TEXT /2F2-F1/;PU;PA 564,600;DSPLY I_MRDBC,5.2;PU;PA700,600;TEXT /dBc/;" 
+talk 18 "PU;PA200,570;TEXT /IP3/;PU;PA 590,570;DSPLY I_TOI,5.2;PU;PA700,570;TEXT /dBm/;" 
+talk 18 "PU;PA300,120;TEXT /Press SHIFT 2 Hz to repeat test/;HD;" 
+talk 18 "@;" 
+
+talk 18 "FUNCDEF N_OTHIRD, @" 
+talk 18 "RCLS 2;MOV TRA,S_TORE;" 
+talk 18 "EM;D3;DA3072;PU;PA100,600;" 
+talk 18 "TEXT /THIRD ORDER INTERMODULATION PRODUCTS/;" 
+talk 18 "PU;PA100,550;TEXT /ARE AT OR BELOW THE NOISE LEVEL/;" 
+talk 18 "PU;PA100,450;TEXT /Press SHIFT 2 Hz to repeat test/; HD;" 
+talk 18 "@;" 
+
+talk 18 "FUNCDEF C_HECK, @" 
+talk 18 "SMOOTH TRA,32;MKMIN;" 
+talk 18 "MOV N_OISE,MA;ADD N_OISE,N_OISE,15;" 
+talk 18 "IF L_EFT,LE,N_OISE THEN;" 
+talk 18 " N_OTHIRD;" 
+talk 18 " ELSE R_EPORT;" 
+talk 18 "ENDIF;" 
+talk 18 "@;" 
+
+talk 18 "FUNCDEF T_HIRDIMOD, @" 
+talk 18 "T_ESTTONES;E_QUALAMP;P_RODUCTS;M_EASURE;C_HECK;" 
+talk 18 "@;" 
+talk 18 "KEYDEF 2,T_HIRDIMOD;"
+echo Upload complete.  You can run T_HIRDIMOD by pressing Shift 2 Hz 
+echo on the analyzer's front panel.
+echo.
+echo User RAM bytes left:
+query 18 "MEM?"
+

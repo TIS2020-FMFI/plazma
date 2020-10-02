@@ -1,0 +1,187 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "pnres.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICON                ICON                    "pn.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Acquisition dialog
+//
+
+IDD_PN_PARAMS DIALOGEX 0, 0, 319, 334
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION
+FONT 8, "MS Shell Dlg", 0, 0, 0x0
+BEGIN
+    LTEXT           "Caption",IDC_STATIC,16,15,26,8
+    EDITTEXT        IDC_CAPTION,115,14,180,13,ES_AUTOHSCROLL
+
+    LTEXT           "Carrier",IDC_STATIC,16,39,58,8
+    EDITTEXT        IDC_CARRIER_HZ,115,37,60,14,ES_AUTOHSCROLL
+    LTEXT           "Hz",IDC_STATIC,179,39,9,8
+    EDITTEXT        IDC_CARRIER_DBM,215,37,36,14,ES_AUTOHSCROLL
+    LTEXT           "dBm",IDC_STATIC,256,39,14,8
+
+    LTEXT           "External Conversion",IDC_STATIC,16,63,78,8
+    EDITTEXT        IDC_EXT_LO,115,61,60,14,ES_AUTOHSCROLL
+    LTEXT           "LO Hz",IDC_STATIC,179,63,24,8
+    EDITTEXT        IDC_EXT_IF,215,61,60,14,ES_AUTOHSCROLL
+    LTEXT           "IF Hz",IDC_STATIC,279,63,24,8
+
+    LTEXT           "External Multiplier",IDC_STATIC,16,87,78,8
+    EDITTEXT        IDC_EXT_MULT,115,85,40,14,ES_AUTOHSCROLL
+    LTEXT           "x",IDC_STATIC,159,87,8,8
+
+    LTEXT           "Measurement Offset Range",IDC_STATIC,16,111,95,8
+    EDITTEXT        IDC_MIN,115,109,40,14,ES_AUTOHSCROLL
+    LTEXT           "Hz to ",IDC_STATIC,159,111,20,8
+    EDITTEXT        IDC_MAX,179,109,40,14,ES_AUTOHSCROLL
+    LTEXT           "Hz",IDC_STATIC,222,111,9,8
+
+    LTEXT           "Carrier Clipping Level",IDC_STATIC_CLIP,16,135,95,8
+    CONTROL         "0 dB",IDC_CLIP_0,"Button",BS_AUTORADIOBUTTON | 
+                    WS_TABSTOP,115,134,30,10
+    CONTROL         "10 dB",IDC_CLIP_10,"Button",BS_AUTORADIOBUTTON,165,134,
+                    30,10
+    CONTROL         "20 dB",IDC_CLIP_20,"Button",BS_AUTORADIOBUTTON,215,134,
+                    30,10
+    CONTROL         "40 dB",IDC_CLIP_40,"Button",BS_AUTORADIOBUTTON,265,134,
+                    30,10
+
+    LTEXT           "VBW:RBW Ratio",IDC_STATIC_VBF,16,159,80,8
+    EDITTEXT        IDC_VBF,115,157,40,14,ES_AUTOHSCROLL
+
+    LTEXT           "Noise Response Characteristic",IDC_STATIC_NF,16,183,94,
+                    8
+    EDITTEXT        IDC_NF,115,181,40,14,ES_AUTOHSCROLL
+    LTEXT           "dB",IDC_STATIC_NF_DB,159,183,9,8
+
+    CONTROL         "&Alternative acquisition",IDC_ALT_ACQ,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,215,183,94,8
+    CONTROL         "&Force 0 dB RF ATTEN",IDC_0DB,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,215,193,94,8
+
+    LTEXT           "Instrument GPIB Address",IDC_STATIC,16,207,81,8
+    EDITTEXT        IDC_GPIB_ADDR,115,205,40,14,ES_AUTOHSCROLL | ES_NUMBER
+
+    PUSHBUTTON      "Start Measurement",IDOK,77,228,71,14
+    PUSHBUTTON      "Cancel",IDCANCEL,211,228,31,14
+
+    GROUPBOX        "Static",IDC_HELPGROUP,13,247,292,75
+    LTEXT           "Static help text goes here",IDC_HELPBOX,20,258,278,56
+END
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Change-caption dialog
+//
+
+IDD_PN_CAPTION DIALOGEX 0, 0, 319, 121
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION
+FONT 8, "MS Shell Dlg", 0, 0, 0x0
+BEGIN
+    LTEXT           "",IDC_STATIC,16,15,71,8
+    EDITTEXT        IDC_CAPTION,13,13,292,13,ES_AUTOHSCROLL
+    PUSHBUTTON      "OK",IDOK,77,100,71,14
+    PUSHBUTTON      "Cancel",IDCANCEL,211,100,31,14
+    GROUPBOX        "Static",IDC_HELPGROUP,13,35,292,54
+    LTEXT           "Static help text goes here",IDC_HELPBOX,20,46,278,36
+END
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Spur clip level dialog
+//
+
+IDD_PN_EDIT_SPUR_CLIP DIALOGEX 0, 0, 269, 155
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION
+FONT 8, "MS Shell Dlg", 0, 0, 0x0
+BEGIN
+    LTEXT           "Spur clipping threshold in dB",IDC_STATIC,16,15,91,8
+    EDITTEXT        IDC_SPUR_LEVEL,113,13,72,13,ES_AUTOHSCROLL
+    PUSHBUTTON      "OK",IDOK,83,130,31,14
+    PUSHBUTTON      "Cancel",IDCANCEL,155,130,31,14
+    GROUPBOX        "Static",IDC_HELPGROUP,13,35,242,81
+    LTEXT           "Static help text goes here",IDC_HELPBOX,20,45,228,67
+END
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_PN_PARAMS, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 302
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

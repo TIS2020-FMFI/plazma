@@ -1,0 +1,1088 @@
+<html>
+<head>
+<TITLE>7470: HP-GL/2 Plotter Emulator</TITLE>
+<style type="text/css">
+body 
+{
+font-family:arial; font-size:12; font-weight:normal; color:black;
+}
+h2
+{
+font-family:arial; font-size:24; font-weight:bold; color:black;
+}
+pre
+{
+font-size:12; font-family:lucida console,courier; font-weight:normal; color:black;
+}
+.subhead
+{
+font-family:arial; font-size:14; font-style:italic; font-weight:bold; color:maroon;
+}
+</style>
+</head>
+<body>
+<img src="./7470.gif" align=right>
+<br>
+<br>
+<i><h2>An Intelligent Plotter Emulator for HP-GL/2-Compatible Instruments</h2></i>
+<P>
+<br>
+<P>
+7470.EXE is a Win32-based emulator for the HP 7470A plotter.  It will acquire an HP-GL/2 plot and render it
+in a window.  The plot can then be printed, viewed as an overlay with other plots, or saved in several different graphics file formats as well as its original HP-GL/2
+format.
+<P>
+With the help of 7470.EXE, you can capture screenshots from GPIB-based test equipment 
+such as digital oscilloscopes, spectrum analyzers, logic analyzers, and more.  7470.EXE can
+even recognize certain instrument models and and request plots from them without user access to their
+front-panel controls.
+<P>
+7470.EXE is part of the <a href="./readme.htm">KE5FX GPIB Toolkit</a>.  The latest version of the Toolkit is downloadable <a href="http://www.thegleam.com/ke5fx/gpib/setup.exe">here</a>.
+<br clear=all>
+<P>
+<P class="subhead">Running 7470</P>
+<P>
+Depending on the options you selected during installation, you can run 7470.EXE from the Start menu, by clicking on its desktop shortcut, or by
+using its Quick Launch icon on the taskbar.  You can also run 7470.EXE from a DOS-box 
+command line or Windows Start->Run... command, optionally
+specifying a GPIB address from which to acquire host-requested plots (see below), or the names of one or more existing HP-GL/2 data files.  Use quotes around filenames that contain 
+spaces - for example, 
+<P>
+
+<pre>
+      7470 "IMD test.plt"            ... Display "IMD test.plt" by itself
+      7470 before.plt after.plt      ... Overlay before.plt and after.plt
+      7470 (no command-line options) ... Display all plots in the current directory
+</pre>
+<P>
+You can acquire your own HP-GL/2 .PLT files via the options on the Acquire menu, if your PC has a National Instruments-compatible GPIB interface or a Prologix GPIB-USB/GPIB-ETHERNET adapter.  <b>It's important
+to understand that there are two ways to do this in 7470.EXE.</b>  Unlike other plotter emulators, 7470.EXE supports both <i>host-requested</i> and <i>device-initiated</i> plotting operations.  
+<P>
+<b>Host-Requested Plots</b>
+<P>
+A few instruments, currently limited to the following models, support "host-requested" plotting in 7470.EXE.   
+<ul>
+<li>Tektronix TDS 5/6/7xx-series oscilloscopes
+<li>Tektronix 490P/2750P-series spectrum analyzers (including 492P and 496P)
+<li>Tektronix 2710-series spectrum analyzers
+<li>Tektronix 2782/2784 spectrum analyzers
+<li>HP 3561A dynamic signal analyzers
+<li>HP 3585A/B spectrum analyzers (see notes below)
+<li>HP 8566A/8567A/8568A spectrum analyzers (see notes below)
+<li>HP 8566B/8567B/8568B spectrum analyzers
+<li>HP 8560A/B/E and 8590-series portable spectrum analyzers
+<li>HP 54100- and 54200-series digital oscilloscopes
+<li>Tektronix 2430A, 2432/2432A, and 2440/2440A digital oscilloscopes
+<li>Tektronix SCD-series transient digitizers (ROM version 1.5 or later)
+<li>Various SCPI-compatible spectrum analyzers (tested on Rohde & Schwarz FSP)
+</ul>
+If your instrument appears in this list, then you can use the Acquire menu to ask it to send an HP-GL/2 plot to 7470.EXE 
+without the need for any interaction with the instrument's front-panel controls. 
+Given a sufficiently-long GPIB cable, you don't even need to be in the same room as the instrument. This mode
+of operation is also handy for another reason: as 7470.EXE communicates with the instrument
+to request the plot, it can also turn on graticule illumination, enable the desired display elements, select appropriate pen
+colors, and execute other plotter-setup tasks that the user would otherwise need to perform manually.
+<P>
+Normally, you'll issue host-initiated plot requests by selecting one of the "Request plot from supported device at address n" options
+on the Acquire menu.  Instrument shortcut entries (see below) can also be selected.  Note that earlier Prologix adapters, and those with their DIP switches set to Device mode, can't support host-requested plots at all.
+<P>
+Most instruments that support host-requested plots may be addressed directly on the 7470.EXE command line, just like a .PLT filename:
+
+<pre>	7470 3
+</pre>
+
+The above example is suitable for inclusion in a Windows desktop shortcut. When clicked, the shortcut will launch 7470.EXE, which will then immediately request 
+a plot from the supported instrument at GPIB address 3. This feature allows you to capture screenshots with a single mouse click on the host PC.
+<P>
+<b>Host-Requested Plots via Instrument Menu Shortcuts</b>
+<P>
+Beginning with the 1.80 release of 7470.EXE, you can also add strings of the form
+
+<pre>	instrument_0         Tektronix 2430A at GPIB address 4\tF2
+</pre>
+to the 7470.INI file in the 7470.EXE program directory.  The file contains several entries that illustrate how
+this is done.  (See below for more information on 7470.INI.)  If any of these entries are present (and not 
+commented out with a leading semicolon), the Acquire menu will include a list of the instrument 
+name/address specification strings and allow you to select one with the mouse, or, alternatively, by 
+pressing a function key.
+<P>
+<b>Important notes for users of HP 8566A-8568A, HP 3585A/B, and SCPI-compatible spectrum analyzers and HP 8510- and 87xx-series VNAs</b>
+<P>
+Some instruments can't be automatically identified and addressed by 7470.EXE, and many also don't support 
+HP-GL/2 plotting at all.  Fortunately, 7470.EXE can still work with certain instrument models that are 
+incompatible with other plotters and emulators.  
+<P>
+<blockquote>
+<P>
+<i>HP 8566A, HP 8567A, and HP 8568A spectrum analyzers</i><P>
+In order to tell 7470.EXE to access one of these 
+instruments, at least one instrument menu shortcut must contain the string "8566A", "8567A", or "8568A".
+When a shortcut key corresponding to an HP 8566A-8568A spectrum analyzer is pressed, 
+7470.EXE will request raw annotation, state, and trace data from the analyzer and generate its own HP-GL/2 .PLT 
+file image based on it.  This HP-GL/2 image may then be saved, rendered, and printed just like
+any other .PLT file.   A typical menu shortcut for an HP 8566A-8568A spectrum analyzer looks like this:
+<pre>	instrument_0         HP 8566A / 8567A / 8568A (via HP-GL/2 emulation) at GPIB address 18\tF8
+</pre>
+<P>
+The HP-GL/2 synthesis process for the HP 8566A-8568A analyzers takes place in less than a second, including the data acquisition itself.  
+It's actually a great way to access the later HP 8566B-8568B models as well; not only are 7470.EXE's synthesized HP-GL/2 plots much faster to acquire, 
+but certain features such as markers look much better than they do in the B-series analyzers' own plots.  Note, 
+however, that a few display features such as the 'C' trace and hardware diagnostic/error messages will not appear in a 
+synthesized plot.
+<P>
+<i>HP 3585A/B spectrum analyzers</i><P>
+In order to tell 7470.EXE to access one of these 
+instruments, at least one instrument menu shortcut must contain the string "3585".
+When a shortcut key corresponding to an HP 3585A/B spectrum analyzer is pressed, an HP-GL/2 plot will be 
+synthesized from raw instrument data, as with the HP 8566A-8568A support process described above.  A typical menu shortcut for an HP 3585A/B spectrum analyzer looks like this:
+<pre>	instrument_0         HP 3585A/B (via HP-GL/2 emulation) at GPIB address 11\tF3
+</pre>
+<P>
+<i>HP 87xx- and 8510-series vector network analyzers</i><P>
+In order to tell 7470.EXE to access one of these 
+instruments, at least one instrument menu shortcut must contain the string "8510", "8753", or "8702".
+When a shortcut key corresponding to one of these VNAs is pressed, a conventional HP-GL/2 plot will be 
+fetched and rendered.  A typical menu shortcut looks like this:
+<pre>instrument_6         HP 8510 or 8753 series at GPIB address 16\tF9
+</pre>
+<P>
+<i>SCPI-compatible spectrum analyzers</i><P>
+Some SCPI-compatible models supported by SSM.EXE and SATRACE.EXE can be addressed by 7470.EXE by placing the string "SCPI" in an
+instrument menu shortcut.  The default 7470.INI file contains an instrument shortcut associating the F11 key with a SCPI instrument 
+at address 20:
+<pre>instrument_7         Supported SCPI-compatible spectrum analyzer at GPIB address 20\tF11 
+</pre>
+In principle most of the SCPI instruments supported by SSM should work with this option, but currently only the
+Rohde & Schwarz FSP has been tested.
+</blockquote>
+<P>
+Again, the normal host- or device-initiated plot menu options will <b>not</b> work with these instruments. 
+<P>
+Beginning in version 1.92, a few instrument-menu shortcuts are included by default in 7470.INI.  If your
+8566A-8568A analyzer's GPIB address is 18, you don't have to modify 7470.INI at all -- just hit F8!  Likewise,
+F9 will acquire a plot from an 8510-series network analyzer by default.
+<P>
+<b>Device-Initiated Plots</b>
+<P>
+If your instrument doesn't appear in the list above, that means it isn't 
+directly supported by 7470.EXE, and won't work with the Acquire->Request 
+functions, instrument menu shortcuts, or the command-line GPIB address feature. However, chances are 
+good that you can still obtain plots from it by activating its front-panel "Plot" 
+button while 7470.EXE is in the "Wait for device-initiated plot" mode. 
+This mode may be selected from the Acquire menu, or by pressing the
+lower-case 'w' key.
+
+<P>
+<P class="subhead">GPIB Instrument and Interface Configuration Notes</P>
+<P>
+Host-requested plotting requires 7470.EXE to carry on a two-way GPIB conversation with the instrument, so you'll need to configure your instrument for Talk/Listen mode (as opposed to
+Talk-Only or System Controller mode) for use with this feature.  This typically involves changing a system-level menu option or DIP switch.  
+All National Instruments GPIB adapters support host-requested plotting, but only versions 3.1 and later of the Prologix GPIB-USB adapter 
+can provide the necessary GPIB controller functionality.  All Prologix GPIB-ETHERNET adapter versions are compatible.  (For more information on the Prologix adapters, you can contact Prologix <a href="http://www.prologix.biz">here</a>.)
+<P>
+<P>
+Device-initiated plotting usually requires the instrument to be configured for Talk-Only mode.  When their front-panel PLOT buttons are pressed, some 
+instruments, such as the HP analyzers, expect the <i>plotter</i> to be addressable at a specific GPIB address, usually 5.  The 
+emulated plotter address is normally controlled by 7470.EXE's GPIB menu, unless an older Prologix adapter with DIP switches
+is in use.  Certain instruments expect to be the only addressable device on the bus when their PLOT buttons are pressed, requiring selection 
+of the "Listen only" option in 7470.EXE's GPIB menu.  
+<P>
+As you can imagine, experimentation is sometimes needed to 
+find the right combination of device and host settings that will allow 7470.EXE to work with a particular instrument.  Some notes on specific instruments appear below.
+<ul>
+<li><b>Tektronix 490P and 2750P spectrum analyzers</b>
+<ul>
+<li>Device-initiated plots with 494P and later models: Must be set to Talk-Only mode via DIP switch in rear.  This may cause problems if other devices are on the GPIB bus.  7470 GPIB setting must be "No assigned plotter address (listen only)."  Plot with front-panel PLOT button (typically Blue Shift-PLOT).
+<li>Host-requested plots (recommended for all 49x models, and required for 492P/496P): Both Talk-Only and Listen-Only switches should be off (0).  LF-or-EOI switch does not matter for use with 7470.EXE, but should be set to on (1) for use with SSM.EXE and PN.EXE utilities.  (Tip: if you set address 3, you can use the F4 keyboard shortcut that's predefined in 7470.INI.)
+<li>DIP switches on these instruments are extremely prone to age-related failures.  <i>Verbum sat sapienti est.</i>
+</ul>
+<li><b>Tektronix 2782 and 2784 spectrum analyzers</b>
+<ul>
+<li>Device-initiated plots: GPIB board must be connected to dedicated plotter output port on rear panel.  7470 GPIB setting must be configured to listen on address 5.  
+(Note that the analyzer cannot be controlled via this port, so many GPIB Toolkit users will want to use host-requested plots instead.
+These work by synthesizing an HP-GL/2 plot from raw instrument data obtained from the GPIB control port.)
+<li>Host-requested plots: This feature uses the HP-GL/2 synthesis code developed for the HP 8566A-8568A analyzers.  In the current implementation, markers and 
+traces other than NORMAL and A will not be visible in plots requested from a 2782/2784.
+</ul>
+<li><b>Tektronix 2430A / 2432 / 2440 DSOs</b>
+<ul>
+<li>Device-initiated plots: DSO must be set to "Plotter" device mode.  7470 GPIB setting must be "No assigned plotter address (listen only)."  
+<li>Host-requested plots (recommended): DSO must be set to T/L device mode.  7470 GPIB setting does not matter.
+<li>7470.EXE will NOT work with the earlier 2430 model, since it does not support GPIB plotting at all.
+</ul>
+<li><b>Tektronix SCD-series transient waveform digitizers</b>
+<ul>
+<li>Device-initiated plots: Issued automatically after triggered acquisition is complete
+<li>Host-requested plots: Available on ROM versions 1.5 and later; earlier versions must use device-initiated plotting
+</ul>
+<li><b>HP 8566B, 8567B, and 8568B spectrum analyzers</b>
+<ul>
+<li>Device-initiated plots: 7470 must be configured via the GPIB menu to listen at address 5.  
+<li>Press "Lower Left" button on front panel for device-initiated plotting.
+<li>Host-requested plots are also possible with these analyzers.  For faster plotting, though, try the 8566A/8567A/8568A-series menu shortcut (F8) technique described above!
+<li>Other HP 8560- and 8590-series spectrum analyzers are reported as working like HP 8566B. Host-requested plots may work on these; if not, device-initiated plots should be possible.
+</ul>
+<li><b>HP 8566A, 8567A, and 8568A spectrum analyzers</b>
+<ul>
+<li>These do not support HP-GL/2 plots at all, either device-initiated or host-requested.  See notes above on how to work around this limitation.
+</ul>
+<li><b>Other instruments known to be compatible with 7470.EXE for device-initiated plotting</b>
+<ul>
+<li>Tektronix TDS5XX/6XX/7XX series oscilloscopes<small><blockquote>7470 GPIB setting must be "No assigned plotter address (listen only)"</blockquote></small>  
+<li>Tektronix 370A curve tracer
+<li>Tektronix SCD series transient digitizers<small><blockquote>Pre-V1.5 instruments do a screen dump immediately after acquisition</blockquote></small>
+<li>Advantest R3762AH vector network analyzer
+<li>Advantest R3361A spectrum analyzer
+<li>Advantest R4131B spectrum analyzer
+<li>Advantest R3261C spectrum analyzer
+<li>Advantest R9211E FFT analyzer
+<li>LeCroy 9354AM DSO
+<li>Giga-Tronics 8003 scalar network analyzer
+<li>Gould 4072 DSO<small><blockquote>7470 GPIB setting must be "No assigned plotter address (listen only)"</blockquote></small> 
+<li>HP 3040A cable analyzer
+<li>HP 54201A DSO
+<li>HP 54502A DSO<small><blockquote>7470 GPIB setting must be "No assigned plotter address (listen only)"</blockquote></small> 
+<li>HP 54542A DSO<small><blockquote>7470 GPIB setting must be "No assigned plotter address (listen only)"<br>DSO must be in talk-only mode<br>Disable saving images to disk<br>For maximum text legibility, switch 7470.EXE to 1024x768 mode (Display->1024x768, or hit the '0' key)</blockquote></small> 
+<li>HP 54110D DSO<small><blockquote>7470 GPIB setting must be "No assigned plotter address (listen only)"<br>DSO must be in talk-only mode<br>For maximum text legibility, switch 7470.EXE to 1024x768 mode (Display->1024x768, or hit the '0' key)</blockquote></small>
+<li>HP 853A/8559A spectrum analyzer<small><blockquote>7470 GPIB setting must be "No assigned plotter address (listen only)"<br>Press STORE BLANK and CLEAR WRITE prior to PLOT TRACE</blockquote></small> 
+<li>HP 8510B vector network analyzer
+<li>HP 8752C vector network analyzer
+<li>HP 8756A scalar network analyzer
+<li>HP 8757A scalar network analyzer<small><blockquote>For device-initiated plotting with the 8756 and 8757 network analyzers, the GPIB adapter must be connected to the System Interface port, not the main HP-IB port.  If using a Prologix adapter, make sure the firmware is up to date.  It may be necessary to disconnect any floppy drives or other peripherals controlled by the analyzer in order to obtain plots.  7470.EXE's GPIB menu should be set to address 5.</blockquote></small>
+<li>HP 8753A vector network analyzer
+<li>HP 3562A dynamic signal analyzer
+<li>HP 5372A frequency/time interval analyzer
+<li>HP 8569B / 8570A spectrum analyzer<small><blockquote>7470 GPIB setting must be "No assigned plotter address (listen only)"</blockquote></small>
+<li>HP 4194A / 4195A network/spectrum analyzer<small><blockquote>7470 GPIB setting must be "No assigned plotter address (listen only)"<br>Select "More Menus &gt; HPIB Define &gt; TALK Only"<br>Select "More Menus &gt; Copy Menu &gt; PLOT Mode"<br>Hitting COPY button initiates the plot</blockquote></small> 
+<li>HP 3577A network analyzer<small><blockquote>7470 GPIB setting be "No assigned plotter address (listen only)"<br>HP 3577A must be set to Talk-Only mode</blockquote></small>
+<li>HP 3588A / 3589A spectrum analyzer<small><blockquote>7470 GPIB setting must match specified plotter address, or be set to Listen Only<br>Set System Controller mode in analyzer's HP-IB menu</blockquote></small>
+<li>Marconi 6500/6311 scalar network analyzer<small><blockquote>7470 must be connected to private bus, addressable at 5, before powering up the analyzer</blockquote></small>
+<li>Rohde & Schwarz FSA spectrum analyzer
+<li>Rohde & Schwarz UPL audio analyzer
+<li>Wiltron 562 network analyzer
+<li>Stanford Research Systems SR620 time-interval counter<small><blockquote>Use COMn:9600,7,N,1 in CONNECT.INI when connecting via a USB-RS232 converter</blockquote></small>
+</ul>
+</ul>
+
+Keep in mind that some instruments need to be set to Talk-Only mode to support device-initiated plots. However, some of those instruments, when 
+set to Talk-Only mode, may prevent other instruments on the GPIB bus from communicating with 7470.EXE (or anything else). Users of multiple 
+GPIB instruments may need to experiment to find a configuration that allows all of the instruments to work properly with each other.
+<P>
+Also, if you have more than two or three
+powered-down instruments on the GPIB bus, keep in mind that they'll load the bus, possibly preventing successful communication with the instrument(s) that are turned on.  When 
+attempting to use 7470.EXE with a new instrument for the first time, it's best to use a simple direct connection between the instrument and the host PC's GPIB adapter.
+<P>
+ I'm always interested in hearing from users of other instruments so they may be added to 
+the list above. Please feel free to contact me at <a href="mailto:john@miles.io">john@miles.io</a> with any bug reports or success stories.
+
+<P>
+<br>
+<P class="subhead">Menu Commands and Keyboard Shortcuts</P>
+<P>
+
+
+<pre>
+     Key               Menu Command                                 Remarks
+     <hr align=left width=800>
+     l                 File->Load HP-GL/2 data                      Retrieves a saved HP-GL/2 file (.PLT, .HPG, .PGL, .HGL) for viewing
+     
+     s                 File->Save image or HP-GL/2 data             Saves the currently-browsed plot as an HP-GL/2 file.  Also can be 
+                                                                    used to save the current window contents (which may consist of 
+                                                                    several overlaid HP-GL/2 files) as a .GIF, .BMP, .TGA, 
+                                                                    or .PCX image file
+     
+     p                 File->Print image                            Sends the current window contents to the default Windows printer
+
+     Home              File->Close all visible plots                Stop displaying/browing any currently-loaded plots.  This command
+                                                                    does <b>not</b> delete any files; it simply removes them from
+                                                                    7470.EXE's current display list.
+     
+     Delete            File->Close current plot                     Stop displaying/browsing the currently-visible plot.  This command 
+                                                                    does <b>not</b> delete the file; it simply removes it from 
+                                                                    7470.EXE's current display list.
+     
+     Ctrl-Delete       File->Delete current plot file               Same as File->Close current plot, except that it <b>deletes the </b>
+                                                                    <b>HP-GL/2 file being viewed</b>
+     
+     Esc               File->Quit
+     
+     Space or F5       View->Refresh current display                Reloads the currently-visible HP-GL/2 file.  If the file was 
+                                                                    acquired as a host-requested plot in the current 7470.EXE session,
+                                                                    it will be re-acquired.
+     
+     b                 View->Browse sources one at a time           Allows you to use the +/- keys to move through the list of 
+                                                                    viewable plots, displaying them one at a time
+     
+     o                 View->Overlay all sources                    Renders the graphical (i.e., non-text) portions of all loaded 
+                                                                    or acquired HP-GL/2 plots atop each other.  In Overlay mode, 
+                                                                    the +/- keys are used to determine which plot contributes 
+                                                                    text labels to the display.
+     
+                                                                    The three traces in the example image at the top of this page 
+                                                                    were displayed with the View->Overlay command prior to being saved 
+                                                                    as a .GIF file.  (Use caution when closing or deleting a file in 
+                                                                    Overlay mode.  The visible text labels are the only way to tell 
+                                                                    which file will be closed or deleted!)
+     
+     +                 View->Next source                            Navigates the list of visible HP-GL/2 plots.  Specific behavior is
+     -                 View->Previous source                        determined by the choice of Browse/Overlay mode (above).
+     
+     5                 Display->512 x 384                           Adjusts the size of 7470.EXE's window.  Some crowded plots look much
+                       Display->640 x 400                           better at higher resolutions, but 7470.EXE will render an undersampled
+     6                 Display->640 x 480                           image if you you select a window size that's too large for the current
+     8                 Display->800 x 600                           Windows desktop.  You can change the default window size in the 7470.INI
+     9                 Display->1280 x 960                          file (below.)
+     0                 Display->1024 x 768
+                        
+     a                 Display->Antialiasing                        Enables basic antialiasing of text and graphics in plots drawn with 
+                                                                    white backgrounds.
+
+     i                 Display->Alternate colors                    Useful for certain instruments such as the HP 8566/8568 analyzers 
+                                                                    whose graticule and trace colors appear inverted in 7470.EXE.  
+                                                                    (This option was added prior to the pen_colors array in 7470.INI, 
+                                                                    which can be a better place to address color-rendering problems.)
+
+     k                 Display->Background                          Toggles the background color between white and the pen
+                                                                    specified by INI_background_color in 7470.INI.
+
+     r                 Display->Rotate                              Rotates the image in 90-degree increments.
+
+     c                 Caption->Edit caption text                   Allows you to enter text which can subsequently be placed at any
+                                                                    desired location by left-clicking on the currently-viewed plot.  
+                                                                    Supported only in Browse mode.
+     
+     e                 Caption->Erase most-recently-added caption ...
+                                                                    Removes the most-recently-added user caption from the plot.  Supported
+                                                                    only in Browse mode.
+
+     w                 Acquire->Wait for device-initiated plot      Enters a mode in which 7470.EXE waits for, and renders, HP-GL/2 
+                                                                    data that arrives after pressing the front-panel PLOT button on an 
+                                                                    instrument.  You can press any key to exit this mode and restore 
+                                                                    normal 7470.EXE operation.
+     
+     W                 Acquire->Wait for device-initiated plot,     Same as above, except that each incoming plot is sent to the 
+                       then print                                   default Windows printer.  If you set the auto_print_mode field in 
+                                                                    7470.INI to '1', 7470.EXE will enter this mode on startup, acting 
+                                                                    as an unattended HP-GL/2 print server.
+
+                       Acquire->Beep when plot received             If this option is selected, 7470.EXE will attempts to play the 
+                                                                    .wav file specified by the beep_wav_filename field in 7470.INI 
+                                                                    as soon as each incoming device-initiated plot has been received
+                                                                    The default setting is based on the beep_when_plot_received field.
+     
+                       Acquire->Request plot from supported         When one of these options is selected, 7470.EXE will attempt to
+                       device at GPIB address N(1-30)               identify the instrument at the specified address and initiate a 
+                                                                    host-requested plotting operation.  This may entail sending 
+                                                                    commands to the instrument to turn on its graticule display, 
+                                                                    select HP-GL printing, and perform other setup tasks.  <b>Undefined</b>
+                                                                    <b>results may occur if the instrument does not appear in the list</b>
+                                                                    <b>under "Host-Requested Plots" above.</b>
+     
+                       GPIB->No assigned plotter address            During device-initiated plots, some instruments may need to 
+                       (listen-only)                                communicate with the (emulated) plotter, expecting to find it at a 
+                                                                    specific GPIB address.  Others may expect the plotter to be 
+                       GPIB->Plotter addressable at N(0-30)         entirely transparent to the GPIB bus.  This menu allows you to    
+                                                                    specify the plotter's address, or to assign it no address at all.
+     
+                                                                    When an older Prologix GPIB-USB adapter is in use, this functionality 
+                                                                    is provided by its DIP switch, and the GPIB menu will have no 
+                                                                    effect.
+</pre>
+
+<P>
+<br>
+<P class="subhead">Mouse Controls</P>
+<P>
+
+<b>Left-click</b> anywhere within a displayed plot in Browse mode to add the current caption text (<i>Caption->Edit caption text...</i>) to
+the plot at that location.  
+<P>
+The modified HP-GL/2 file will be saved automatically after any user captions are added or removed.
+
+<P>
+<br>
+<P class="subhead">7470.INI</P>
+<P>
+The directory containing 7470.EXE should also contain a file called 7470.INI, which provides some configuration defaults that you can change if desired.
+<P>
+Most users won't need to edit this file.  To configure the GPIB Toolkit for use with Prologix GPIB adapters, you'll need to edit CONNECT.INI instead, or run the GPIB Configurator utility (see below).
+<P>
+Here is an example
+of a 7470.INI file with comments explaining each line:
+
+<pre>
+;
+;Initial X/Y resolution.  If you specify a window that's 
+;too big for your desktop, 7470.EXE may behave strangely 
+;
+
+res_x                800
+res_y                600
+
+;
+;Initial X/Y window placement.  Uncomment these lines to
+;specify the location of the upper-left corner of the 7470.exe
+;window on your desktop.  By default, the window is always
+;centered on the primary monitor.
+;
+
+;pos_x                100
+;pos_y                100
+
+;
+;If your plots appear clipped improperly, you can change the default
+;renderer margins here
+;
+
+x_margin             24
+y_margin             24
+
+;
+;Set to '1' to display graphs in an alternate color set. 
+;Useful for the HP 8566B analyzer, possibly others 
+;
+;'0' causes 7470 to use the default pen colors specified below
+;
+
+color_scheme         0
+
+;
+;Background color: set to 0 for white background, 1 for black, etc
+;
+
+background           0
+
+;
+;
+;Antialiasing: set to 0 to default anti-aliasing to OFF,  1 for ON
+;
+;  Antialiasing attemps to smooth out jagged angled lines.  It may reduce
+;  contrast and cause some lines to look "ropey."  It is currently enabled only 
+;  if background is 0 (white)
+;
+
+antialias            1
+
+;
+;Image rotation: 0:   0 degrees
+;                1:  90 degrees
+;                2: 180 degrees
+;                4: 270 degrees
+;
+
+rotate               0
+
+;
+;Specify a higher value (in milliseconds) if 7470.EXE times  
+;out during device-initiated plotting                        
+;
+
+async_timeout        3500
+
+;
+;Options below are used to determine how the plotter responds to various  
+;output queries.  No effect unless a valid GPIB board address is specified.
+;Lines in this group may be commented out if necessary to suppress replies 
+;to a given query
+;
+
+OE_reply             0
+OH_reply             250,279,10250,7479
+OI_reply             7470A
+OP_reply             250,279,10250,7479
+OO_reply             0,1,0,0,0,0,0,0
+OF_reply             40,40
+OA_reply             250,279,0
+OC_reply             250,279,0
+
+;
+;Set to '0' to suppress replies to OS (Output Status) command
+;
+
+process_OS           1
+
+;
+;Set to '1' to autodetect pen-storage commands in device-initiated plots, 
+;avoiding the need to wait for the async_timeout interval to expire at the
+;end of each plot.  Set to '0' if plots appear to be terminated prematurely
+;
+
+SP0_detect           1
+
+;
+;Sets the default plotter address in the GPIB menu.  Use -1 for
+;listen-only mode
+;
+
+default_board_addr   5
+
+;
+;For diagnostic/optimization purposes
+;
+
+async_xfer_size       100
+async_GPIB_timeout_ms 1000
+serial_read_dropout   500
+release_sys_control   0
+ignore_write_aborts   1
+min_plot_bytes        128
+
+;
+;Caption text applied when left-clicking on plot
+;(leading spaces ignored)
+;
+;If this field is blank, the user will be prompted to enter the
+;caption text
+;
+
+caption_text         
+
+;
+;Set to '1' to execute a 'W' (Acquire->Wait for device-initiated plot, then print)
+;function automatically when 7470.EXE starts.  Helpful if you want to make an 
+;unattended PC act as a dedicated HP-GL/2 print server.  (Suggest setting 
+;use_default_printer to 1 if you use this feature.)
+;
+
+auto_print_mode      0
+
+;
+;Set to '1' to force 7470 to use the default Windows printer, or '0' to show the
+;standard printer-selection dialog each time a print command is issued
+;
+
+use_default_printer  1
+
+;
+;Uncomment this line (remove the leading semicolon) to force
+;7470.EXE to exit immediately after acquiring a plot and saving it.
+;Normally, this line should be left commented out to run 7470 in its
+;'interactive' mode.  Note that if any command-line parameters are 
+;supplied when launching 7470, the auto_save_filename option is ignored
+;
+
+;auto_save_filename   c:\my documents\automatic capture.gif
+
+;
+;Set beep_when_plot_received to '1' to play a sound after each new 
+;device-initiated plot has been received
+;
+;Sound may optionally be specified as a .wav filename.  If beep_wav_filename
+;is commented out, a default system alert sound will be played
+;
+
+beep_when_plot_received    0
+beep_wav_filename          c:\program files\ke5fx\gpib\beep.wav
+
+;
+;Enable to write incoming/outgoing GPIB traffic to a file during
+;reception of device-initiated plots
+;
+
+;traffic_diag_filename      c:\traffic.txt
+
+;
+;Enable to preface all received plots with a specified string
+;
+;(Try "IN; SC0,4095,0,4388;" if your HP 8702B/8753C plots are rendered improperly)
+;
+
+;HPGL_preface                IN; SC -92,628,-16,287;
+
+;
+;Optional list of instrument/address pairs for the Acquire menu
+;
+;Entries should have the form 'instrument_n    xxxx at GPIB address <addr>',
+;where n is an arbitrary value or name and xxxx is the name of the
+;instrument at the specified address.  Optionally, the entry value may end
+;in a '\tFn' substring to assign a keyboard shortcut to the instrument.
+;(Don't use F1, F5, or F10 -- they are reserved for other functions.)
+;
+;If any entries are present, then they will be added to the Acquire menu.
+;This feature is valid ONLY for those instruments for which 7470 
+;supports host-requested plots!
+;
+
+instrument_0         Tektronix 2430A / 2432A / 2440A at GPIB address 4\tF2
+instrument_1         HP 3561A at GPIB address 11\tF7
+instrument_2         HP 3585A/B (via HP-GL/2 emulation) at GPIB address 11\tF3
+instrument_3         Tektronix 49x at GPIB address 3\tF4
+instrument_4         HP 8566B / 8567B / 8568B at GPIB address 18\tF6
+instrument_5         HP 8566A / 8567A / 8568A (via HP-GL/2 emulation) at GPIB address 18\tF8
+instrument_6         HP 8510 or 8753 series at GPIB address 16\tF9
+instrument_8         HP 54201A at GPIB address 5\tF12
+
+;
+;Pen RGB color array (custom color set that may look better with some instruments)
+;
+
+pen_0                255,255,255 `White
+pen_1                0,0,0       `Black
+pen_2                0,0,255     `Blue
+pen_3                0,192,0     `Green
+pen_4                128,128,0   `Dark yellow
+pen_5                255,0,0     `Red
+pen_6                255,0,255   `Magenta
+pen_7                0,255,255   `Cyan
+
+;
+;Standard HP-GL pen colors, uncomment if preferred
+;
+
+;pen_0                255,255,255 `White
+;pen_1                0,0,0       `Black
+;pen_2                255,0,0     `Red
+;pen_3                0,192,0     `Green
+;pen_4                0,0,255     `Blue
+;pen_5                0,255,255   `Cyan
+;pen_6                255,0,255   `Magenta
+;pen_7                128,128,0   `Dark yellow
+
+;
+;  Plotter units range.  Small format plotters like the 7470 have the origin
+;  of the plotter units in the lower left corner.  Newer/larger ones have it 
+;  in the center of the plot area.  This 'pu' setting lets you set the plotter 
+;  units range to match the plotter that you want to emulate.  Note that some
+;  plotters have the X and Y axes swapped... this can really mess things up.
+;  try the keyboard 'r' command to attempt to rotate these plots to a usable
+;  orientation.
+;
+;  pu xmin,ymin,xmax,ymax
+;
+
+pu 0,0,10660,7995 'good for 7470 emulation with instrument plots (ratio 1.333:1)
+
+
+
+</pre>
+
+<P>
+<br>
+<P class="subhead">CONNECT.INI</P>
+<P>
+Your PC's local user data directory should contain a file called CONNECT.INI, which tells the GPIB Toolkit how to
+take advantage of various GPIB connectivity options.  These include direct RS-232 or TCP/IP links, as well as 
+the Prologix GPIB-USB and GPIB-ETHERNET adapters.
+<P>If you have a Prologix adapter, you can review the comments in CONNECT.INI 
+to learn how to configure 7470 and the other GPIB Toolkit applications to use it, 
+or you can simply select your adapter in the GPIB configurator application (PROLOGIX.EXE)
+and press "Update CONNECT.INI" to automate the configuration process.
+<P>
+If the COM port specification in CONNECT.INI is commented out with a 
+leading semicolon -- or if CONNECT.INI is missing entirely -- all GPIB Toolkit applications will attempt to 
+communicate with the GPIB0 device via the National Instruments NI488.2 programming interface instead.  This is the default behavior.
+<P>
+<b>Note that some versions of Windows hide .INI file suffixes by default.</b>  In Windows 2000 and XP, for instance, CONNECT.INI may appear simply as "CONNECT," with the type "Configuration Settings."  To
+turn off this behavior, go to the Tools->Folder Options->View tab in any Explorer window and deselect the "Hide file extensions for known file types" option.  The exact location of CONNECT.INI may vary from one
+Windows installation to the next.  It's often easier to select the "Edit CONNECT.INI" button in the GPIB configurator application than to try to locate the file yourself.
+<P>
+<br>
+<P class="subhead">Release Notes</P>
+<P>
+Release 0.91 of 31-Oct-01
+<ul>
+<li>Some formatting improvements and assorted updates, but still an alpha release!
+</ul>
+Release 0.92 of 22-Jan-02
+<ul>
+<li>Takes multiple files or GPIB addresses to plot, overlay-style
+<li>Runs at 800x600 by default
+<li>Lets you print the current plot on any Windows-compatible printer
+by hitting 'p' (inkjets are great for this!) 
+<li>This release also includes source for my GPIBLIB wrapper for National 
+Instruments NI488 drivers.
+</ul>
+Release 0.93 of 28-Jan-02
+<ul>
+<li>Wildcards can now be used on the command line (e.g., 7470 ..\myfiles\*.plt)
+<li>If wildcards are used, all matching files will be 
+displayed one at a time. Use the + and - keys to navigate 
+the file list. You may also run 7470 by itself to display 
+all .PLT, .HPG, .HGL, and .PGL files in the current 
+directory.
+<li>Hit 's' to save the current plot as a 16-bit .TGA file. Many
+photo editors, including Microsoft's, will allow you to 
+manipulate these files and convert them to other common formats
+such as .GIF, .BMP, or .JPG.
+</ul>
+Release 0.94 of 03-Feb-03
+<ul>
+<li>Made some improvements to the GPIBLIB wrapper to
+support instruments like the HP5345 and HP5370 counters that use
+terminator characters to delimit transmitted strings. 
+<li>Added example
+"get current frequency" programs for these counters in their respective
+subdirectories.
+<li>Sending a GPIB device-clear message is now optional behavior for
+GPIB_startup(), and disabled by default. This change was needed to 
+avoid resetting the HP5370B counter during GPIB handshaking. It 
+doesn't seem to have affected any other instruments.
+</ul>
+Release 1.00 of 15-Apr-03
+<ul>
+<li>Beta release of the new and improved 7470.EXE: near-complete rewrite.  
+<li>All commands accessible via Windows menu
+<li>Saves .GIF, .BMP, and .PCX files directly from program
+<li>New "wait for plot" feature should (theoretically) support any 
+instrument in talk-only mode
+<li>Many UI improvements including resolution switching and overlay/browse modes
+</ul>
+Release 1.50 of 19-Jul-04
+<ul>
+<li>Many improvements, including more supported 
+instruments, better HP-GL rendering fidelity, 7470.INI setup 
+options, and more
+</ul>
+Release 1.60 of 9-Oct-04
+<ul>
+<li>Added response options for several plotter output-status queries,
+necessary to support HP 8752C VNA and many other instruments
+<li>Added auto_save_filename, other options to 7470.INI
+<li>Default suffix for saved files is now .PLT, not .GIF
+<li>Revised handling of UC (User Character) opcodes
+</ul>
+Release 1.70 of 22-Mar-05
+<ul>
+<li>Reduced buffer size used by GPIB_read() from 64K to 4K. This
+function can no longer be used to acquire a large block of data
+such as an entire plot.
+</ul>
+Release 1.80 of 13-Dec-05
+<ul>
+<li>7470.EXE is now installed with the larger KE5FX GPIB Toolkit package
+<li>Improved character-positioning code in renderer
+<li>Added support for host-requested plotting from Tektronix 2710-series spectrum analyzers
+<li>Significant GPIBLIB rework to add support for Prologix GPIB-USB adapter
+<li>Added instrument name/address/function-key feature to 7470.INI
+<li>Added user-configurable RGB pen colors to 7470.INI
+<li>Fixed a bug that could cause blank pages to be printed on a LaserJet
+<li>Added HTML user guide
+</ul>
+
+Release 1.81 of 28-Dec-05
+<ul>
+<li>Windows desktop no longer used as the working directory when running from a desktop icon
+<li>Renderer now supports device-initiated plots from HP 3562A dynamic signal analyzer
+<ul>
+<li>HP-GL/2 OF and OO commands supported
+<li>SC command supports parameter-free form
+</ul>
+</ul>
+
+Release 1.82 of 3-Jan-06
+<ul>
+<li>HP 8566A/8567A/8568A spectrum analyzers supported (via NI GPIB interfaces only)
+<ul>
+<li>Host-based HP-GL/2 synthesis used to create .PLT image from raw analyzer data
+<li>GPIBLIB updated to inhibit EOI assertion at end of host-transmitted strings
+</ul>
+<li>Renderer now supports device-initiated plots from Advantest R3361A spectrum analyzer
+<ul>
+<li>Selected pen restored to its equivalent physical position after an SC command
+<li>Parameter-free SC command uses reasonable (nonzero) defaults
+</ul>
+</ul>
+
+Release 1.83 of 10-Mar-06
+<ul>
+<li>Tektronix SCD-series transient digitizers supported
+</ul>
+
+Release 1.84 of 25-Mar-06
+<ul>
+<li>HP 5372A time-interval analyzer supported
+</ul>
+
+Release 1.85 of 18-Apr-06
+<ul>
+<li>Extensive changes made to simplify the code that handles generating and refreshing temporary .PLT files.  (Most users will not notice any operational differences.)
+<li>Added support for software-based GPIB address-selection feature in new Prologix adapter firmware
+<ul> 
+<li>Moved <b>controller_mode</b>, <b>device_addressable</b>, and <b>host_addressable</b> fields from 7470.INI to CONNECT.INI.  These options now apply to all applications in the GPIB Toolkit, not just 7470.EXE.  <b>If you want to keep your existing 7470.INI file when upgrading, you'll need to move these three options to CONNECT.INI yourself.</b>
+<li>Added <b>reset_to_local</b> field to CONNECT.INI.  This affects Prologix adapters only; see CONNECT.INI for more information
+<li>HP 8568A rev-B spectrum analyzer successfully tested with new software-addressable Prologix adapter
+</ul>
+</ul>
+
+Release 1.86 of 19-May-06
+<ul>
+<li>HP 3588A spectrum analyzer supported
+<ul>
+<li>Negative ASCII characters rendered as spaces
+</ul>
+<li>Rohde & Schwarz FSA spectrum analyzer supported
+</ul>
+
+Release 1.87 of 26-May-06
+<ul>
+<li>Fix potential bug with device-initiated plots on the HP 8566B-8568B analyzers using Prologix adapters 
+<ul>
+<li>GPIB library ignores <b>device_addressable</b> and <b>reset_to_local</b> fields in CONNECT.INI if controller_mode is 0
+</ul>
+</ul>
+
+Release 1.88 of 25-Jun-06
+<ul>
+<li>Don't check iberr after ibrd() or ibwrt() unless ibsta has ERR bit set (attempt to improve compatibility with NI GPIB-232CT-A)
+</ul>
+
+Release 1.89 of 6-Jul-06
+<ul>
+<li>Always reset devices to local control at shutdown time when using NI-compatible GPIB interfaces
+</ul>
+
+Release 1.90 of 1-Oct-06
+<ul>
+<li>Serial ports beyond COM9 are now supported.  Thanks to Bill Tracey, <a href="http://www.ewjt.com/kd5tfd/">KD5TFD</a>, for this patch!
+</ul>
+
+Release 1.91 of 9-Nov-06
+<ul>
+<li>Added <b>min_plot_bytes</b> field to 7470.INI to allow small (preamble) data blocks from instruments such as the HP 8756A network analyzer to be disregarded
+<li>Increased X and Y screenspace margins from 4 to 8 pixels to reduce text-clipping problems on some instruments (e.g., HP 54502A)
+<li>Fixed a bug that caused occasional failures to accept device-initiated plots from HP 8566B-8568B analyzers via Prologix GPIB adapters
+</ul>
+
+Release 1.92 of 15-Jan-07
+<ul>
+<li>Saved .PLT files are now zero-terminated to prevent a possible buffer-overflow condition in the renderer
+<li>Some tweaks for HP 54110D DSO support
+<li>F2, F4, and F8 instrument shortcuts enabled by default in 7470.INI, for demonstration purposes
+</ul>
+
+Release 1.93 of 22-Jan-07
+<ul>
+<li>Fixed a bug introduced in 1.92 that could cause text-rendering problems on certain HP 8566B-8568B plots
+<li>Improved color fidelity in .GIF and .PCX files, particularly when saved at higher display resolutions
+</ul>
+
+Release 1.94 of 5-Feb-07
+<ul>
+<li>Enabled EOS termination in device-initiated plot mode on NI cards.  This shouldn't cause problems for anyone but
+if it does, please <a href="mailto:john@miles.io">let me know</a>.
+</ul>
+
+Release 1.95 of 6-Feb-07
+<ul>
+<li>Changed 7470.INI file entry async_GPIB_timeout to async_GPIB_timeout_ms.  All applications that call GPIB_connect() now 
+specify their timeout parameters directly in milliseconds, rather than using the GPTIMEOUT type.  As with the 1.94
+update above, this change should not affect most users of the GPIB Toolkit
+</ul>
+
+Release 1.96 of 8-Feb-07
+<ul>
+<li>7470.exe no longer enables board-level EOS termination during device-initiated plots, due to problems 
+reported with certain instruments (e.g., Wiltron 562).  (Board-level EOS checks were originally added for 
+the benefit of the <b>listen.exe</b> command-line utility, but they're not useful in 7470.exe.)
+</ul>
+
+Release 1.97 of 4-Mar-07
+<ul>
+<li>The use of instrument-menu shortcuts in the 7470.INI file no longer disables the "Request plot from 
+supported device at address xx" options in the <i>Acquire</i> menu
+</ul>
+
+Release 1.98 of 20-Mar-07
+<ul>
+<li>Added basic support for host-requested plots from the Tektronix 2782/2784 spectrum analyzers (see notes above)
+<li>Display-line support added in synthesized HP-GL/2 plots for the HP 8566A-8568A analyzers
+</ul>
+
+Release 1.990 of 28-May-07
+<ul>
+<li>Added support for host-requested plots from HP 54200-series DSOs (tested with HP 54201A)
+</ul>
+
+Release 1.991 of 04-Nov-07
+<ul>
+<li>Added support for host-requested plots from HP 8510-series vector network analyzers (see notes above)
+<li>Added support for host-requested plots from HP 3585A/B spectrum analyzers (see notes above)
+<li>Added <b>x_margin</b> and <b>y_margin</b> entries to 7470.INI to allow the default plot margins to be changed
+<li>New code to center file dialogs within the main window
+<li>Prompt before overwriting existing files with the Save command
+</ul>
+
+Release 1.992 of 06-Nov-07
+<ul>
+<li>Added <i>Caption</i> menu to allow user labels to be added to plots
+<li>Viewing a plot from a Tektronix 278x analyzer no longer toggles the alternate-color state for all other loaded plots
+</ul>
+
+Release 1.993 of 07-Nov-07
+<ul>
+<li>Added workaround for a firmware bug in certain HP 8590-series spectrum analyzers that could cause vertically-compressed rendering in 7470.exe and PrintCapture
+</ul>
+
+Release 1.994 of 16-Jan-08
+<ul>
+<li>Added support for host-requested plots from HP 3561A dynamic signal analyzer
+</ul>
+
+Release 1.995 of 05-Apr-08
+<ul>
+<li>Extensive revisions to HP-GL renderer made to accommodate Advantest R9211E and other devices that use
+multiple plotting windows
+<ul>
+<li>Improved rendering of HP 54502A plots
+<li>When rendering .PLT files acquired from earlier versions of 7470.EXE, it may be necessary to increase the <b>x_margin</b> and <b>y_margin</b>
+values in 7470.INI to avoid clipping problems
+<li>Removed <i>Display->Aspect correction</i> menu options, which are no longer needed
+<li>The last version of the GPIB Toolkit with the original HP-GL renderer can be downloaded at <a href="http://www.ke5fx.com/gpib/setup148.exe">http://www.ke5fx.com/gpib/setup148.exe</a>
+</ul>
+<li>The <i>Acquire</i> and <i>GPIB</i> menus now work exactly the same way with Prologix and National Instruments adapters
+<ul>
+<li>Removed <b>controller_mode</b>, <b>device_addressable</b>, and <b>host_addressable</b> fields from CONNECT.INI, replacing them with <b>is_Prologix</b>
+<li>If <b>is_Prologix</b> is nonzero, the Prologix adapter is assumed to 
+be capable of software-based mode and address configuration
+<li>Users of other interfaces, as well as early Prologix adapters that don't support programmable addressing, will need to edit CONNECT.INI manually to set <b>is_Prologix</b> to 0
+</ul>
+<li>Captions from all loaded files are visible in Overlay mode
+</ul>
+
+Release 1.996 of 7-May-08
+<ul>
+<li>Added <i>Acquire->Beep when plot received</i> option (and corresponding 7470.INI field)
+<li>Waiting for device-initiated plots is now interruptable with left click anywhere onscreen
+<li>User captions in Overlay mode are now keyed to the assigned pen color for that trace
+</ul>
+
+Release 1.997 of 14-Jul-08
+<ul>
+<li>Renamed SERIAL.INI to CONNECT.INI, and added TCP/IP support
+<li>Fixed a bug that could cause failures with GPIB addresses specified on the 7470.exe command line
+<li>Added <i>File->Close all visible plots</i> option (keyboard shortcut: Home)
+<li>Added support for host-requested plots from HP 8753-series network analyzers
+<li>Added two instrument shortcuts to 7470.INI (HP 8753 series at address 16, and HP 54201A at address 5)
+<li>Acquisition from HP 54201A no longer selects the alternate pen color set automatically
+<li>Plots requested from 8510-series analyzers are resized to occupy the entire page
+<li>Acquired .PLT files are no longer saved in the Program Files subtree
+</ul>
+
+Release 1.998 of 25-Jul-08
+<ul>
+<li>HP 8753 series analyzers no longer report "Addressed to talk with nothing to say" when transmitting host-requested plots
+</ul>
+
+Release 1.9981 of 5-Nov-08
+<ul>
+<li>Added <b>traffic_diag_filename</b> field to 7470.INI to help troubleshoot device-initiated plotting
+<li>Increased size of temporary memory buffer used to receive incoming plots to 4 MB
+<li>Text-layout improvements in 3585A/8566A/8568A plots
+</ul>
+
+Release 1.9982 of 23-Dec-08
+<ul>
+<li>Host-requested plots are now supported for Tektronix 492P and 496P analyzers.  Displays in zero-span mode and LIN mode are not plotted
+<li>Host-requested plots are now supported for HP 70000-series analyzers (logarithmic display modes only, markers unsupported)
+</ul>
+
+Release 1.9983 of 8-Apr-09
+<ul>
+<li>Added support for host-requested plots from HP 54100-series DSOs (tested with HP 54111D)
+<li>Added a workaround for truncated PA commands from the Tektronix 370 curve tracer
+<li>Captions may now be created and erased in the currently-selected plot in Overlay mode
+<li>Text from erased captions becomes the default text for subsequent captions, making it easy to reposition captions with the <b>e</b> key and left mouse button
+</ul>
+
+Release 1.9984 of 5-Oct-10
+<ul>
+<li>Fixed bug affecting XT and YT tick mark placement (Tek 2430A/2432A/2440 graticules)
+</ul>
+
+Release 1.9985 of 9-Jun-11
+<ul>
+<li>Plots from HP 8753 series analyzers should now be requested with the F9 shortcut (Acquire->HP 8510 or 8753 series).  The previous shortcut, F11, was yielding incomplete or misaligned plots on some instruments.
+<li>HP-GL label text in Browse mode is now rendered in the selected pen color, rather than black.  As before, user captions are rendered in black in Browse mode, and all text drawn in Overlay mode is based on the order in which each plot was loaded or acquired. 
+<li>Bumped the default x_margin and y_margin values in 7470.INI from 16 to 24 pixels to avoid excessive clipping on some plots
+</ul>
+
+Release 1.9986 of 28-May-12
+<ul>
+<li>Added <b>use_default_printer</b> field to 7470.INI
+</ul>
+
+Release 2.00 of 8-Dec-13
+<ul>
+<li>All-new HP-GL/2 renderer greatly improves compliance with HP standard plotter commands, as well as PCL data files.  The previous version of 7470.exe is <a href="http://www.ke5fx.com/gpib/setup_1911.exe">available</a> in case of difficulty with the new version.  Please <a href="mailto:john@miles.io?subject=7470 issues">report</a> any problems.
+<li>Added <i>Display->Background (k)</i>, <i>Display->Antialiasing (a)</i>, and <i>Display->Rotate (r)</i> menu options
+<li>Added <i>Display->1280x960 (9)</i> menu option
+<li>Increased default window size from 640x480 to 800x600 for better legibility with new renderer.  (You can change this by editing 7470.INI as described above.)
+</ul>
+
+Release 2.002 of 13-Jan-15
+<ul>
+<li>Improved compatibility with certain Wiltron instruments
+</ul>
+
+Release 2.003 of 18-Nov-15
+<ul>
+<li>Added support for host-requested plotting from Tektronix TDS 5/6/7xx-series oscilloscopes (tested with TDS 694C)
+</ul>
+
+Release 2.01 of 30-Dec-15
+<ul>
+<li>Window size, antialiasing, color scheme selections, and browse/overlay status are now retained between runs
+<li>The most recent set of displayed files is now reloaded at startup time (if no filenames are explicitly specified on the command line)
+</ul>
+
+Release 2.02 of 22-Dec-16
+<ul>
+<li>Added support for host-requested plots from certain SCPI-compatible spectrum analyzers, specifically those supported by SSM and SATRACE with the SCPI acquisition option
+</ul>
+
+Release 2.03 of 2-Oct-18
+<ul>
+<li>Added short delay to address a potential timing issue on HP 8510 VNAs 
+</ul>
+
+Release 2.04 of 10-Jan-20
+<ul>
+<li>Added host-requested plotting support for HP 3577B
+</ul>
+
+Release 2.05 of 19-Mar-20
+<ul>
+<li>Listen-only mode supported under Prologix adapters with firmware version 6.102 or later
+</ul>
+
+<P>
+<P>
+<br>
+<P class="subhead">Acknowledgements and Additional Notes</P>
+<P>
+Thanks to Harrison Hooker, W8YMO for supplying information on the 
+obsolete HP7470A command set, and to Mark S. Sims for his contribution of the new HP-GL/2 renderer in the 2.00 release.
+<P>
+Thanks to Vladan Temer of <a href="http://www.sonoma-instrument.com">Sonoma Instrument Co.</a> for supplying additional 7470A documentation and providing extensive 
+assistance with support for various HP instruments in the 1.60 release.
+<P>
+Thanks to Dr. Alfredo Rosati, <a href="http://i5uxj-2.cln.it">I5UXJ</a> for his contribution of the Tektronix 2782/2784 
+and HP 8510 support code, and to Ron Kittel, K8AQC, and Grant Hodgman, G8UBN for their extensive help with development and testing on the HP 3585A. 
+<P>
+HP 54200-series DSO support provided by Abdul Nizar of <a href="http://www.prologix.biz">Prologix</a>.
+<P>
+If you find that 7470.EXE doesn't meet your needs, an excellent commercial
+alternative is <a href="http://www.printcapture.com">PrintCapture</a>.  See the PrintCapture
+site for more information.  Two more-expensive commercial packages from <a href="http://www.aphena.com">Aphena</a>, which 
+I haven't personally evaluated, are <a href="http://www.plottergeist.com/">Plottergeist</a> and
+<a href="http://www.softplot.com">SoftPlot</a>.  Another freeware utility, TekPlot, is designed for the TDS7xx oscilloscopes and can be downloaded <a href="http://www.matthewkendall.com/freesoftware/tekplot">here</a>.  Two good third-party renderers for HPGL files obtained from 7470.EXE are <a href="http://www.softwarecompanions.com/viewcomp.html">ViewCompanion</a> and CERN's <a href="http://service-hpglview.web.cern.ch/service-hpglview/download_index.html
+">HPGLVIEW</a>.  Also see David MacDermot's work on <a href="https://www.codeproject.com/Articles/872469/Instrument-Snapshot-How-to-Acquire-and-Render-Scre">CodeProject</a>.
+
+<br>
+<br>
+<br>
+<P>
+<hr>
+<b>
+Released into the public domain 24-Jan-01 by John Miles, KE5FX.
+<br>
+Please contact <a href="mailto:john@miles.io?subject=7470.EXE">john@miles.io</a> with feedback and enhancements!
+<P>
+Source code compilable with the free <a href="http://msdn.microsoft.com/vstudio/express/default.aspx">Microsoft Visual Studio Express</a> package 
+<br>
+No warranties, expressed or implied, are offered with this program. 
+<br>
+Use at your own risk!
+
+</body>
+</html>

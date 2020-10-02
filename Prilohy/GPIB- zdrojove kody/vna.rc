@@ -1,0 +1,133 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "vnares.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICON                ICON                    "vna.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+VNAUTILITIES DIALOGEX 432, 132, 520, 260
+STYLE DS_SETFONT | WS_MINIMIZEBOX | WS_CAPTION | WS_SYSMENU
+CAPTION "KE5FX VNA Utility"
+CLASS "VNAUtilities"
+FONT 8, "MS Sans Serif", 0, 0, 0x0
+BEGIN
+    LTEXT           "GPIB Address",R_GPIBTXT,43,19,45,8
+    EDITTEXT        R_ADDR,89,17,22,12,ES_AUTOHSCROLL
+    CONTROL         "SCPI",R_SCPI,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,29,38,32,10
+    CONTROL         "CALIONE2 support",R_CALIONE2,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,29,48,76,10
+    CONTROL         "Progress",R_PROGRESS,"msctls_progress32",PBS_SMOOTH,43,71,68,11
+    PUSHBUTTON      "Save state ...",R_SAVE_S,153,11,90,14
+    PUSHBUTTON      "Save state+cal ...",R_SAVE_SC,153,27,90,14
+    PUSHBUTTON      "Recall state and/or cal ...",R_RECALL,153,43,90,14
+    PUSHBUTTON      "Preset",R_PRESET,153,59,90,14
+    PUSHBUTTON      "Factory preset",R_FPRESET,153,75,90,14
+    GROUPBOX        "S-parameters",IDC_STATIC,259,7,248,92
+    CONTROL         "Magnitude-angle",R_MA,"Button",BS_AUTORADIOBUTTON,270,25,69,10
+    CONTROL         "dB-angle",R_DB,"Button",BS_AUTORADIOBUTTON,270,35,44,10
+    CONTROL         "Real-imaginary",R_RI,"Button",BS_AUTORADIOBUTTON,270,45,62,10
+    LTEXT           "R=",R_GPIBTXT2,424,20,10,8
+    EDITTEXT        R_R,436,18,20,12,ES_AUTOHSCROLL
+    LTEXT           "ohms",R_GPIBTXT3,458,20,18,8
+    LTEXT           "Frequency Label",R_GPIBTXT4,378,35,54,8
+    COMBOBOX        R_FREQ_FMT,436,32,60,68,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "DC",R_GPIBTXT5,421,49,11,8
+    COMBOBOX        R_DC,436,47,60,68,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Query",R_GPIBTXT6,413,63,20,8
+    COMBOBOX        R_QUERY,436,61,60,68,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "File type",R_GPIBTXT7,406,77,27,8
+    COMBOBOX        R_FILETYPE,436,75,60,68,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Save ...",R_SAVE,268,73,53,14
+    PUSHBUTTON      "T-Check ...",R_TCHECK,329,73,53,14
+    GROUPBOX        " Help ",R_HELPBOX,13,106,494,126
+    LTEXT           " ",R_HELPTXT,27,119,471,108
+    PUSHBUTTON      "Exit",R_EXITBTN,233,238,53,14
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    "VNAUTILITIES", DIALOG
+    BEGIN
+        RIGHTMARGIN, 467
+        BOTTOMMARGIN, 239
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

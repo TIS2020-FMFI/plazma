@@ -1,0 +1,130 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "ssmres.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICON                ICON                    "ssm.ico"
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_PN_PARAMS, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 302
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// F/A offset dialog
+//
+
+IDD_EDIT_OFFSETS DIALOGEX 0, 0, 269, 155
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION
+FONT 8, "MS Shell Dlg", 0, 0, 0x0
+BEGIN
+    LTEXT           "Frequency offset in Hz",IDC_STATIC,16,15,91,8
+    EDITTEXT        IDC_F_OFFSET,93,13,72,13,ES_AUTOHSCROLL
+    LTEXT           "Amplitude offset in dB",IDC_STATIC,16,35,91,8
+    EDITTEXT        IDC_A_OFFSET,93,33,72,13,ES_AUTOHSCROLL
+    PUSHBUTTON      "OK",IDOK,83,130,31,14
+    PUSHBUTTON      "Cancel",IDCANCEL,155,130,31,14
+    GROUPBOX        "Static",IDC_HELPGROUP,13,55,242,64
+    LTEXT           "Static help text goes here",IDC_HELPBOX,20,65,228,50
+END
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Composite/multiseg sweep
+//
+
+IDD_EDIT_SWEEP_RANGE DIALOGEX 0, 0, 300, 155
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION
+FONT 8, "MS Shell Dlg", 0, 0, 0x0
+BEGIN
+    LTEXT           "Start",IDC_STATIC,89,10,17,8
+    EDITTEXT        IDC_START_MHZ,111,8,66,13,ES_AUTOHSCROLL
+    LTEXT           "Stop",IDC_STATIC,89,24,16,8
+    EDITTEXT        IDC_STOP_MHZ,111,22,66,13,ES_AUTOHSCROLL
+    CONTROL         "&Use extended sweep range",IDC_USE_RANGE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,95,38,134,8
+    PUSHBUTTON      "OK",IDOK,83,130,41,14
+    PUSHBUTTON      "Cancel",IDCANCEL,185,130,41,14
+    GROUPBOX        "Static",IDC_HELPGROUP,13,55,282,64
+    LTEXT           "Static help text goes here",IDC_HELPBOX,20,65,268,50
+    LTEXT           "MHz",IDC_STATIC,183,10,17,8
+    LTEXT           "MHz",IDC_STATIC,183,24,16,8
+END
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
