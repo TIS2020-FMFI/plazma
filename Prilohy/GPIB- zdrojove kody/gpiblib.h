@@ -49,10 +49,10 @@ GPIBDEF bool   WINAPI GPIB_connect_ex              (C8        *device_address,  
 
 GPIBDEF bool         WINAPI  GPIB_disconnect                        (bool reset_to_local = TRUE);
 GPIBDEF S32          WINAPI  GPIB_set_EOS_mode                      (S32 new_EOS_char, bool send_EOI_at_EOT = TRUE, bool enable_board_configuration = TRUE);
-GPIBDEF S32          WINAPI  GPIB_write                             (C8 *string, S32 len=-1, bool to_board = FALSE, bool ignore_aborts = TRUE); 
+GPIBDEF S32          WINAPI  GPIB_write                             (const C8 *string, S32 len=-1, bool to_board = FALSE, bool ignore_aborts = TRUE); 
 GPIBDEF S32          WINAPI  GPIB_write_BIN                         (void *string, S32 len, bool to_board = FALSE, bool ignore_aborts = TRUE); 
-GPIBDEF S32          WINAPI  GPIB_puts                              (C8 *string, bool ignore_aborts = TRUE);
-GPIBDEF void         __cdecl GPIB_printf                            (C8 *fmt, ...);
+GPIBDEF S32          WINAPI  GPIB_puts                              (const C8 *string, bool ignore_aborts = TRUE);
+GPIBDEF void         __cdecl GPIB_printf                            (const C8 *fmt, ...);
 GPIBDEF S32          WINAPI  GPIB_set_serial_read_dropout           (S32 ms); 
 GPIBDEF SRPROGRESSCB WINAPI  GPIB_set_serial_read_progress_callback (SRPROGRESSCB progress_callback = NULL); 
 GPIBDEF GPIB_CTYPE   WINAPI  GPIB_connection_type                   (void);
@@ -60,7 +60,7 @@ GPIBDEF bool         WINAPI  GPIB_auto_read_mode                    (S32 set_mod
 GPIBDEF C8 *         WINAPI  GPIB_read_ASC                          (S32 max_len=-1, bool report_timeout = TRUE, bool from_board = FALSE);
 GPIBDEF C8 *         WINAPI  GPIB_read_BIN                          (S32 max_len=-1, bool report_timeout = TRUE, bool from_board = FALSE, S32 *actual_len = NULL);
 GPIBDEF S32          WINAPI  GPIB_status                            (bool from_board = FALSE);
-GPIBDEF C8 *         WINAPI  GPIB_query                             (C8 *string, bool from_board = FALSE);
+GPIBDEF C8 *         WINAPI  GPIB_query                             (const C8 *string, bool from_board = FALSE);
 GPIBDEF U8           WINAPI  GPIB_serial_poll                       (void);
 GPIBDEF S32          WINAPI  GPIB_flush_receive_buffers             (void);
                                                                    
