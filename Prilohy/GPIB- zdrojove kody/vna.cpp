@@ -38,6 +38,7 @@
 #include "gpiblib.h"
 #include "stdtpl.h"
 
+
 #include "spline.cpp"
 #include "sparams.cpp"
 
@@ -225,7 +226,7 @@ void instrument_setup(S32 SCPI, bool debug_mode = TRUE)
 // To take advantage of automatic cleanup, don't call exit() while TEMPFNs are on the stack!
 //
 
-void __cdecl alert_box(C8 *caption, C8 *fmt, ...);
+void __cdecl alert_box(const C8 *caption, const C8 *fmt, ...);
 
 enum TFMSGLVL
 {
@@ -246,7 +247,7 @@ struct TEMPFN
    bool active;
 
    virtual void message_sink(TFMSGLVL level,   
-                             C8      *text)
+                             const C8      *text)
       {
       if (level >= TF_ERROR)
          alert_box("Error","%s", text);
@@ -255,7 +256,7 @@ struct TEMPFN
       }
 
    virtual void message_printf(TFMSGLVL level,
-                               C8 *fmt,
+                               const C8 *fmt,
                                ...)
       {
       C8 buffer[4096] = { 0 };
@@ -293,7 +294,7 @@ struct TEMPFN
                    buffer);
       }
 
-   TEMPFN(C8 *suffix = NULL, bool keep_files=FALSE)
+   TEMPFN(const C8 *suffix = NULL, bool keep_files=FALSE)
       {
       keep = keep_files;
       active = TRUE;
@@ -427,7 +428,7 @@ DynArray<TEMPFN *> TF_list;
 //
 /*********************************************************************/
 
-void __cdecl alert_box(C8 *caption, C8 *fmt, ...)
+void __cdecl alert_box(const C8 *caption, const C8 *fmt, ...)
 {
    static char work_string[4096];
 
@@ -465,9 +466,9 @@ void __cdecl alert_box(C8 *caption, C8 *fmt, ...)
       }
 }
 
-void __cdecl show_last_error(C8 *caption = NULL, ...)
+void __cdecl show_last_error(const C8 *caption = NULL, ...)
 {
-   LPVOID lpMsgBuf = "Hosed";       // Default message for Win9x (FormatMessage() is NT-only)
+   LPVOID lpMsgBuf = (LPVOID)"Hosed";       // Default message for Win9x (FormatMessage() is NT-only)
 
    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 
                  hwnd,
@@ -798,8 +799,8 @@ UINT_PTR CALLBACK AHOFNHookProc(HWND hdlg,      // handle to the dialog box wind
 
 bool get_save_filename(HWND          hWnd,               // parent window
                        C8           *dest,               // where the filename will be written (MAX_PATH)
-                       C8           *dialog_title,       // title for file dialog
-                       C8           *filter)             // filter specifier
+                       const C8           *dialog_title,       // title for file dialog
+                       const C8           *filter)             // filter specifier
 {
    OPENFILENAME fn;
    C8           fn_buff[MAX_PATH] = { 0 };
@@ -846,8 +847,8 @@ bool get_save_filename(HWND          hWnd,               // parent window
 
 bool get_open_filename(HWND          hWnd,               // parent window
                        C8           *dest,               // where the filename will be written (MAX_PATH)
-                       C8           *dialog_title,       // title for file dialog
-                       C8           *filter)             // filter specifier
+                       const C8           *dialog_title,       // title for file dialog
+                       const C8           *filter)             // filter specifier
 {
    OPENFILENAME fn;
    C8           fn_buff[MAX_PATH];
@@ -903,7 +904,7 @@ bool get_open_filename(HWND          hWnd,               // parent window
 
 void DlgItemPrintf(HWND hwnd,
                    S32 control,
-                   C8 *fmt,
+                   const C8 *fmt,
                    ...)
 {
    C8 buffer[512];
@@ -1177,8 +1178,12 @@ When using an instrument that does not support the CALIONE2 calibration type, ch
 
       default:
          {
-         SetDlgItemText(hwnd, R_HELPTXT, "VNA Utility V"VERSION" of "__DATE__" by John Miles, KE5FX\nwww.ke5fx.com\
-\n\nThis program may be copied and distributed freely.");
+         SetDlgItemText(hwnd, R_HELPTXT, "VNA Utility V" 
+                                         VERSION 
+                                         " of " 
+                                         __DATE__ 
+                                         " by John Miles, KE5FX\nwww.ke5fx.com"
+                                         "\n\nThis program may be copied and distributed freely.");
          break;
          }
       }
@@ -1348,7 +1353,7 @@ void recall_state(S32 addr, S32 SCPI)
 
    static C8 data[262144];
    memset(data, 0, sizeof(data));
-   S32 len = fread(data, 1, sizeof(data), in);
+   S32 len = (S32)fread(data, 1, sizeof(data), in);
 
    fclose(in);
    in = NULL;
@@ -1916,8 +1921,8 @@ void save_state(S32  addr,
    end_wait(norm);
 }
 
-bool read_complex_trace(C8             *param, 
-                        C8             *query,
+bool read_complex_trace(const C8             *param, 
+                        const C8             *query,
                         COMPLEX_DOUBLE *dest, 
                         S32             cnt,
                         S32             progress_fraction)
@@ -2051,8 +2056,8 @@ bool read_complex_trace_SCPI(S32             param,
 }
 
 bool save_SnP(S32       SnP,        // 1 or 2
-              C8       *param,
-              C8       *query,
+              const C8       *param,
+              const C8       *query,
               S32       addr,
               S32       SCPI,
               DOUBLE    R_ohms,
@@ -2567,17 +2572,17 @@ found:
 
             case R_SAVE:
                {
-               C8 *fmt = NULL;
+               const C8 *fmt = NULL;
 
                     if (Button_GetCheck(GetDlgItem(hwnd, R_MA))) fmt = "MA";
                else if (Button_GetCheck(GetDlgItem(hwnd, R_DB))) fmt = "DB"; 
                else if (Button_GetCheck(GetDlgItem(hwnd, R_RI))) fmt = "RI"; 
 
-               C8 *query = "OUTPDATA";
+               const C8 *query = "OUTPDATA";
                if (ComboBox_GetCurSel(hQuery) == 1) query = "OUTPFORM";
 
                S32 SnP = 1;
-               C8 *param = "";
+               const C8 *param = "";
 
                     if (ComboBox_GetCurSel(hFiletype) == 0) { SnP = 2; param = "";    }
                else if (ComboBox_GetCurSel(hFiletype) == 1) { SnP = 1; param = "S11"; } 
@@ -2602,13 +2607,13 @@ found:
                TEMPFN *TF = new TEMPFN(".s2p");
                TF_list.add(TF);
 
-               C8 *fmt = NULL;
+               const C8 *fmt = NULL;
 
                     if (Button_GetCheck(GetDlgItem(hwnd, R_MA))) fmt = "MA";
                else if (Button_GetCheck(GetDlgItem(hwnd, R_DB))) fmt = "DB"; 
                else if (Button_GetCheck(GetDlgItem(hwnd, R_RI))) fmt = "RI"; 
 
-               C8 *query = "OUTPDATA";
+               const C8 *query = "OUTPDATA";
                if (ComboBox_GetCurSel(hQuery) == 1) query = "OUTPFORM";
 
                if (save_SnP(2,

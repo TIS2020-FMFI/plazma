@@ -169,7 +169,7 @@ struct SPARAMS
       }
 
    virtual void message_printf(SPARAM::MSGLVL level,
-                               C8            *fmt,
+                               const C8            *fmt,
                                ...)
       {
       va_list ap;
