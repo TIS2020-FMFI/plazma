@@ -16,6 +16,29 @@ static int cmdline_s21 = 0;
 static int cmdline_s12 = 0;
 static int cmdline_s22 = 0;
 
+static volatile int ready_to_receive_command = 1;
+static volatile int running = 1;
+static volatile int autosweep = 0;
+static char *save_file_name = 0;
+
+enum input_mode { mode_menu, mode_cmd };
+
+static volatile input_mode current_input_mode = mode_menu;
+
+static char ln[52];
+
+enum action_type {
+    action_none, action_connect, action_disconnect, action_sweep, action_getstate, action_setstate,
+    action_getcalib, action_setcalib, action_cmd_puts, action_cmd_query, action_cmd_status, action_cmd_read_asc,
+    action_cmd_read_bin, action_exit, action_reset, action_freset
+};
+
+static volatile action_type action;
+
+
+HANDLE action_event;
+
+
 void WINAPI GPIB_error(C8* msg, S32 ibsta, S32 iberr, S32 ibcntl)
 {
     printf("GPIB Error %s, ibsta=%d, iberr=%d, ibcntl=%d\n", msg, ibsta, iberr, ibcntl);
@@ -380,34 +403,69 @@ int sweep()
     // Read data from VNA
     //
 
-    bool result = FALSE;
+    int sweep_iteration = 0;
 
-    if (cmdline_s11) result = read_complex_trace("S11", "OUTPDATA", &S11[first_AC_point], n_AC_points, 20);
-    if (cmdline_s21) result = result && read_complex_trace("S21", "OUTPDATA", &S21[first_AC_point], n_AC_points, 40);
-    if (cmdline_s12) result = result && read_complex_trace("S12", "OUTPDATA", &S12[first_AC_point], n_AC_points, 60);
-    if (cmdline_s22) result = result && read_complex_trace("S22", "OUTPDATA", &S22[first_AC_point], n_AC_points, 80);
+    do {
+        bool result = FALSE;
 
-    if (result)
-    {
-        double min_Hz = include_DC ? 0.0 : start_Hz;
-        double max_Hz = stop_Hz;
-        double Zo = R_ohms;
+        if (cmdline_s11) result = read_complex_trace("S11", "OUTPDATA", &S11[first_AC_point], n_AC_points, 20);
+        if (cmdline_s21) result = result && read_complex_trace("S21", "OUTPDATA", &S21[first_AC_point], n_AC_points, 40);
+        if (cmdline_s12) result = result && read_complex_trace("S12", "OUTPDATA", &S12[first_AC_point], n_AC_points, 60);
+        if (cmdline_s22) result = result && read_complex_trace("S22", "OUTPDATA", &S22[first_AC_point], n_AC_points, 80);
 
-        printf("! Touchstone 1.1 file saved by HPCTRL.EXE\n"
-            "! %s\n"
-            "!\n"
-            "!    Source: %s\n", timestamp(), instrument_name);
-
-        for (S32 i = 0; i < n_alloc_points; i++)
+        if (result)
         {
-            printf("%.6lf", freq_Hz[i]);
-            if (cmdline_s11) printf(" %.6lf %.6lf", S11[i].real, S11[i].imag);
-            if (cmdline_s21) printf(" %.6lf %.6lf", S21[i].real, S21[i].imag);
-            if (cmdline_s12) printf(" %.6lf %.6lf", S12[i].real, S12[i].imag);
-            if (cmdline_s22) printf(" %.6lf %.6lf", S22[i].real, S22[i].imag);
-            printf("\n");
+            double min_Hz = include_DC ? 0.0 : start_Hz;
+            double max_Hz = stop_Hz;
+            double Zo = R_ohms;
+
+            char* real_file_name = 0;
+            FILE* sf = 0;
+
+            if (save_file_name)
+            {
+                real_file_name = (char*)malloc(strlen(save_file_name) + 15);
+                if (autosweep) sprintf(real_file_name, "%04d_%s", sweep_iteration, save_file_name);
+                else strcpy(real_file_name, save_file_name);
+                sf = fopen(real_file_name, "w+");
+            }
+
+            printf("! Touchstone 1.1 file saved by HPCTRL.EXE\n"
+                "! %s\n"
+                "!\n"
+                "!    Source: %s\n", timestamp(), instrument_name);
+            for (S32 i = 0; i < n_alloc_points; i++)
+            {
+                printf("%.6lf", freq_Hz[i]);
+                if (cmdline_s11) printf(" %.6lf %.6lf", S11[i].real, S11[i].imag);
+                if (cmdline_s21) printf(" %.6lf %.6lf", S21[i].real, S21[i].imag);
+                if (cmdline_s12) printf(" %.6lf %.6lf", S12[i].real, S12[i].imag);
+                if (cmdline_s22) printf(" %.6lf %.6lf", S22[i].real, S22[i].imag);
+                printf("\n");
+            }
+
+            if (sf)
+            {
+                fprintf(sf, "! Touchstone 1.1 file saved by HPCTRL.EXE\n"
+                    "! %s\n"
+                    "!\n"
+                    "!    Source: %s\n", timestamp(), instrument_name);
+                for (S32 i = 0; i < n_alloc_points; i++)
+                {
+                    fprintf(sf, "%.6lf", freq_Hz[i]);
+                    if (cmdline_s11) fprintf(sf, " %.6lf %.6lf", S11[i].real, S11[i].imag);
+                    if (cmdline_s21) fprintf(sf, " %.6lf %.6lf", S21[i].real, S21[i].imag);
+                    if (cmdline_s12) fprintf(sf, " %.6lf %.6lf", S12[i].real, S12[i].imag);
+                    if (cmdline_s22) fprintf(sf, " %.6lf %.6lf", S22[i].real, S22[i].imag);
+                    fprintf(sf, "\n");
+                }
+                fclose(sf);
+                free(real_file_name);
+            }
         }
-    }
+        sweep_iteration++;
+
+    }  while (autosweep && running);
 
     //
     // Restore active parameter and exit
@@ -431,7 +489,8 @@ int sweep()
 
     printf("\n");
     fflush(stdout);
-
+    if (save_file_name) free(save_file_name);
+    save_file_name = 0;
     return 1;
 }
 
@@ -922,50 +981,46 @@ void direct_command()
     // b          - read and print binary response
     // ?          - print status
     // .          - exit direct command mode
+    uint8_t* data;
+    int len;
+    char* response = 0;
 
-    char cmd[1000];
-    do {
-        fgets(cmd, 999, stdin);
-        cmd[strlen(cmd) - 1] = 0;        
-        if (cmd[0] == '.') break;
-
-        if ((cmd[0] == 's') && (strlen(cmd) > 2))
-            GPIB_puts(cmd + 2);
-        else if ((cmd[0] == 'q') && (strlen(cmd) > 2))
-        {
-            char *response = GPIB_query(cmd + 2);
-            printf("%s", response);
-            fflush(stdout);
-        }
-        else if (cmd[0] == 'a')
-        {
-            uint8_t *data = (uint8_t *)GPIB_read_ASC();
-            if ((data[0] != '#') || (data[1] != 'A'))
-                printf("!header not received\n");
-            int len = (data[2] << 8) + data[3];
-            for (int i = 0; i < len; i++)
-                printf("%c", data[i + 4]);
-            printf("\n");
-            fflush(stdout);
-        }
-        else if (cmd[0] == 'b')
-        {
-            uint8_t* data = (uint8_t*)GPIB_read_BIN();
-            if ((data[0] != '#') || (data[1] != 'A'))
-                printf("!header not received\n");
-            int len = (data[2] << 8) + data[3];
-            for (int i = 0; i < len + 4; i++)
-                printf("%02x", data[i]);
-            printf("\n");
-            fflush(stdout);
-        }
-        else if (cmd[0] == '?')
-        {
-            S32 status = GPIB_status();            
-            printf("%d\n", status);
-            fflush(stdout);
-        }
-    } while (1);
+    switch (action)
+    {
+    case action_cmd_puts:
+        GPIB_puts(ln + 2);
+        break;
+    case action_cmd_query:
+        response = GPIB_query(ln + 2);
+        printf("%s", response);
+        fflush(stdout);
+        break;
+    case action_cmd_read_asc:
+        data = (uint8_t *)GPIB_read_ASC();
+        if ((data[0] != '#') || (data[1] != 'A'))
+            printf("!header not received\n");
+        len = (data[2] << 8) + data[3];
+        for (int i = 0; i < len; i++)
+            printf("%c", data[i + 4]);
+        printf("\n");
+        fflush(stdout);
+        break;
+    case action_cmd_read_bin:
+        data = (uint8_t*)GPIB_read_BIN();
+        if ((data[0] != '#') || (data[1] != 'A'))
+            printf("!header not received\n");
+        len = (data[2] << 8) + data[3];
+        for (int i = 0; i < len + 4; i++)
+            printf("%02x", data[i]);
+        printf("\n");
+        fflush(stdout);
+        break;
+    case action_cmd_status:
+        S32 status = GPIB_status();            
+        printf("%d\n", status);
+        fflush(stdout);
+        break;
+    } 
 }
 
 int measure()
@@ -981,30 +1036,41 @@ int measure()
 
 void help()
 {
-    printf("              CONNECT      ... connect to the device\n");
-    printf("              DISCONNECT   ... disconnect the device\n");
-    printf("              S11 .. S22   ... configure (add) a channel for measurement\n");
-    printf("              ALL          ... configure measurement of all 4 channels\n");
-    printf("              CLEAR        ... reset measurement config to no channels\n");
-    printf("              MEASURE      ... perform configured measurement\n");
-    printf("              GETSTATE     ... dump the device state\n");
-    printf("              SETSTATE     ... set the device state (followed in next line)\n");
-    printf("              GETCALIB     ... get the device calibration\n");
-    printf("              SETCALIB     ... set the device calibration (followed in next line)\n");
-    printf("              RESET        ... reset instrument\n");
-    printf("              FACTRESET    ... factory reset instrument\n");
-    printf("              CMD          ... send direct command specified at the next line\n");
-    printf("              HELP         ... send direct command specified at the next line\n");
-    printf("              EXIT         ... terminate the application\n");
+    printf("         CONNECT    ... connect to the device\n");
+    printf("         DISCONNECT ... disconnect the device\n");
+    printf("         S11 .. S22 ... configure (add) a channel for measurement\n");
+    printf("         ALL        ... configure measurement of all 4 channels\n");
+    printf("         CLEAR      ... reset measurement config to no channels\n");
+    printf("         MEASURE    ... perform configured measurement\n");
+    printf("         M+         ... perform repeated configured measurements\n");
+    printf("         M-         ... stop the repetitions of the measurements\n");
+    printf("         FILE path  ... configure file to save the next measurement\n");
+    printf("                        for continuous, they are prefixed with XXXX_\n");
+    printf("         GETSTATE   ... dump the device state\n");
+    printf("         SETSTATE   ... set the device state (followed in next line)\n");
+    printf("         GETCALIB   ... get the device calibration\n");
+    printf("         SETCALIB   ... set the device calibration (followed in next line)\n");
+    printf("         RESET      ... reset instrument\n");
+    printf("         FACTRESET  ... factory reset instrument\n");
+    printf("         CMD        ... enter direct command mode:\n");
+    printf("             s str  ... send the string using gpib_puts()\n");
+    printf("             q str  ... send a query and read a string\n");
+    printf("                        response using gpib_query()\n");
+    printf("             a      ... retrieve response with gpib_read_ASC()\n");
+    printf("             b      ... retrieve response with gpib_read_BIN()\n");
+    printf("             ?      ... read and print status\n");
+    printf("             .      ... leave direct command mode\n");
+    printf("         HELP       ... print this help\n");
+    printf("         EXIT       ... terminate the application\n");
     fflush(stdout);
 }
 
 void print_usage()
 {
     printf("usage: hpctrl [-a n] [-i | [-S11][-S21][-S12][-S22]]\n\n");
-    printf("    -a n    specify device address, default=16\n");
-    printf("    -Sxy    retrieve measurement from channel xy\n");
-    printf("    -i      interactive mode, accepted commands:\n");
+    printf(" -a n   specify device address, default=16\n");
+    printf(" -Sxy   retrieve measurement from channel xy\n");
+    printf(" -i     interactive mode, accepted commands:\n");
     help();
 }
 
@@ -1019,51 +1085,173 @@ void parse_cmdline(int argc, const char** argv)
         else if (_stricmp(argv[i], "-s22") == 0) cmdline_s22 = 1;
 }
 
-const char *test1argv[] = { "hpctrl", "-a", "16", "-s11", "-s12", "-s21", "-s22" };
-const char *test2argv[] = { "hpctrl", "-a", "16", "-i" };
-
-int test1argc = 7;
-int test2argc = 4;
-
-//int runtest = 1;
-int runtest = 0;
-
-void interactive()
+void set_file()
 {
-    char ln[52];
+    if (strlen(ln) < 6) return;
+    if (save_file_name) free(save_file_name);
+    save_file_name = (char*)malloc(strlen(ln + 5) + 1);
+    strcpy(save_file_name, ln + 5);
+}
 
+DWORD WINAPI interactive_thread(LPVOID arg)
+{
     do {
         fgets(ln, 50, stdin);
         ln[strlen(ln) - 1] = 0; //strip EOL
         if (strlen(ln) == 0) continue;
 
-        if (_stricmp(ln, "CONNECT") == 0) connect();
-        else if (_stricmp(ln, "DISCONNECT") == 0) disconnect();
-        else if (_stricmp(ln, "S11") == 0) cmdline_s11 = 1;
-        else if (_stricmp(ln, "S21") == 0) cmdline_s21 = 1;
-        else if (_stricmp(ln, "S12") == 0) cmdline_s12 = 1;
-        else if (_stricmp(ln, "S22") == 0) cmdline_s22 = 1;
-        else if (_stricmp(ln, "ALL") == 0) cmdline_s11 = cmdline_s21 = cmdline_s12 = cmdline_s22 = 1;
-        else if (_stricmp(ln, "CLEAR") == 0) cmdline_s11 = cmdline_s21 = cmdline_s12 = cmdline_s22 = 0; 
-        else if (_stricmp(ln, "MEASURE") == 0) sweep();
-        else if (_stricmp(ln, "GETSTATE") == 0) getstate(0);
-        else if (_stricmp(ln, "SETSTATE") == 0) setstate(0);
-        else if (_stricmp(ln, "GETCALIB") == 0) getstate(1);
-        else if (_stricmp(ln, "SETCALIB") == 0) setstate(1);
-        else if (_stricmp(ln, "RESET") == 0) reset();
-        else if (_stricmp(ln, "FACTRESET") == 0) factory_reset();
-        else if (_stricmp(ln, "CMD") == 0) direct_command();
-        else if (_stricmp(ln, "HELP") == 0) help();
-        else if (_stricmp(ln, "USAGE") == 0) print_usage();
-        else if (_stricmp(ln, "EXIT") == 0) break;
-        else printf("!unknown command %s\n", ln);
-    } while (1);
+        action = action_none;
+
+        if (current_input_mode == mode_menu)
+        { 
+            if (_stricmp(ln, "HELP") == 0) help();
+            else if (_stricmp(ln, "USAGE") == 0) print_usage();
+            else if (_stricmp(ln, "EXIT") == 0) action = action_exit;
+            else if (_stricmp(ln, "M-") == 0) autosweep = 0;
+            else if (!ready_to_receive_command) printf("!not ready, try again later (%s)\n", ln);
+            else if (_stricmp(ln, "CONNECT") == 0) action = action_connect;
+            else if (_stricmp(ln, "DISCONNECT") == 0) action = action_disconnect;
+            else if (_stricmp(ln, "S11") == 0) cmdline_s11 = 1;
+            else if (_stricmp(ln, "S21") == 0) cmdline_s21 = 1;
+            else if (_stricmp(ln, "S12") == 0) cmdline_s12 = 1;
+            else if (_stricmp(ln, "S22") == 0) cmdline_s22 = 1;
+            else if (_stricmp(ln, "ALL") == 0) cmdline_s11 = cmdline_s21 = cmdline_s12 = cmdline_s22 = 1;
+            else if (_stricmp(ln, "CLEAR") == 0) cmdline_s11 = cmdline_s21 = cmdline_s12 = cmdline_s22 = 0;
+            else if (_strnicmp(ln, "FILE", 4) == 0) set_file();
+            else if (_stricmp(ln, "MEASURE") == 0) action = action_sweep;
+            else if (_stricmp(ln, "M+") == 0) { autosweep = 1; action = action_sweep; }
+            else if (_stricmp(ln, "GETSTATE") == 0) action = action_getstate;
+            else if (_stricmp(ln, "SETSTATE") == 0) action = action_setstate;
+            else if (_stricmp(ln, "GETCALIB") == 0) action = action_getcalib;
+            else if (_stricmp(ln, "SETCALIB") == 0) action = action_setstate;
+            else if (_stricmp(ln, "RESET") == 0) action = action_reset;
+            else if (_stricmp(ln, "FACTRESET") == 0) action = action_freset;
+            else if (_stricmp(ln, "CMD") == 0) current_input_mode = mode_cmd;
+            else printf("!unknown command %s\n", ln);            
+        }
+        else if (current_input_mode == mode_cmd)
+        {
+            if (ln[0] == '.') current_input_mode = mode_menu;
+            else if ((ln[0] == 's') && (strlen(ln) > 2)) action = action_cmd_puts;
+            else if ((ln[0] == 'q') && (strlen(ln) > 2)) action = action_cmd_query;
+            else if (ln[0] == 'a') action = action_cmd_read_asc;
+            else if (ln[0] == 'b') action = action_cmd_read_bin;
+            else if (ln[0] == '?') action = action_cmd_status;
+        }
+
+        if (action != action_none)
+        {
+            ready_to_receive_command = 0;
+            if (!SetEvent(action_event))
+            {
+                printf("SetEvent failed (%d)\n", GetLastError());
+                exit(1);
+            }
+        }
+
+    } while (action != action_exit);
     if (connected)
     {
         printf("!auto disconnect before exit\n");
         disconnect();
     }
+    return 0;
 }
+
+void create_event_and_thread()
+{
+    action_event = CreateEvent(
+        NULL,               // default security attributes
+        FALSE,               // auto-reset event
+        FALSE,              // initial state is nonsignaled
+        0                   // no event object name
+    );
+
+    if (action_event == NULL)
+    {
+        printf("CreateEvent failed (%d)\n", GetLastError());
+        exit(1);
+    }
+
+    HANDLE t = CreateThread(
+        NULL,                   // default security attributes
+        0,                      // use default stack size  
+        interactive_thread,       // thread function name
+        0,                       // argument to thread function 
+        0,                      // use default creation flags 
+        0);                    // does not return the thread identifier 
+
+    if (t == NULL)
+    {
+        printf("CreateThread failed (%d)\n", GetLastError());
+        exit(1);
+    }
+}
+
+void main_action_loop()
+{
+    while (running)
+    {
+        DWORD event = WaitForSingleObject(
+            action_event, // event handle
+            INFINITE);    // indefinite wait
+        
+        if (event != WAIT_OBJECT_0)
+        {
+            printf("Wait error (%d)\n", GetLastError());
+            exit(1);
+        }
+
+        switch (action)
+        {
+        case action_connect: connect();
+            break;
+        case action_disconnect: disconnect();
+            break;
+        case action_sweep: sweep();
+            break;
+        case action_getstate: getstate(0);
+            break;
+        case action_setstate: setstate(0);
+            break;
+        case action_getcalib: getstate(1);
+            break;
+        case action_setcalib: setstate(1);
+            break;
+        case action_cmd_puts: 
+        case action_cmd_status: 
+        case action_cmd_query:
+        case action_cmd_read_asc:
+        case action_cmd_read_bin:
+            direct_command();
+            break;
+        case action_exit: running = 0;
+            break;
+        case action_reset: reset();
+            break;
+        case action_freset: factory_reset();
+            break;
+        }
+        //printf("!ok\n");
+        ready_to_receive_command = 1;
+    }
+}
+
+void interactive()
+{
+    create_event_and_thread();
+    main_action_loop();
+    CloseHandle(action_event);
+}
+
+const char* test1argv[] = { "hpctrl", "-a", "16", "-s11", "-s12", "-s21", "-s22" };
+const char* test2argv[] = { "hpctrl", "-a", "16", "-i" };
+
+int test1argc = 7;
+int test2argc = 4;
+
+//int runtest = 1;
+int runtest = 2;
 
 int main(int argc, char** argv)
 {
