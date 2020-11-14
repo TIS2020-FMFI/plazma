@@ -47,7 +47,7 @@ static char ln[52];
 enum action_type {
     action_none, action_connect, action_disconnect, action_sweep, action_getstate, action_setstate,
     action_getcalib, action_setcalib, action_cmd_puts, action_cmd_query, action_cmd_status, action_cmd_read_asc,
-    action_cmd_read_bin, action_exit, action_reset, action_freset
+    action_cmd_continuous_asc, action_cmd_read_bin, action_exit, action_reset, action_freset
 };
 
 static volatile action_type action;
@@ -1175,6 +1175,7 @@ void direct_command()
     // s string   - send string using gpib_puts()
     // q query    - send string using gpib_query() and print result
     // a          - read and print ascii response
+    // c          - read and print ascii response until next action
     // b          - read and print binary response
     // ?          - print status
     // .          - exit direct command mode
@@ -1193,9 +1194,20 @@ void direct_command()
         fflush(stdout);
         break;
     case action_cmd_read_asc:
-        data = (uint8_t *)GPIB_read_ASC();
-        printf("%s\n", data);
+        data = (uint8_t *)GPIB_read_ASC();        
+        printf("%s", data);
         fflush(stdout);
+        break;
+    case action_cmd_continuous_asc:
+        do {
+            data = (uint8_t*)GPIB_read_ASC();
+            if (strlen((char *)data) > 0)
+            {
+                printf("%s", data);
+                fflush(stdout);
+            }
+            else Sleep(1);
+        } while (action == action_cmd_continuous_asc);
         break;
     case action_cmd_read_bin:
         data = (uint8_t*)GPIB_read_BIN();
@@ -1252,6 +1264,7 @@ void help()
     printf("             q str  ... send a query and read a string\n");
     printf("                        response using gpib_query()\n");
     printf("             a      ... retrieve response with gpib_read_ASC()\n");
+    printf("             c      ... continuous gpib_read_ASC() until next input\n");
     printf("             b      ... retrieve response with gpib_read_BIN()\n");
     printf("             ?      ... read and print status\n");
     printf("             .      ... leave direct command mode\n");
@@ -1372,6 +1385,7 @@ DWORD WINAPI interactive_thread(LPVOID arg)
             else if ((ln[0] == 's') && (strlen(ln) > 2)) action = action_cmd_puts;
             else if ((ln[0] == 'q') && (strlen(ln) > 2)) action = action_cmd_query;
             else if (ln[0] == 'a') action = action_cmd_read_asc;
+            else if (ln[0] == 'c') action = action_cmd_continuous_asc;
             else if (ln[0] == 'b') action = action_cmd_read_bin;
             else if (ln[0] == '?') action = action_cmd_status;
         }
@@ -1482,6 +1496,7 @@ void main_action_loop()
         case action_cmd_status: 
         case action_cmd_query:
         case action_cmd_read_asc:
+        case action_cmd_continuous_asc:
         case action_cmd_read_bin:
             direct_command();
             break;
