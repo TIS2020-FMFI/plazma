@@ -2,6 +2,7 @@
 #include <inttypes.h>
 #include <malloc.h>
 #include <float.h>
+#include <math.h>
 #include <windows.h>
 
 #include "gpiblib.h"
@@ -20,6 +21,12 @@ static volatile int ready_to_receive_command = 1;
 static volatile int running = 1;
 static volatile int autosweep = 0;
 static char *save_file_name = 0;
+
+enum measure_format { fmt_ri, fmt_ma, fmt_db };
+static measure_format current_format = fmt_ri;
+
+enum freq_format { hz, khz, mhz, ghz };
+static freq_format current_freq_format = ghz;
 
 enum input_mode { mode_menu, mode_cmd, mode_input_blocked };
 
@@ -43,6 +50,26 @@ void WINAPI GPIB_error(C8* msg, S32 ibsta, S32 iberr, S32 ibcntl)
 {
     printf("GPIB Error %s, ibsta=%d, iberr=%d, ibcntl=%d\n", msg, ibsta, iberr, ibcntl);
     exit(1);
+}
+
+void conv_RI_2_MA(double r, double i, double *m, double *a)
+{
+    *m = sqrt(r * r + i * i);
+
+    if (*m > 1E-20)
+        *a = atan2(i, r) * RAD2DEG;
+    else
+        *a = 0.0;
+}
+
+void conv_RI_2_DB(double r, double i, double *dB, double *a)
+{
+    *dB = 20.0 * log10(max(1E-15, sqrt(r * r + i * i)));
+
+    if (*dB > -200.0)
+        *a = atan2(i, r) * RAD2DEG;
+    else
+        *a = 0.0;
 }
 
 S32 S16_BE(C8* s)
@@ -174,6 +201,9 @@ void instrument_setup(bool debug_mode = TRUE)
 
     C8* data = GPIB_query("OUTPIDEN");
     _snprintf(instrument_name, sizeof(instrument_name) - 1, "%s", data);
+    if (strlen(instrument_name) > 0)
+        if (instrument_name[strlen(instrument_name) - 1] == '\n')
+            instrument_name[strlen(instrument_name) - 1] = 0;
     //printf("instrument name: %s\n", data);   
     GPIB_printf("HOLD;");
 }
@@ -271,6 +301,81 @@ int connect()
 
     connected = 1;
     return 1;
+}
+
+void output_complex_value(FILE *f, COMPLEX_DOUBLE *val)
+{
+    double v1 = 0, v2 = 0;
+
+    switch (current_format)
+    {
+    case fmt_ri: 
+        v1 = val->real;
+        v2 = val->imag;
+        break;
+    case fmt_ma:         
+        conv_RI_2_MA(val->real, val->imag, &v1, &v2);        
+        break;
+    case fmt_db:         
+        conv_RI_2_DB(val->real, val->imag, &v1, &v2);
+        break;
+    }
+    fprintf(f, " %.6lf %.6lf", v1, v2);
+}
+
+const char* freq_str()
+{
+    switch (current_freq_format)
+    {
+    case hz: return "HZ";
+    case khz: return "KHZ";
+    case mhz: return "MHZ";
+    case ghz: return "GHZ";
+    }
+    return "???";
+}
+
+const char* fmt_str()
+{
+    switch (current_format)
+    {
+    case fmt_ri: return "RI";
+    case fmt_ma: return "MA";
+    case fmt_db: return "DB";    
+    }
+    return "??";
+}
+
+void save_file(FILE *of, const char *fname)
+{
+    if (fname) fprintf(of, "!\n! %s\n!\n", fname);
+    fprintf(of, "! Touchstone 1.1 file saved by HPCTRL.EXE\n"
+        "! %s\n"
+        "!\n"
+        "!    Source: %s\n", timestamp(), instrument_name);
+    fprintf(of, "!  Min freq: %e Hz\n", start_Hz);
+    fprintf(of, "!  Max freq: %e Hz\n", stop_Hz);
+    fprintf(of, "!    Points: %d\n", n_alloc_points);
+    fprintf(of, "!    Params:%s%s%s%s\n",
+        cmdline_s11 ? " S11" : "", cmdline_s21 ? " S21" : "", cmdline_s12 ? " S12" : "", cmdline_s22 ? " S22" : "");
+    fprintf(of, "!\n!!!!!\n# %s S %s R 50\n", freq_str(), fmt_str());
+    for (S32 i = 0; i < n_alloc_points; i++)
+    {
+        double freq_frac = 0;
+        switch (current_freq_format)
+        {
+        case hz: freq_frac = 1.0; break;
+        case khz: freq_frac = 1E3; break;
+        case mhz: freq_frac = 1E6; break;
+        case ghz: freq_frac = 1E9; break;
+        }
+        fprintf(of, "%.16lf", freq_Hz[i] / freq_frac);
+        if (cmdline_s11) output_complex_value(of, S11 + i);
+        if (cmdline_s21) output_complex_value(of, S21 + i);
+        if (cmdline_s12) output_complex_value(of, S12 + i);
+        if (cmdline_s22) output_complex_value(of, S22 + i);
+        fprintf(of, "\n");
+    }
 }
 
 int sweep()
@@ -406,61 +511,46 @@ int sweep()
     int sweep_iteration = 0;
 
     do {
-        bool result = FALSE;
+        int req_results = 0;
+        int ok_results = 0;
 
-        if (cmdline_s11) result = read_complex_trace("S11", "OUTPDATA", &S11[first_AC_point], n_AC_points, 20);
-        if (cmdline_s21) result = result && read_complex_trace("S21", "OUTPDATA", &S21[first_AC_point], n_AC_points, 40);
-        if (cmdline_s12) result = result && read_complex_trace("S12", "OUTPDATA", &S12[first_AC_point], n_AC_points, 60);
-        if (cmdline_s22) result = result && read_complex_trace("S22", "OUTPDATA", &S22[first_AC_point], n_AC_points, 80);
+        if (cmdline_s11) req_results++;
+        if (cmdline_s12) req_results++;
+        if (cmdline_s21) req_results++;
+        if (cmdline_s22) req_results++;
 
-        if (result)
+        if (cmdline_s11 && read_complex_trace("S11", "OUTPDATA", &S11[first_AC_point], n_AC_points, 20)) ok_results++;
+        if (cmdline_s21 && read_complex_trace("S21", "OUTPDATA", &S21[first_AC_point], n_AC_points, 40)) ok_results++;
+        if (cmdline_s12 && read_complex_trace("S12", "OUTPDATA", &S12[first_AC_point], n_AC_points, 60)) ok_results++;
+        if (cmdline_s22 && read_complex_trace("S22", "OUTPDATA", &S22[first_AC_point], n_AC_points, 80)) ok_results++;
+
+        if ((ok_results == req_results) && (req_results))
         {
             double min_Hz = include_DC ? 0.0 : start_Hz;
             double max_Hz = stop_Hz;
             double Zo = R_ohms;
 
-            char* real_file_name = 0;
-            FILE* sf = 0;
+            save_file(stdout, 0);
 
             if (save_file_name)
             {
-                real_file_name = (char*)malloc(strlen(save_file_name) + 15);
-                if (autosweep) sprintf(real_file_name, "%04d_%s", sweep_iteration, save_file_name);
-                else strcpy(real_file_name, save_file_name);
-                sf = fopen(real_file_name, "w+");
-            }
-
-            printf("! Touchstone 1.1 file saved by HPCTRL.EXE\n"
-                "! %s\n"
-                "!\n"
-                "!    Source: %s\n", timestamp(), instrument_name);
-            for (S32 i = 0; i < n_alloc_points; i++)
-            {
-                printf("%.6lf", freq_Hz[i]);
-                if (cmdline_s11) printf(" %.6lf %.6lf", S11[i].real, S11[i].imag);
-                if (cmdline_s21) printf(" %.6lf %.6lf", S21[i].real, S21[i].imag);
-                if (cmdline_s12) printf(" %.6lf %.6lf", S12[i].real, S12[i].imag);
-                if (cmdline_s22) printf(" %.6lf %.6lf", S22[i].real, S22[i].imag);
-                printf("\n");
-            }
-
-            if (sf)
-            {
-                fprintf(sf, "! Touchstone 1.1 file saved by HPCTRL.EXE\n"
-                    "! %s\n"
-                    "!\n"
-                    "!    Source: %s\n", timestamp(), instrument_name);
-                for (S32 i = 0; i < n_alloc_points; i++)
+                char* real_file_name = 0;
+                FILE* sf = 0;
+                if (autosweep)
                 {
-                    fprintf(sf, "%.6lf", freq_Hz[i]);
-                    if (cmdline_s11) fprintf(sf, " %.6lf %.6lf", S11[i].real, S11[i].imag);
-                    if (cmdline_s21) fprintf(sf, " %.6lf %.6lf", S21[i].real, S21[i].imag);
-                    if (cmdline_s12) fprintf(sf, " %.6lf %.6lf", S12[i].real, S12[i].imag);
-                    if (cmdline_s22) fprintf(sf, " %.6lf %.6lf", S22[i].real, S22[i].imag);
-                    fprintf(sf, "\n");
+                    real_file_name = (char*)malloc(strlen(save_file_name) + 15);
+                    sprintf(real_file_name, "%04d_%s", sweep_iteration, save_file_name);
                 }
-                fclose(sf);
-                free(real_file_name);
+                else real_file_name = save_file_name;
+                sf = fopen(real_file_name, "w+");
+                if (!sf)
+                    printf("!could not open file %s for writing\n", real_file_name);
+                else
+                {
+                    save_file(sf, real_file_name);
+                    fclose(sf);
+                }
+                if (autosweep) free(real_file_name);
             }
         }
         sweep_iteration++;
@@ -1041,6 +1131,8 @@ void help()
     printf("         S11 .. S22 ... configure (add) a channel for measurement\n");
     printf("         ALL        ... configure measurement of all 4 channels\n");
     printf("         CLEAR      ... reset measurement config to no channels\n");
+    printf("         FMT RI|MA|DB ... configure measure data format (RI default)\n");
+    printf("         FREQ HZ|KHZ|MHZ|GHZ ... configure freq format (GHZ default)\n");
     printf("         MEASURE    ... perform configured measurement\n");
     printf("         M+         ... perform repeated configured measurements\n");
     printf("         M-         ... stop the repetitions of the measurements\n");
@@ -1093,6 +1185,25 @@ void set_file()
     strcpy(save_file_name, ln + 5);
 }
 
+void set_format(char* ln)
+{
+    if (strlen(ln + 3) < 3) return;
+    ln += 4;
+    if (_stricmp(ln, "RI") == 0) current_format = fmt_ri;
+    else if (_stricmp(ln, "MA") == 0) current_format = fmt_ma;
+    else if (_stricmp(ln, "DB") == 0) current_format = fmt_db;
+}
+
+void set_freq_format(char* ln)
+{
+    if (strlen(ln + 4) < 3) return;
+    ln += 5;
+    if (_stricmp(ln, "HZ") == 0) current_freq_format = hz;
+    else if (_stricmp(ln, "KHZ") == 0) current_freq_format = khz;
+    else if (_stricmp(ln, "MHZ") == 0) current_freq_format = mhz;
+    else if (_stricmp(ln, "GHZ") == 0) current_freq_format = ghz;
+}
+
 DWORD WINAPI interactive_thread(LPVOID arg)
 {
     do {
@@ -1130,6 +1241,8 @@ DWORD WINAPI interactive_thread(LPVOID arg)
             else if (_stricmp(ln, "S22") == 0) cmdline_s22 = 1;
             else if (_stricmp(ln, "ALL") == 0) cmdline_s11 = cmdline_s21 = cmdline_s12 = cmdline_s22 = 1;
             else if (_stricmp(ln, "CLEAR") == 0) cmdline_s11 = cmdline_s21 = cmdline_s12 = cmdline_s22 = 0;
+            else if (_strnicmp(ln, "FMT", 3) == 0) set_format(ln);
+            else if (_strnicmp(ln, "FREQ", 4) == 0) set_freq_format(ln);
             else if (_strnicmp(ln, "FILE", 4) == 0) set_file();
             else if (_stricmp(ln, "MEASURE") == 0) action = action_sweep;
             else if (_stricmp(ln, "M+") == 0) { autosweep = 1; action = action_sweep; }
