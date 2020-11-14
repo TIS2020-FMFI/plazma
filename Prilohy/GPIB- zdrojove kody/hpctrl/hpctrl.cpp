@@ -21,7 +21,7 @@ static volatile int running = 1;
 static volatile int autosweep = 0;
 static char *save_file_name = 0;
 
-enum input_mode { mode_menu, mode_cmd };
+enum input_mode { mode_menu, mode_cmd, mode_input_blocked };
 
 static volatile input_mode current_input_mode = mode_menu;
 
@@ -36,7 +36,7 @@ enum action_type {
 static volatile action_type action;
 
 
-HANDLE action_event;
+HANDLE action_event, end_of_input_event;
 
 
 void WINAPI GPIB_error(C8* msg, S32 ibsta, S32 iberr, S32 ibcntl)
@@ -1096,6 +1096,19 @@ void set_file()
 DWORD WINAPI interactive_thread(LPVOID arg)
 {
     do {
+        if (current_input_mode == mode_input_blocked)
+        {
+            DWORD event = WaitForSingleObject(
+                end_of_input_event, // event handle
+                INFINITE);    // indefinite wait
+
+            if (event != WAIT_OBJECT_0)
+            {
+                printf("Wait error (%d)\n", GetLastError());
+                exit(1);
+            }
+            current_input_mode = mode_menu;
+        }
         fgets(ln, 50, stdin);
         ln[strlen(ln) - 1] = 0; //strip EOL
         if (strlen(ln) == 0) continue;
@@ -1121,9 +1134,9 @@ DWORD WINAPI interactive_thread(LPVOID arg)
             else if (_stricmp(ln, "MEASURE") == 0) action = action_sweep;
             else if (_stricmp(ln, "M+") == 0) { autosweep = 1; action = action_sweep; }
             else if (_stricmp(ln, "GETSTATE") == 0) action = action_getstate;
-            else if (_stricmp(ln, "SETSTATE") == 0) action = action_setstate;
+            else if (_stricmp(ln, "SETSTATE") == 0) { action = action_setstate; current_input_mode = mode_input_blocked; }
             else if (_stricmp(ln, "GETCALIB") == 0) action = action_getcalib;
-            else if (_stricmp(ln, "SETCALIB") == 0) action = action_setstate;
+            else if (_stricmp(ln, "SETCALIB") == 0) { action = action_setcalib; current_input_mode = mode_input_blocked; }
             else if (_stricmp(ln, "RESET") == 0) action = action_reset;
             else if (_stricmp(ln, "FACTRESET") == 0) action = action_freset;
             else if (_stricmp(ln, "CMD") == 0) current_input_mode = mode_cmd;
@@ -1173,6 +1186,19 @@ void create_event_and_thread()
         exit(1);
     }
 
+    end_of_input_event = CreateEvent(
+        NULL,               // default security attributes
+        FALSE,              // auto-reset event
+        FALSE,              // initial state is nonsignaled
+        0                   // no event object name
+    );
+
+    if (end_of_input_event == NULL)
+    {
+        printf("CreateEvent failed (%d)\n", GetLastError());
+        exit(1);
+    }
+
     HANDLE t = CreateThread(
         NULL,                   // default security attributes
         0,                      // use default stack size  
@@ -1213,10 +1239,20 @@ void main_action_loop()
         case action_getstate: getstate(0);
             break;
         case action_setstate: setstate(0);
+            if (!SetEvent(end_of_input_event))
+            {
+                printf("SetEvent failed (%d)\n", GetLastError());
+                exit(1);
+            }
             break;
         case action_getcalib: getstate(1);
             break;
         case action_setcalib: setstate(1);
+            if (!SetEvent(end_of_input_event))
+            {
+                printf("SetEvent failed (%d)\n", GetLastError());
+                exit(1);
+            }
             break;
         case action_cmd_puts: 
         case action_cmd_status: 
@@ -1242,6 +1278,7 @@ void interactive()
     create_event_and_thread();
     main_action_loop();
     CloseHandle(action_event);
+    CloseHandle(end_of_input_event);
 }
 
 const char* test1argv[] = { "hpctrl", "-a", "16", "-s11", "-s12", "-s21", "-s22" };
