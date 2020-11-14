@@ -102,8 +102,8 @@ void conv_form1_2_RI(uint8_t* data, double* r, double* i)
     // real mantissa is 16-bit signed integer (2-compl)
     // common exponent is 8-bit signed integer (2-compl)
     //
-    // imag = (imag mantissa) * 2^(common exponent)
-    // real = (real mantissa) * 2^(common exponent)
+    // imag = (imag mantissa/32768) * 2^(common exponent)
+    // real = (real mantissa/32768) * 2^(common exponent)
 
     int8_t common_exp = (int8_t)*(data + 5);
     double exp = pow(2, common_exp);
@@ -1194,12 +1194,7 @@ void direct_command()
         break;
     case action_cmd_read_asc:
         data = (uint8_t *)GPIB_read_ASC();
-        if ((data[0] != '#') || (data[1] != 'A'))
-            printf("!header not received\n");
-        len = (data[2] << 8) + data[3];
-        for (int i = 0; i < len; i++)
-            printf("%c", data[i + 4]);
-        printf("\n");
+        printf("%s\n", data);
         fflush(stdout);
         break;
     case action_cmd_read_bin:
@@ -1516,8 +1511,8 @@ const char* test2argv[] = { "hpctrl", "-a", "16", "-i" };
 int test1argc = 7;
 int test2argc = 4;
 
-//int runtest = 1;
-int runtest = 2;
+//int runtest = 2;
+int runtest = 0;
 
 int main(int argc, char** argv)
 {
