@@ -1,3 +1,10 @@
+// hpctrl.cpp: simple command-line utility
+// to communicate with HP8753 over GPIB USB device
+// it is based on the vna.cpp from John Miles, KE5FX 
+//  http://www.ke5fx.com/gpib/readme.htm
+// and depends on gpiblib.dll
+// it compiles with MSVS2019 community version.
+
 #include <stdio.h>
 #include <inttypes.h>
 #include <malloc.h>
@@ -21,6 +28,9 @@ static volatile int ready_to_receive_command = 1;
 static volatile int running = 1;
 static volatile int autosweep = 0;
 static char *save_file_name = 0;
+
+enum sending_format { form1, form4 };
+static sending_format current_sending_format = form1;
 
 enum measure_format { fmt_ri, fmt_ma, fmt_db };
 static measure_format current_format = fmt_ri;
@@ -70,6 +80,39 @@ void conv_RI_2_DB(double r, double i, double *dB, double *a)
         *a = atan2(i, r) * RAD2DEG;
     else
         *a = 0.0;
+}
+
+void print8bit(uint8_t b)
+{
+    for (int i = 0; i < 8; i++)
+        printf("%d", (b >> (7 - i)) & 1);
+}
+
+void conv_form1_2_RI(uint8_t* data, double* r, double* i)
+{    
+    // HP8753 form1 binary internal representation format: 6 bytes: 
+    // 0:  imag mantissa1 (MSB)
+    // 1:  imag mantissa2 (LSB)
+    // 2:  real mantissa1 (MSB)
+    // 3:  real mantissa2 (LSB)
+    // 4:  "additional resolution for transferring raw data" - no idea what this is, always saw 0 there
+    // 5:  common exponent
+    //
+    // imag mantissa is 16-bit signed integer (2-compl)
+    // real mantissa is 16-bit signed integer (2-compl)
+    // common exponent is 8-bit signed integer (2-compl)
+    //
+    // imag = (imag mantissa) * 2^(common exponent)
+    // real = (real mantissa) * 2^(common exponent)
+
+    int8_t common_exp = (int8_t)*(data + 5);
+    double exp = pow(2, common_exp);
+    uint16_t i_bits = (((uint16_t) *data) << 8) + (uint16_t) *(data + 1);
+    int16_t i_value = (int16_t)i_bits;
+    uint16_t r_bits = (((uint16_t) * (data + 2)) << 8) + (uint16_t) * (data + 3);
+    int16_t r_value = (int16_t)r_bits;
+    *i = ((double)i_value) / (double)32768 * exp;
+    *r = ((double)r_value) / (double)32768 * exp;
 }
 
 S32 S16_BE(C8* s)
@@ -201,6 +244,7 @@ void instrument_setup(bool debug_mode = TRUE)
 
     C8* data = GPIB_query("OUTPIDEN");
     _snprintf(instrument_name, sizeof(instrument_name) - 1, "%s", data);
+    instrument_name[sizeof(instrument_name) - 1] = 0;
     if (strlen(instrument_name) > 0)
         if (instrument_name[strlen(instrument_name) - 1] == '\n')
             instrument_name[strlen(instrument_name) - 1] = 0;
@@ -221,7 +265,10 @@ bool read_complex_trace(const C8* param,
     if (is_8720()) { GPIB_printf("CLES;SRE 4;ESNB 1;"); mask = 0x40; }
     if (is_8510()) { GPIB_printf("CLES;");              mask = 0x10; }
 
-    GPIB_printf("%s;FORM4;SING;", param);
+    if (current_sending_format == form4)
+        GPIB_printf("%s;FORM4;SING;", param);
+    else if (current_sending_format == form1)
+        GPIB_printf("%s;FORM1;SING;", param);
 
     if (is_8510())             // Skip first reading to ensure EOS bit is clear, but only on 8510 
     {                       // (SRQ bit auto-resets after the first successful poll on 8753)   
@@ -232,7 +279,7 @@ bool read_complex_trace(const C8* param,
 
     for (;;)
     {
-        Sleep(100);
+        Sleep(1);
 
         U8 result = GPIB_serial_poll();
 
@@ -250,23 +297,83 @@ bool read_complex_trace(const C8* param,
 
     GPIB_printf("%s;", query);
 
-    for (S32 i = 0; i < cnt; i++)
+    if (current_sending_format == form4)
     {
-        C8* data = GPIB_read_ASC(-1, FALSE);
-
-        DOUBLE I = DBL_MIN;
-        DOUBLE Q = DBL_MIN;
-
-        sscanf(data, "%lf, %lf", &I, &Q);
-
-        if ((I == DBL_MIN) || (Q == DBL_MIN))
+        for (S32 i = 0; i < cnt; i++)
         {
-            printf("Error VNA read timed out reading %s (point %d of %d points)", param, i, cnt);
-            return FALSE;
+            C8* data = GPIB_read_ASC(-1, FALSE);
+
+            DOUBLE I = DBL_MIN;
+            DOUBLE Q = DBL_MIN;
+
+            sscanf(data, "%lf, %lf", &I, &Q);
+
+            if ((I == DBL_MIN) || (Q == DBL_MIN))
+            {
+                printf("Error VNA read timed out reading %s (point %d of %d points)", param, i, cnt);
+                return FALSE;
+            }
+
+            dest[i].real = I;
+            dest[i].imag = Q;
+        }
+    }
+    else if (current_sending_format == form1)
+    {
+        //
+         // Verify its header 
+         //
+
+        S32 actual = 0;
+        uint8_t* data = (uint8_t*)GPIB_read_BIN(2, TRUE, FALSE, &actual);
+
+        if (actual != 2)
+        {
+            printf("Error: data header query returned %d bytes", actual);
+            return 0;
         }
 
-        dest[i].real = I;
-        dest[i].imag = Q;
+        if ((data[0] != '#') || (data[1] != 'A'))
+        {
+            printf("Error: data FORM1 block header was 0x%.2X 0x%.2X", data[0], data[1]);
+            return 0;
+        }
+
+        //
+        // Get length in bytes
+        //
+
+        actual = 0;
+        data = (uint8_t*)GPIB_read_BIN(2, TRUE, FALSE, &actual);
+
+        S32 len = S16_BE((C8*)data);
+
+        if (actual != 2)
+        {
+            printf("Error: data len returned %d bytes", actual);
+            return 0;
+        }
+
+        //
+        // Get data
+        //
+
+        data = (uint8_t*)GPIB_read_BIN(len, TRUE, FALSE, &actual);
+
+        if (actual != len)
+        {
+            printf("Error: data len = %d, received %d", len, actual);
+            return 0;
+        }
+
+        if (len != cnt * 6)
+        {
+            printf("Error: data cnt = %d, cnt*6 = %d, but len = %d", cnt, cnt * 6, len);
+            return 0;
+        }
+
+        for (int i = 0; i < cnt; i++)
+            conv_form1_2_RI(data + 6 * i, &dest[i].real, &dest[i].imag);
     }
 
     return 1;
@@ -1131,6 +1238,7 @@ void help()
     printf("         S11 .. S22 ... configure (add) a channel for measurement\n");
     printf("         ALL        ... configure measurement of all 4 channels\n");
     printf("         CLEAR      ... reset measurement config to no channels\n");
+    printf("         FORM1|FORM4 ... setup sending format 1=fast, 4=ascii\n");
     printf("         FMT RI|MA|DB ... configure measure data format (RI default)\n");
     printf("         FREQ HZ|KHZ|MHZ|GHZ ... configure freq format (GHZ default)\n");
     printf("         MEASURE    ... perform configured measurement\n");
@@ -1204,6 +1312,13 @@ void set_freq_format(char* ln)
     else if (_stricmp(ln, "GHZ") == 0) current_freq_format = ghz;
 }
 
+void set_sending_format(char f)
+{
+    if (f == '1') current_sending_format = form1;
+    else if (f == '4') current_sending_format = form4;
+    else printf("!unsupported format %c", f);
+}
+
 DWORD WINAPI interactive_thread(LPVOID arg)
 {
     do {
@@ -1241,6 +1356,7 @@ DWORD WINAPI interactive_thread(LPVOID arg)
             else if (_stricmp(ln, "S22") == 0) cmdline_s22 = 1;
             else if (_stricmp(ln, "ALL") == 0) cmdline_s11 = cmdline_s21 = cmdline_s12 = cmdline_s22 = 1;
             else if (_stricmp(ln, "CLEAR") == 0) cmdline_s11 = cmdline_s21 = cmdline_s12 = cmdline_s22 = 0;
+            else if (_strnicmp(ln, "FORM", 4) == 0) set_sending_format(ln[4]);
             else if (_strnicmp(ln, "FMT", 3) == 0) set_format(ln);
             else if (_strnicmp(ln, "FREQ", 4) == 0) set_freq_format(ln);
             else if (_strnicmp(ln, "FILE", 4) == 0) set_file();
