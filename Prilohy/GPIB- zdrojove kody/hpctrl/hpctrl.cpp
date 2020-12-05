@@ -1377,7 +1377,12 @@ DWORD WINAPI interactive_thread(LPVOID arg)
             else if (_stricmp(ln, "EXIT") == 0) action = action_exit;
             else if (_stricmp(ln, "M-") == 0) autosweep = 0;
             else if (!ready_to_receive_command) printf("!not ready, try again later (%s)\n", ln);
-            else if (_stricmp(ln, "CONNECT") == 0) action = action_connect;
+            else if (_strnicmp(ln, "CONNECT", 7) == 0)
+            {
+                action = action_connect;
+                if ((ln[8] >= '0') && (ln[8] <= '9'))
+                    sscanf(ln + 8, "%d", &cmdline_a);
+            }
             else if (_stricmp(ln, "DISCONNECT") == 0) action = action_disconnect;
             else if (_stricmp(ln, "S11") == 0) cmdline_s11 = 1;
             else if (_stricmp(ln, "S21") == 0) cmdline_s21 = 1;
