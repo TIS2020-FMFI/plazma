@@ -47,10 +47,11 @@ static char ln[52];
 enum action_type {
     action_none, action_connect, action_disconnect, action_sweep, action_getstate, action_setstate,
     action_getcalib, action_setcalib, action_cmd_puts, action_cmd_query, action_cmd_status, action_cmd_read_asc,
-    action_cmd_continuous_asc, action_cmd_read_bin, action_exit, action_reset, action_freset
+    action_cmd_continuous_asc, action_cmd_repeated_asc, action_cmd_read_bin, action_exit, action_reset, action_freset
 };
 
 static volatile action_type action;
+static int cmd_read_repeat_count;
 
 
 HANDLE action_event, end_of_input_event;
@@ -1176,12 +1177,19 @@ void direct_command()
     // q query    - send string using gpib_query() and print result
     // a          - read and print ascii response
     // c          - read and print ascii response until next action
+    // d          - read and print ascii response N-times
     // b          - read and print binary response
     // ?          - print status
     // .          - exit direct command mode
     uint8_t* data;
     int len;
     char* response = 0;
+
+    if (!connected)
+    {
+        printf("!not connected\n");
+        return;
+    }
 
     switch (action)
     {
@@ -1208,6 +1216,18 @@ void direct_command()
             }
             else Sleep(1);
         } while (action == action_cmd_continuous_asc);
+        break;
+    case action_cmd_repeated_asc:
+        for (int i = 0; i < cmd_read_repeat_count; i++)
+        {
+            data = (uint8_t*)GPIB_read_ASC();
+            if (strlen((char*)data) > 0)
+            {
+                printf("%s", data);
+                fflush(stdout);
+            }
+            else Sleep(1);
+        } 
         break;
     case action_cmd_read_bin:
         data = (uint8_t*)GPIB_read_BIN();
@@ -1265,6 +1285,7 @@ void help()
     printf("                        response using gpib_query()\n");
     printf("             a      ... retrieve response with gpib_read_ASC()\n");
     printf("             c      ... continuous gpib_read_ASC() until next input\n");
+    printf("             d n    ... continuous gpib_read_ASC() N-times\n");
     printf("             b      ... retrieve response with gpib_read_BIN()\n");
     printf("             ?      ... read and print status\n");
     printf("             .      ... leave direct command mode\n");
@@ -1386,6 +1407,11 @@ DWORD WINAPI interactive_thread(LPVOID arg)
             else if ((ln[0] == 'q') && (strlen(ln) > 2)) action = action_cmd_query;
             else if (ln[0] == 'a') action = action_cmd_read_asc;
             else if (ln[0] == 'c') action = action_cmd_continuous_asc;
+            else if (ln[0] == 'd')
+            {
+                sscanf(ln + 2, "%d", &cmd_read_repeat_count);
+                action = action_cmd_repeated_asc;
+            }
             else if (ln[0] == 'b') action = action_cmd_read_bin;
             else if (ln[0] == '?') action = action_cmd_status;
         }
@@ -1404,9 +1430,9 @@ DWORD WINAPI interactive_thread(LPVOID arg)
     if (connected)
     {
         printf("!auto disconnect before exit\n");
-        disconnect();
+        if (ready_to_receive_command) disconnect();
     }
-    return 0;
+    exit(0);
 }
 
 void create_event_and_thread()
@@ -1497,6 +1523,7 @@ void main_action_loop()
         case action_cmd_query:
         case action_cmd_read_asc:
         case action_cmd_continuous_asc:
+        case action_cmd_repeated_asc:
         case action_cmd_read_bin:
             direct_command();
             break;
@@ -1521,7 +1548,7 @@ void interactive()
 }
 
 const char* test1argv[] = { "hpctrl", "-a", "16", "-s11", "-s12", "-s21", "-s22" };
-const char* test2argv[] = { "hpctrl", "-a", "16", "-i" };
+const char* test2argv[] = { "hpctrl", "-a", "19", "-i" };
 
 int test1argc = 7;
 int test2argc = 4;
