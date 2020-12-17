@@ -4,8 +4,8 @@ import data_validation
 
 
 class SweepGui:
-    def __init__(self, program):
-        self.p = program
+    def __init__(self, main_gui):
+        self.gui = main_gui
         self.create_sweep_gui()
 
     def create_sweep_gui(self):
@@ -14,7 +14,7 @@ class SweepGui:
         widget_port_font = tk_font.Font(family="Tw Cen MT", size=11)
         widget_button_font = tk_font.Font(family="Tw Cen MT", size=13)
 
-        sweep_frame = tk.LabelFrame(self.p.window, width=1000, height=3000, text="SWEEP", fg="#323338", bg='#f2f3fc',
+        sweep_frame = tk.LabelFrame(self.gui.window, width=1000, height=3000, text="SWEEP", fg="#323338", bg='#f2f3fc',
                                     font=widget_title_font, relief=tk.RIDGE)
         sweep_frame.grid(row=0, column=2, rowspan=8, sticky=tk.NW, padx=6, pady=(255, 0))
 
@@ -207,47 +207,28 @@ class SweepGui:
         else:
             print("bad input")
 
+
     def stop_measure(self):
         print("zastavujem meranie")
         self.run_button["text"] = "Run"
+        self.gui.program.adapter.end_measurement()
 
     def run_measure(self):
-        # TODO skoci do ineho stavu
-        print(" - mode:")
-        if self.continuous.get() == 1:
-            print("continuous")
-        else:
-            print("not continous")
+        # TODO zmena stavu
+        # TODO volanie všetkých metód
+        # TODO odosielať settings
 
         if self.autosave.get() == 1:
-            print("autosave")
-        else:
-            print("not autosave")
-
-        # print("")
-        # if self.freq_variable.get() == 0:
-        #     print("in MHz")
-        # else:
-        #     print("in GHz")
-        # print("start:", self.start_entry.get())
-        # print("stop:", self.stop_entry.get())
-        # print("points:", self.points_entry.get())
-        # print("")
-        # print(" - S parameters:")
-        # if self.s11.get() == 1:
-        #     print("S11")
-        # if self.s12.get() == 1:
-        #     print("S12")
-        # if self.s21.get() == 1:
-        #     print("S21")
-        # if self.s22.get() == 1:
-        #     print("S22")
+            self.gui.project.save()
 
         if self.continuous.get() == 1:
             self.run_button["text"] = "Stop"
 
         if self.continuous.get() == 0:
-            print(self.p.program.adapter.measure())
+            print(self.gui.program.adapter.measure())
+        else:
+            self.gui.program.adapter.start_measurement()
+
 
         # self.saveSettings()
 
@@ -262,7 +243,7 @@ class SweepGui:
             self.frame_last_button["state"] = tk.DISABLED
         else:
             self.frame_entry.delete(0, tk.END)
-            self.frame_entry.insert(tk.END, "0")  # TODO: aktualny frame
+            self.frame_entry.insert(tk.END, "0")  # TODO: aktuálny frame
             self.frame_entry["state"] = tk.NORMAL
             self.max_label["text"] = "/ 10"  # TODO: počet Frame
             self.frame_down_button["state"] = tk.NORMAL
