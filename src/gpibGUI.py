@@ -67,14 +67,12 @@ class GpibGui:
                 self.address_entry["bg"] = "white"
 
                 print("Pripájam sa na adresu: ", self.address_entry.get())
-                self.main_gui.program.adapter.connect(self.address_entry.get())
-                self.main_gui.program.gui.info.change_connect_label()
+                self.main_gui.program.queue_function(f"connect({self.address_entry.get()})")
             else:
                 print("oprav adresu, zly format")
                 self.address_entry["bg"] = "#d44242"
         else:
-            self.main_gui.program.adapter.disconnect()
-            self.main_gui.program.gui.info.change_connect_label()
+            self.main_gui.program.queue_function("disconnect()")
 
     def update_button_connected(self):
         print("Pripájam prístroj")
