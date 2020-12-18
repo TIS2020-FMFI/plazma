@@ -3,7 +3,7 @@ from calibGUI import CalibrationGui
 from gpibGUI import GpibGui
 from instStateGUI import InstStateGui
 from graphGUI import GraphsGui
-from projectGUI import ProjectGui
+from projectGUI import ProjectGui, InfoGui
 from sweepGUI import SweepGui
 
 
@@ -39,6 +39,9 @@ class Gui:
 
         # GRAPHS
         self.graphs = GraphsGui(self)
+
+        # INFO
+        self.info = InfoGui(self)
 
     def disable_buttons(self):
         self.gpib.disable()

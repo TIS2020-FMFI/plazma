@@ -4,8 +4,8 @@ import data_validation
 
 
 class GpibGui:
-    def __init__(self, program):
-        self.p = program
+    def __init__(self, main_gui):
+        self.main_gui = main_gui
         self.create_gpib_gui()
 
     def create_gpib_gui(self):
@@ -14,9 +14,9 @@ class GpibGui:
         widget_label_font = tkFont.Font(family="Tw Cen MT", size=13)
         widget_button_font = tkFont.Font(family="Tw Cen MT", size=13)
 
-        gpib_frame = tk.LabelFrame(self.p.window, text="GPIB", fg="#323338", bg='#f2f3fc',
+        gpib_frame = tk.LabelFrame(self.main_gui.window, text="GPIB", fg="#323338", bg='#f2f3fc',
                                    font=widget_title_font, relief=tk.RIDGE)
-        gpib_frame.grid(row=0, column=1, sticky=tk.N)
+        gpib_frame.grid(row=0, column=1, sticky=tk.N, pady=(0,10))
 
         address_label = tk.Label(gpib_frame, text="Address:", fg="#323338", bg='#f2f3fc', font=widget_label_font)
         address_label.grid(row=0, column=1, sticky=tk.W, padx=20)
@@ -32,7 +32,7 @@ class GpibGui:
         line_label.grid(row=1, column=0, columnspan=3, sticky=tk.W + tk.N, padx=10)
 
         connect_label = tk.Label(gpib_frame, text="Connect:", fg="#323338", bg="#f2f3fc", font=widget_label_font)
-        connect_label.grid(row=2, column=1, sticky=tk.W + tk.N, padx=10, pady=10)
+        connect_label.grid(row=2, column=1, sticky=tk.W + tk.N, padx=18, pady=10)
 
         self.connect_button = tk.Button(gpib_frame, text="ON", bg="#5bb38a", fg='#323338', font=widget_button_font)
         self.connect_button["command"] = self.start_connect
@@ -67,12 +67,14 @@ class GpibGui:
                 self.address_entry["bg"] = "white"
 
                 print("Pripájam sa na adresu: ", self.address_entry.get())
-                self.p.program.adapter.connect(self.address_entry.get())
+                self.main_gui.program.adapter.connect(self.address_entry.get())
+                self.main_gui.program.gui.info.change_connect_label()
             else:
                 print("oprav adresu, zly format")
                 self.address_entry["bg"] = "#d44242"
         else:
-            self.p.program.adapter.disconnect()
+            self.main_gui.program.adapter.disconnect()
+            self.main_gui.program.gui.info.change_connect_label()
 
     def update_button_connected(self):
         print("Pripájam prístroj")
