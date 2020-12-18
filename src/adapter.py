@@ -25,14 +25,14 @@ class Adapter:
 
         #####################################################
 
-        print('help', file=self.process.stdin)
-        self.process.stdin.flush()
-        time.sleep(1)
-
-        self.output = self.get_output(self.out_queue)
-        print("1" + self.output)
-
-        print('done')
+        # print('help', file=self.process.stdin)
+        # self.process.stdin.flush()
+        # time.sleep(1)
+        #
+        # self.output = self.get_output(self.out_queue)
+        # print("1" + self.output)
+        #
+        # print('done')
 
         #####################################################
 
@@ -60,9 +60,9 @@ class Adapter:
             Testing.address = address
             self.address = address
             self.connected = True
-            self.program.gui.gpib.update_button_connected()
-            return
+            return True
 
+        # TODO overenie konekcie a poslat spatnu vazbu
         print("connect " + address, file=self.process.stdin)
         self.process.stdin.flush()
         time.sleep(1)
@@ -74,7 +74,6 @@ class Adapter:
             Testing.connected = False
             Testing.address = None
             self.connected = False
-            self.program.gui.gpib.update_button_disconnected()
             return
 
         print("disconnect", file=self.process.stdin)
@@ -85,10 +84,13 @@ class Adapter:
 
     def get_state(self):
         if self.testing:
-            print('GETSTATE')
-            time.sleep(2)
-
-            return Testing.state
+            if Testing.connected:
+                print('posielam do pristroja: GETSTATE')
+                time.sleep(2)  # iba kvoli testu
+                return Testing.state
+            else:
+                print('Error - Not connected')
+                return
 
         try:
             # dostane OSError ak nie je connectnuty - teda ak proces skoncil(treba zmenit hpctrl)
@@ -105,8 +107,12 @@ class Adapter:
             print("Ummmmmmmmm chces poslat prazdny stav????")
 
         if self.testing:
-            Testing.state = "Zmeneny" + Testing.state
-            return
+            if Testing.connected:
+                Testing.state = "Zmeneny" + Testing.state
+                return True
+            else:
+                print('Error - Not connected')
+                return False
 
         print("SETSTATE\n" + state, file=self.process.stdin)
         self.process.stdin.flush()
@@ -114,7 +120,10 @@ class Adapter:
 
     def preset(self):
         if self.testing:
-            reset()
+            if Testing.connected:
+                reset()
+            else:
+                print('Error - Not connected')
             return
 
         print("RESET", file=self.process.stdin)
@@ -127,7 +136,11 @@ class Adapter:
 
     def get_calibration(self):
         if self.testing:
-            return Testing.calib
+            if Testing.connected:
+                return Testing.calib
+            else:
+                print('Error - Not connected')
+                return
 
         print("GETCALIB", file=self.process.stdin)
         self.process.stdin.flush()
@@ -136,7 +149,10 @@ class Adapter:
 
     def set_calibration(self, calibration):
         if self.testing:
-            Testing.calib = "Zmenena" + Testing.calib
+            if Testing.connected:
+                Testing.calib = "Zmenena" + Testing.calib
+            else:
+                print('Error - Not connected')
             return
 
         print("SETCALIB\n" + calibration, file=self.process.stdin)
@@ -182,14 +198,17 @@ class Adapter:
         self.process.stdin.flush()
         time.sleep(1)
 
-    def set_parameters(self, parameters): # parameters = string S11 .. S22
+    def set_parameters(self, parameters):  # parameters = string S11 .. S22
         print(parameters, file=self.process.stdin)
         self.process.stdin.flush()
         time.sleep(1)
 
     def measure(self):
         if self.testing:
-            return Testing.data1
+            if Testing.connected:
+                return Testing.data1
+            else:
+                print('Error - Not connected')
 
         print("MEASURE", file=self.process.stdin)
         self.process.stdin.flush()

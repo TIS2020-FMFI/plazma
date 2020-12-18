@@ -69,11 +69,12 @@ class InstStateGui:
 
     def save_state(self):
         print("ukladám stav prístroja do pamäte")
-        self.main_gui.program.project.set_state(self.main_gui.program.adapter.get_state())
-        self.main_gui.info.change_state_label()
+        # self.main_gui.program.project.set_state(self.main_gui.program.adapter.get_state())
+        self.main_gui.program.queue_function("save_state()")
 
     def recall_state(self):
         # TO DO: Načítať uložený stav do prístroja
         print("načítavam stav z pamäte do prístroja")
-        self.main_gui.program.adapter.set_state(self.main_gui.program.project.get_state())
+        self.main_gui.program.queue_function("recall_state()")
+        # self.main_gui.program.adapter.set_state(self.main_gui.program.project.get_state())
         print("Posielas stav: \n" + self.main_gui.program.project.get_state())
