@@ -5,6 +5,7 @@ class Project:
         self.program = program
 
         self.state = None   # string
+
         self.calibration = None  # string
         self.type = None  # string ale iba tie typy co mozu byt
         # self.port1 = 0
@@ -31,7 +32,7 @@ class Project:
     #     # poslat do pristroja
     #     # nastavit self.port1 = port1...
     #     pass
-    
+ 
     def reset_data(self, param_11 = False, param_12 = False, param_21 = False, param_22 = False):
         # zavolá sa, po stlačení tlačidla run, bude sa volať z Program.py, ktorý bude tiež volať metódu z adapter.py 
         self.data = Data(param_11, param_12, param_21, param_22)
@@ -95,7 +96,4 @@ class Project:
 
 ##        def set_data_type(self, type):
 ##            pass
-
-
-
 
