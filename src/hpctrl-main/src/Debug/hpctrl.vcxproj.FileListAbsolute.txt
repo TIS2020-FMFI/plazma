@@ -1,0 +1,2 @@
+D:\Fakulta\3_rocnik\TIS\zzzzProjekt\plazma - Copy\src\hpctrl-main\src\Debug\hpctrl.exe
+D:\Fakulta\3_rocnik\TIS\zzzzProjekt\plazma - Copy\src\hpctrl-main\src\Debug\hpctrl.pdb

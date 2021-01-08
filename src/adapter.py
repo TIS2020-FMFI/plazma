@@ -2,26 +2,31 @@ import time
 import subprocess
 import threading
 import queue
+import testing
 
 
 class Adapter:
+    MAX_RESPONSE_TIME = 10.0  # ako dlho caka na pristroj aby odpovedal, v sekundach
+    MAX_HPCTRL_RESPONSE_TIME = 0.05  # ako dlho caka na program HPCTRL aby vyprintoval dalsi riadok, v sekundach
+    # vzdy defaultne vecie ako 0.05, pre pomalsie PC sa da zvacsit ak nieco pada
+
     def __init__(self, program):
         self.testing = True
+        # self.testing = False
+        if self.testing:
+            self.test = testing.Test()
 
         self.program = program
         self.address = None
         self.connected = False
+        # self.frequency_format = "GHz"
+
         self.out_queue = None
-        self.in_queue = None
-
-        self.process = subprocess.Popen(["hpctrl-main/src/Debug/hpctrl.exe", "-i"], stdin=subprocess.PIPE,
-                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-        self.out_queue = queue.Queue()
-        self.out_thread = threading.Thread(target=self.enqueue_output, args=(self.process.stdout, self.out_queue))
-        self.out_thread.daemon = True
-        self.out_thread.start()
-
-        self.frequency_format = "GHz"
+        self.process = None
+        self.out_thread = None
+        self.out_thread_killed = False
+        self.restart_hpctrl()
+        # self.in_queue = None
 
         #####################################################
 
@@ -29,106 +34,202 @@ class Adapter:
         # self.process.stdin.flush()
         # time.sleep(1)
         #
-        # self.output = self.get_output(self.out_queue)
-        # print("1" + self.output)
+        # output = self.get_output()
+        # print("SKONCIL GET_OUTPUT HELP: " + output)
         #
         # print('done')
 
         #####################################################
 
-    def enqueue_output(self, out, queue):
+    def enqueue_output(self):
+        out = self.process.stdout
         for line in iter(out.readline, b''):
-            queue.put(line)
-            # print("enqueue" + line)
-        out.close()
-        time.sleep(1)
+            if self.out_thread_killed:
+                # out.close()
+                return
+            if line:
+                self.out_queue.put(line)
+                # print("enqueue" + line)
+            else:
+                time.sleep(self.MAX_HPCTRL_RESPONSE_TIME)
+            # nekonecny cyklus, thread vzdy cita z pipe a hadze do out_queue po riadkoch
+        # out.close()
+        # time.sleep(1)
 
-    def get_output(self, out_queue):
-        outStr = ''
+    def get_output(self):
+        out_str = ''
+        slept = False
+        counter = 0
+        max_cycles = max(self.MAX_RESPONSE_TIME / max(self.MAX_HPCTRL_RESPONSE_TIME, 0.05), 2)
+
+        while out_str.strip() == "" or slept:
+            print("zacinam")
+            try:
+                while True:
+                    print("kek, out_str: \n" + out_str)
+                    out_str += self.out_queue.get_nowait()
+                    slept = False
+                    counter = 0
+
+            except queue.Empty:
+                print("empty queue, slept: " + str(slept))
+                if slept and out_str.strip() != "":
+                    return out_str
+                time.sleep(self.MAX_HPCTRL_RESPONSE_TIME)   # uistenie sa ze na 100% vytiahnem cely vystup, a nie iba cast
+                slept = True
+                counter += 1
+                print(counter)
+                if counter > max_cycles:
+                    print(f"Presiel som {max_cycles} cyklov(minimalne {self.MAX_RESPONSE_TIME}s)"
+                          + " a nedostal som odpoved z pristroja")
+                    return None
+        print("Error pri citani outputu - sem by sa nikdy nemalo dostat")
+
+    def hpctrl_is_responsive(self):
+        if not self.send("ping"):
+            return False
+
+        out = self.get_output()
+        if out is None:
+            self.restart_hpctrl()  # restartujem ho, lebo nereaguje
+            return False
+
+        if out.strip() == "!unknown command ping":
+            return True
+        # out = out.split(' ')
+        # if out[0] == "!unknown" and out[1] == "command":
+        #     return True
+
+        print("HPCTRL returned something unexpected")
+        self.restart_hpctrl()
+        return False
+
+    def send(self, message):
         try:
-            while True:
-                # print("kek ")
-                outStr += out_queue.get_nowait()
+            print(message, file=self.process.stdin)
+            self.process.stdin.flush()
+            print("Poslal som: " + message)
+            time.sleep(0.5)  # aby HPCTRL stihol spracovat prikaz, inak vypisuje !not ready, try again later (ping)
+            return True
+        except OSError:
+            print("Padol HPCTRL")
+            self.restart_hpctrl()
+            return False
 
-        except queue.Empty:
-            # print("empty queue")
-            return outStr
+    def restart_hpctrl(self):
+        # TODO NEFUNGUJE po 4h debugovania :(
+        print("RESTARTUJEM HPCTRL")
+
+        if self.out_thread is not None:
+            self.out_thread_killed = True
+            self.out_thread.join()
+            print("out_thread joined")
+            self.out_thread = None
+        if self.process is not None:
+            self.process.kill()
+            # self.process.terminate()
+            self.process = None
+        self.out_queue = None
+
+        # TODO napisat do GUI spatnu vazbu ak je zla cesta...
+        # try:
+        self.process = subprocess.Popen(["hpctrl-main/src/Debug/hpctrl.exe", "-i"], stdin=subprocess.PIPE,
+                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        # except:
+        #     pass
+
+        self.out_queue = queue.Queue()
+
+        self.out_thread = threading.Thread(target=self.enqueue_output)
+        self.out_thread.daemon = True
+        self.out_thread.start()
 
     def connect(self, address):
         if self.testing:
-            Testing.connected = True
-            Testing.address = address
-            self.address = address
-            self.connected = True
-            return True
+            if self.test.connect(address):
+                self.address = address
+                self.connected = True
+                return True
+            else:
+                return False
 
-        # TODO overenie konekcie a poslat spatnu vazbu
-        print("connect " + address, file=self.process.stdin)
-        self.process.stdin.flush()
-        time.sleep(1)
-        self.address = address
-        self.connected = True
+        if self.send("CONNECT " + str(address)):
+            if self.hpctrl_is_responsive():
+                self.address = address
+                self.connected = True
+                return True
+
+        print("Error s HPCTRL pri connektuvani")
+        return False
 
     def disconnect(self):
         if self.testing:
-            Testing.connected = False
-            Testing.address = None
+            self.test.disconnect()
             self.connected = False
+            self.address = None  # potrebujem adresu vobec si pametat?
             return
 
-        print("disconnect", file=self.process.stdin)
-        self.process.stdin.flush()
-        time.sleep(1)
+        self.send("DISCONNECT")
+        # disconnect prikaz nevypisuje nic ak uz bol
+
         self.address = None
         self.connected = False
 
     def get_state(self):
         if self.testing:
-            if Testing.connected:
-                print('posielam do pristroja: GETSTATE')
-                time.sleep(2)  # iba kvoli testu
-                return Testing.state
+            if self.connected:
+                print('GETSTATE = 2s cakanie')
+                time.sleep(2)  # iba kvoli testovaniu ci sa GUI zamrzne
+                print('GETSTATE skoncil')
+                return self.test.get_state()
             else:
                 print('Error - Not connected')
-                return
+                return False
 
-        try:
-            # dostane OSError ak nie je connectnuty - teda ak proces skoncil(treba zmenit hpctrl)
-            print('GETSTATE', file=self.process.stdin)
-            self.process.stdin.flush()
-            time.sleep(1)
-            return self.get_output(self.out_queue)
-        except OSError:
-            print("NOPE")
+        if self.connected:
+            if self.send("GETSTATE"):
+                return self.get_output()
+            else:
+                return None
+        return False
 
     def set_state(self, state):  # state = string
         # TODO ked sa nieco zle posle...
         if state is None or state == "":
-            print("Ummmmmmmmm chces poslat prazdny stav????")
+            print("Trying to send state, but state is empty")
+            return False
 
         if self.testing:
-            if Testing.connected:
-                Testing.state = "Zmeneny" + Testing.state
+            if self.connected:
+                self.test.set_state("------Toto je stav, ktory bol poslaty do pristroja: "
+                                    + self.program.project.get_state())
                 return True
             else:
                 print('Error - Not connected')
                 return False
 
-        print("SETSTATE\n" + state, file=self.process.stdin)
-        self.process.stdin.flush()
-        time.sleep(1)
+        if self.connected:
+            if self.send("SETSTATE\n" + state):  # neviem ci takto pojde alebo musim dat dalsi send()?
+                return True
+            else:
+                return None
+        return False
 
     def preset(self):
         if self.testing:
-            if Testing.connected:
-                reset()
+            if self.connected:
+                self.test.reset()
+                return True
             else:
                 print('Error - Not connected')
-            return
+                return False
 
-        print("RESET", file=self.process.stdin)
-        self.process.stdin.flush()
-        time.sleep(1)
+        if self.connected:
+            if self.send("RESET"):
+                return True
+            else:
+                return None
+        return False
 
     def get_calibration_type(self):
         # TODO zistit ako co
@@ -136,28 +237,35 @@ class Adapter:
 
     def get_calibration(self):
         if self.testing:
-            if Testing.connected:
-                return Testing.calib
+            if self.connected:
+                time.sleep(2)  # iba kvoli testovaniu ci sa GUI zamrzne
+                return self.test.get_calib()
             else:
                 print('Error - Not connected')
                 return
 
-        print("GETCALIB", file=self.process.stdin)
-        self.process.stdin.flush()
-        time.sleep(1)
-        return self.get_output(self.out_queue)
+        if self.connected:
+            if self.send("GETCALIB"):
+                return self.get_output()
+            else:
+                return None
+        return False
 
     def set_calibration(self, calibration):
         if self.testing:
-            if Testing.connected:
-                Testing.calib = "Zmenena" + Testing.calib
+            if self.connected:
+                self.test.set_calib("----Zmenena kalibracia: " + self.program.project.get_calibration())
+                return True
             else:
                 print('Error - Not connected')
-            return
+                return False
 
-        print("SETCALIB\n" + calibration, file=self.process.stdin)
-        self.process.stdin.flush()
-        time.sleep(1)
+        if self.connected:
+            if self.send("SETCALIB\n" + calibration):  # neviem ci takto pojde alebo musim dat dalsi send()?
+                return True
+            else:
+                return None
+        return False
 
     def set_port1_length(self, value):
         pass
@@ -168,62 +276,258 @@ class Adapter:
     def set_velocity_factor(self, value):
         pass
 
-    def set_frequency_unit(self, unit):
-        # TODO kontrola
-        self.frequency_unit = unit
+    def set_frequency_unit(self):  # asi nebude v adaptery? bar ni v tomto tvare
+        unit = self.program.settings.get_freq_unit.strip()
+        if unit.upper() not in ("GHZ", "MHZ"):
+            print("Zla jednotka frekvencie !!!")
+            return False
 
-    def set_start_frequency(self, value):
-        print("CMD STAR " + value + " " + self.frequency_unit, file=self.process.stdin)
-        # TODO overit ci toto funguje takto
-        print("\n.", file=self.process.stdin)
-        self.process.stdin.flush()
-        time.sleep(1)
+        if self.testing:
+            if self.connected:
+                self.test.set_freq_unit(unit)
+                return True
+            else:
+                return False
 
-    def set_stop_frequency(self, value):
-        print("CMD STOP " + value + " " + self.frequency_unit, file=self.process.stdin)
-        # TODO overit ci toto funguje takto
-        print("\n.", file=self.process.stdin)
-        self.process.stdin.flush()
-        time.sleep(1)
+        if self.connected:
+            if self.send("FREQ " + unit):
+                return True
+            else:
+                return None
+        return False
 
-    def set_points(self, value):
-        print("CMD POIN " + value, file=self.process.stdin)
-        # TODO overit ci toto funguje takto
-        print("\n.", file=self.process.stdin)
-        self.process.stdin.flush()
-        time.sleep(1)
+    def set_start_frequency(self):
+        unit = self.program.settings.get_freq_unit.strip()
+        value = self.program.settings.get_freq_start()
+        if self.testing:
+            if self.connected:
+                if unit.upper() == "GHZ":
+                    value *= 1.0e+09
+                elif unit.upper() == "MHZ":
+                    value *= 1.0e+06
+                else:
+                    print("Zla jednotka frekvencie !!!")
+                    return False
+                self.test.set_min_freq(value)
+                return True
+            else:
+                return False
 
-    def set_data_format(self, format):  # format = string RI/MA/DB
-        print("FMT " + format, file=self.process.stdin)
-        self.process.stdin.flush()
-        time.sleep(1)
+        if self.connected:
+            if self.send("CMD s STAR " + value + " " + unit + "\n."):  # este overit ci mozem takto z CMD ist von
+                return True
+            else:
+                return None
+        return False
 
-    def set_parameters(self, parameters):  # parameters = string S11 .. S22
-        print(parameters, file=self.process.stdin)
-        self.process.stdin.flush()
-        time.sleep(1)
+    def set_stop_frequency(self):
+        unit = self.program.settings.get_freq_unit.strip()
+        value = self.program.settings.get_freq_stop()
+        if self.testing:
+            if self.connected:
+                if unit.upper() == "GHZ":
+                    value *= 1.0e+09
+                elif unit.upper() == "MHZ":
+                    value *= 1.0e+06
+                else:
+                    print("Zla jednotka frekvencie !!!")
+                    return False
+                self.test.set_max_freq(value)
+                return True
+            else:
+                return False
+
+        if self.connected:
+            if self.send("CMD s STOP " + value + " " + unit + "\n."):  # este overit ci mozem takto z CMD ist von
+                return True
+            else:
+                return None
+        return False
+
+    def set_points(self):
+        value = self.program.settings.get_points()
+        if self.testing:
+            if self.connected:
+                self.test.set_points(value)
+                return True
+            else:
+                return False
+
+        if self.connected:
+            if self.send("CMD s POIN " + value + "\n."):  # este overit ci mozem takto z CMD ist von
+                return True
+            else:
+                return None
+        return False
+
+    def set_data_format(self):  # format = string RI/MA/DB
+        # nastavi format v hpctrl, nie v pristroji, nevypisuje 'not connected'
+        p_format = self.program.settings.get_parameter_format().strip().upper()
+        if p_format not in ("RI", "MA", "DB"):
+            print("Zly format dat !!!")
+            return False
+
+        if self.testing:
+            if self.connected:
+                self.test.format = p_format  # nikdy sa negetuje asi
+                return True
+            else:
+                return False
+
+        if self.connected:
+            if self.send("FMT " + p_format):
+                return True
+            else:
+                return None
+        return False
+
+    def set_parameters(self):  # parameters = string S11 .. S22
+        # nastavi parametre v hpctrl, nie v pristroji, nevypisuje 'not connected'
+        parameters = self.program.settings.get_parameters().strip().upper()
+        for param in parameters.split():
+            if param not in ("S11", "S12", "S21", "S22"):
+                print("Zle napisane parametre !!!")
+                return
+
+        if self.testing:
+            if self.connected:
+                self.test.params = parameters  # nikdy sa negetuje asi
+                return True
+            else:
+                return False
+
+        if self.connected:
+            if self.send(parameters):
+                return True
+            else:
+                return None
+        return False
+
+    def prepare_measurement(self):
+        if self.testing:
+            self.test.set_freq_unit(self.program.settings.get_freq_unit())
+            self.test.set_min_freq(self.program.settings.get_freq_start())
+            self.test.set_max_freq(self.program.settings.get_freq_stop())
+            self.test.set_points(self.program.settings.get_points())
+            self.test.params = self.program.settings.get_parameters()
+            self.test.format = self.program.settings.get_parameter_format()
+            return True
+
+        functions = [self.set_frequency_unit,
+                     self.set_start_frequency,
+                     self.set_stop_frequency,
+                     self.set_points,
+                     self.set_data_format,
+                     self.set_parameters]
+
+        for f in functions:
+            result = f()
+            if not result:  # false alebo none
+                return result
+        return True
+
+    # self.set_frequency_unit()
+    # self.set_start_frequency()
+    # self.set_stop_frequency()
+    # self.set_points()
+    # self.set_data_format()
+    # self.set_parameters()
 
     def measure(self):
         if self.testing:
-            if Testing.connected:
-                return Testing.data1
+            if self.connected:
+                return_code = self.prepare_measurement()
+                if not return_code:  # false alebo None
+                    return return_code
+
+                print("Zacinam meranie s hodnotami: ")
+                print("-------------------------------")
+                print("jednotka freq: " + self.test.freq_unit)
+                print("start freq: " + str(self.test.min_freq))
+                print("stop freq: " + str(self.test.max_freq))
+                print("points: " + str(self.test.points))
+                print("parameters: " + str(self.test.params))
+                print("format: " + self.test.format)
+                print("-------------------------------")
+                time.sleep(2)  # iba na kvoli simulacii testovania
+
+                time.sleep(0.1)  # musim pockat aby mi nieco prislo,
+                # este aby som si bol isty ze mi hpctrl posle naraz cele meranie
+                return self.test.get_data()
             else:
                 print('Error - Not connected')
+                return False
 
-        print("MEASURE", file=self.process.stdin)
-        self.process.stdin.flush()
-        time.sleep(1)
-        return self.get_output(self.out_queue)
+        if self.connected:
+            return_code = self.prepare_measurement()
+            if not return_code:  # false alebo None
+                return return_code
+
+            if self.send("MEASURE"):
+                return self.get_output()
+            else:
+                return None
+        return False
 
     def start_measurement(self):
-        print("M+", file=self.process.stdin)
-        self.process.stdin.flush()
-        time.sleep(1)
+        if self.testing:
+            if self.connected:
+                return_code = self.prepare_measurement()
+                if not return_code:  # false alebo None
+                    return return_code
+
+                print("Zacinam meranie s hodnotami: ")
+                print("-------------------------------")
+                print("jednotka freq: " + self.test.freq_unit)
+                print("start freq: " + str(self.test.min_freq))
+                print("stop freq: " + str(self.test.max_freq))
+                print("points: " + str(self.test.points))
+                print("parameters: " + str(self.test.params))
+                print("format: " + self.test.format)
+                print("-------------------------------")
+
+                # posles M+
+                # zavolas get_output.. cakas.
+                return True  # self.test.get_data()
+            else:
+                print('Error - Not connected')
+                return False
+
+        if self.connected:
+            return_code = self.prepare_measurement()
+            if not return_code:  # false alebo None
+                return return_code
+
+            if self.send("M+"):
+                return True
+            else:
+                return None
+        return False
 
     def end_measurement(self):
-        print("M-", file=self.process.stdin)
-        self.process.stdin.flush()
-        time.sleep(1)
+        if self.testing:
+            if self.connected:
+                self.test.data_order_number = 0
+                print("Poslal som M- do HPCTRL")
+            else:
+                return False
+
+        if self.connected:
+            if self.send("M-"):
+                return True
+            else:
+                return None
+        return False
+
+    def retrieve_measurement_data(self):
+        if self.testing:
+            time.sleep(2)
+            data = self.test.get_data(more_measurement=True)
+            if data is not None:
+                self.test.data_order_number += 1
+            return data
+
+        return self.get_output()
 
 
 # open_terminal()
@@ -232,228 +536,6 @@ class Adapter:
 # ping()
 # restart_connection()
 # time.sleep() pouzivat vsade po kazdom prikaze alebo nejako inak?
-
-# ---------- Testing:  -------------
-
-def reset():
-    Testing.state = Testing.default_state
-    Testing.points = Testing.default_points
-    Testing.min_freq = Testing.default_min_freq
-    Testing.max_freq = Testing.default_max_freq
-    print("Vykonávam preset prístroja")
-
-
-class Testing:
-    address = None
-    connected = False
-    state = default_state = """23410a42
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-000000000000000000000000000000000000000000000000000000004845574c455454205041434b
-4152442c38373533432c302c342e3133000400000000000000000011a00080210200450100401004
-2020082400028040007000000010000800000000000000000000004060002000000000000800f205
-400040e01004042000000000000000000000000202000000300c0100140004000000000000000000
-11a00080210200450100101004202008240002804000000000000000080000000000000000000000
-4060002000000000000800f205400040e01004042000000000000000000000000202000000300c01
-0014feffffffffffffffffd7ffffffffffff7fe0ffff07060b00f07ff1f17ee8ff3fe00804112404
-f8ffffffffffffffffffffffff3ff0fffffffffffcffffffffffffffffbfffff411efcffffffffff
-fffffffffff9fffffffffffbffff030050000004500000045a0000075a00000755e63ce655e63ce6
-40000001400000014000000140000001666666fd666666fd4000000140000001666666fe666666fe
-666666fe666666fe5000000350000003500000035000000350000003500000035000000350000003
-50000003500000030000008100000081000000810000008150000003500000035000000350000003
-00000081000000810000008100000081000000810000008140000001400000014000000140000001
-00000081000000814000000140000001000000810000008100000081000000810000008100000081
-00000081000000810000008100000081000000810000008100000081000000810000008100000081
-00000081000000810000008100000081000000810000008103000000000000008101808080808202
-80808080808080808080808080800000008100000081000000810000008100000081000000810000
-008100000081ffffffff00020000000100000000ffff320101000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000320000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000000a00000000000000000000000a000000000000000000000001020102030401020506
-07070707ffff000000003b9aca00000000003b9aca00ffff000000003b9aca00000000003b9aca00
-ffff000000003b9aca00000000003b9aca00ffffafffff03afffff03ffff5000000350000003ffff
-afffff04afffff04ffff5000000450000004ffffaa19c3e7aa19c3e7ffff55e63ce855e63ce8ffff
-0000008100000081ffff666667fd666667fdffffaa19c3e6aa19c3e6ffff55e63ce755e63ce7ffff
-000000810000008100010000008100000081ffff0000008100000081ffff00c900c9ffff0bb80bb8
-ffff00010001ffff00000081000000810001000000003b9aca00000000003b9aca00000100000000
-3b9aca00000000003b9aca000001000000003b9aca00000000003b9aca000001000000003b9aca00
-000000003b9aca000001000000000000000000000000000000000000000000810000008100010000
-00000001000100010001000000000000000b000b0000600000036000000300000000008100000081
-0000001000100000400000014000000100000001000100000000000000000000000000009fffff02
-9fffff020000640000066400000600009fffff029fffff0200000000000000000000000000000000
-000000000000008100000081000000000000ffff00000000ffff00010001ffff00000000ffff0000
-0000ffff0000008100000081ffff0000008100000081ffff0000008100000081ffff000000810000
-0081ffff4000000140000001ffff6400000664000006ffff00000000000000000000000000000000
-ffff00000000000000000000000000000000ffff4000000540000005ffff00000000000000000000
-000000000000ffff5000000450000004ffff4000000540000005"""
-    calib = """23410a42
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-000000000000000000000000000000000000000000000000000000004845574c455454205041434b
-4152442c38373533432c302c342e3133000400000000000000000011a00080210200450100401004
-2020082400028040007000000010000800000000000000000000004060002000000000000800f205
-400040e01004042000000000000000000000000202000000300c0100140004000000000000000000
-11a00080210200450100101004202008240002804000000000000000080000000000000000000000
-4060002000000000000800f205400040e01004042000000000000000000000000202000000300c01
-0014feffffffffffffffffd7ffffffffffff7fe0ffff07060b00f07ff1f17ee8ff3fe00804112404
-f8ffffffffffffffffffffffff3ff0fffffffffffcffffffffffffffffbfffff411efcffffffffff
-fffffffffff9fffffffffffbffff030050000004500000045a0000075a00000755e63ce655e63ce6
-40000001400000014000000140000001666666fd666666fd4000000140000001666666fe666666fe
-666666fe666666fe5000000350000003500000035000000350000003500000035000000350000003
-50000003500000030000008100000081000000810000008150000003500000035000000350000003
-00000081000000810000008100000081000000810000008140000001400000014000000140000001
-00000081000000814000000140000001000000810000008100000081000000810000008100000081
-00000081000000810000008100000081000000810000008100000081000000810000008100000081
-00000081000000810000008100000081000000810000008103000000000000008101808080808202
-80808080808080808080808080800000008100000081000000810000008100000081000000810000
-008100000081ffffffff00020000000100000000ffff320101000000000000000000000000000000
-00000000000000000000000000000000000000000000000000000000000000000000320000000000
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000000a00000000000000000000000a000000000000000000000001020102030401020506
-07070707ffff000000003b9aca00000000003b9aca00ffff000000003b9aca00000000003b9aca00
-ffff000000003b9aca00000000003b9aca00ffffafffff03afffff03ffff5000000350000003ffff
-afffff04afffff04ffff5000000450000004ffffaa19c3e7aa19c3e7ffff55e63ce855e63ce8ffff
-0000008100000081ffff666667fd666667fdffffaa19c3e6aa19c3e6ffff55e63ce755e63ce7ffff
-000000810000008100010000008100000081ffff0000008100000081ffff00c900c9ffff0bb80bb8
-ffff00010001ffff00000081000000810001000000003b9aca00000000003b9aca00000100000000
-3b9aca00000000003b9aca000001000000003b9aca00000000003b9aca000001000000003b9aca00
-000000003b9aca000001000000000000000000000000000000000000000000810000008100010000
-00000001000100010001000000000000000b000b0000600000036000000300000000008100000081
-0000001000100000400000014000000100000001000100000000000000000000000000009fffff02
-9fffff020000640000066400000600009fffff029fffff0200000000000000000000000000000000
-000000000000008100000081000000000000ffff00000000ffff00010001ffff00000000ffff0000
-0000ffff0000008100000081ffff0000008100000081ffff0000008100000081ffff000000810000
-0081ffff4000000140000001ffff6400000664000006ffff00000000000000000000000000000000
-ffff00000000000000000000000000000000ffff4000000540000005ffff00000000000000000000
-000000000000ffff5000000450000004ffff4000000540000005"""
-    params = ""
-    format = ""
-    points = default_points = 201
-    min_freq = default_min_freq = 1.000000e+09  # Hz
-    max_freq = default_max_freq = 2.000000e+09  # Hz
-
-    # !  Min freq: 1.000000e+09 Hz
-    # !  Max freq: 1.100000e+09 Hz
-    # !    Points: 51
-    # !    Params: S11 S22
-    data1 = """! S11 sweep finished in 1734 ms
-! S22 sweep finished in 601 ms
-! Touchstone 1.1 file saved by HPCTRL.EXE
-! 1. 12. 2020 16:23:49
-!
-!    Source: HEWLETT PACKARD,8753C,0,4.13
-!  Min freq: 1.000000e+09 Hz
-!  Max freq: 1.100000e+09 Hz
-!    Points: 51
-!    Params: S11 S22
-!
-!!!!!
-# GHZ S RI R 50
-1.0000000000000000 0.765991 0.518951 0.186218 -0.879913
-1.0020000000000000 0.765839 0.514709 0.183899 -0.880737
-1.0040000000000000 0.771332 0.510559 0.183685 -0.877106
-1.0060000000000000 0.773041 0.506470 0.180725 -0.878052
-1.0080000000000000 0.774414 0.502411 0.177673 -0.876648
-1.0100000000000000 0.776550 0.499268 0.176208 -0.876556
-1.0120000000000000 0.780518 0.495880 0.175415 -0.877258
-1.0140000000000000 0.782532 0.491119 0.172302 -0.875916
-1.0160000000000000 0.784515 0.487610 0.168549 -0.874908
-1.0180000000000000 0.786530 0.482880 0.169342 -0.872650
-1.0200000000000000 0.790619 0.480255 0.167267 -0.873413
-1.0220000000000000 0.791504 0.475952 0.163116 -0.873840
-1.0240000000000000 0.793976 0.471405 0.162445 -0.873077
-1.0260000000000000 0.796631 0.468079 0.159912 -0.873444
-1.0280000000000000 0.798920 0.463806 0.158722 -0.872009
-1.0300000000000000 0.800659 0.460358 0.156097 -0.872131
-1.0320000000000000 0.803650 0.456390 0.154205 -0.871643
-1.0340000000000000 0.805786 0.451569 0.153381 -0.869568
-1.0360000000000000 0.807922 0.448151 0.152161 -0.869873
-1.0380000000000000 0.809753 0.442963 0.148712 -0.869110
-1.0400000000000000 0.812500 0.440704 0.147797 -0.868835
-1.0420000000000000 0.816010 0.436707 0.145844 -0.870819
-1.0440000000000000 0.817291 0.432129 0.143677 -0.868225
-1.0460000000000000 0.819061 0.427429 0.142487 -0.867218
-1.0480000000000000 0.821655 0.424164 0.138519 -0.868042
-1.0500000000000000 0.825317 0.419678 0.137848 -0.868073
-1.0520000000000000 0.826874 0.416718 0.135986 -0.866730
-1.0540000000000000 0.827942 0.412628 0.132324 -0.866394
-1.0560000000000000 0.831573 0.406738 0.132599 -0.865662
-1.0580000000000001 0.831726 0.403137 0.129639 -0.865936
-1.0600000000000001 0.836212 0.397156 0.128693 -0.864899
-1.0620000000000001 0.837128 0.396301 0.126984 -0.864716
-1.0640000000000001 0.837891 0.390533 0.124146 -0.865112
-1.0660000000000001 0.841431 0.385162 0.124237 -0.863220
-1.0680000000000001 0.843842 0.381378 0.121216 -0.862732
-1.0700000000000001 0.846039 0.377411 0.119232 -0.862427
-1.0720000000000001 0.846283 0.373047 0.117249 -0.862549
-1.0740000000000001 0.849854 0.369934 0.113312 -0.861481
-1.0760000000000001 0.852142 0.364655 0.113037 -0.862061
-1.0780000000000001 0.852570 0.360443 0.110962 -0.860596
-1.0800000000000001 0.854309 0.355103 0.109741 -0.860596
-1.0820000000000001 0.855621 0.351105 0.109009 -0.859772
-1.0840000000000001 0.856903 0.347504 0.107361 -0.858246
-1.0860000000000001 0.860718 0.342804 0.105072 -0.859253
-1.0880000000000001 0.863739 0.338959 0.103821 -0.857025
-1.0900000000000001 0.864349 0.333405 0.102478 -0.857117
-1.0920000000000001 0.863770 0.329712 0.099670 -0.856812
-1.0940000000000001 0.866730 0.325409 0.099518 -0.856140
-1.0960000000000001 0.869263 0.319794 0.098145 -0.854675
-1.0980000000000001 0.869232 0.317108 0.096375 -0.854401
-1.1000000000000001 0.870544 0.311981 0.095337 -0.853607"""
 
 
 

@@ -34,7 +34,8 @@ class InstStateGui:
         self.recall_state_button["state"] = tk.DISABLED
 
     def preset(self):
-        self.main_gui.program.adapter.preset()
+        self.main_gui.program.queue_function("preset()")
+        # self.main_gui.program.adapter.preset()
         widget_title_font = tkFont.Font(family="Tw Cen MT", size=3)
 
         root = tk.Tk()
@@ -48,7 +49,6 @@ class InstStateGui:
         reset["font"] = widget_title_font
         reset.place(x=5, y=7)
         root.overrideredirect(1)
-
 
         threading.Timer(1.0, root.destroy).start()
 
@@ -68,13 +68,12 @@ class InstStateGui:
         self.recall_state_button["state"] = tk.NORMAL
 
     def save_state(self):
-        print("ukladám stav prístroja do pamäte")
+        print("GUI:ukladám stav prístroja do pamäte")
         # self.main_gui.program.project.set_state(self.main_gui.program.adapter.get_state())
         self.main_gui.program.queue_function("save_state()")
 
     def recall_state(self):
         # TO DO: Načítať uložený stav do prístroja
-        print("načítavam stav z pamäte do prístroja")
+        print("GUI:načítavam stav z pamäte do prístroja")
         self.main_gui.program.queue_function("recall_state()")
         # self.main_gui.program.adapter.set_state(self.main_gui.program.project.get_state())
-        print("Posielas stav: \n" + self.main_gui.program.project.get_state())

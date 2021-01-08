@@ -38,6 +38,7 @@ class ProjectGui:
         name = self.project_name_entry.get()
         description = self.project_descrip_text.get(1.0, tk.END)
 
+        # TODO if not self.main_gui.program.project.exists_data(): set_settings...
         self.main_gui.program.file_manager.save_project(path, name, description)
 
     def load(self):
@@ -46,7 +47,7 @@ class ProjectGui:
         path = tk.filedialog.askdirectory()
         self.main_gui.program.file_manager.load_project(path)
 
-        #  po loade nastavit hodnoty v polickach z self.p.program.file_manager.get_settings() teda z settings.txt
+        #  TODO po loade nastavit hodnoty v polickach z self.p.program.file_manager.get_settings() teda z settings.txt
 
 
 class InfoGui:

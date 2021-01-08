@@ -163,6 +163,7 @@ class SweepGui:
         sweep_frame["height"] = 4000
 
     def start_measure(self):
+        # TODO ak nie je konektnuty tak nemoze kliknut na Run
         measure = True
 
         start = self.start_entry.get()
@@ -199,36 +200,37 @@ class SweepGui:
             measure = False
 
         if measure:
-            print("start measure")
             if self.run_button["text"] == "Run":
+                print("GUI start measure")
                 self.run_measure()
             else:
+                print("GUI stop measure")
                 self.stop_measure()
         else:
             print("bad input")
 
-
     def stop_measure(self):
-        print("zastavujem meranie")
+        print("GUI zastavujem meranie")
         self.run_button["text"] = "Run"
-        self.gui.program.adapter.end_measurement()
+        self.gui.program.end_measurement()
+        # self.gui.program.adapter.end_measurement()
 
     def run_measure(self):
         # TODO zmena stavu
         # TODO volanie všetkých metód
-        # TODO odosielať settings
 
+        # TODO set_settings...
         if self.autosave.get() == 1:
             self.gui.project.save()
 
-        if self.continuous.get() == 1:
-            self.run_button["text"] = "Stop"
-
+        # TODO pred meranim prejde do stavu 3(podla dokumentu v testovacich scenaroch)
         if self.continuous.get() == 0:
-            print(self.gui.program.adapter.measure())
+            self.gui.program.queue_function("measure()")
+            # print(self.gui.program.adapter.measure())
         else:
-            self.gui.program.adapter.start_measurement()
-
+            self.run_button["text"] = "Stop"
+            self.gui.program.queue_function("start_measurement()")
+            # self.gui.program.adapter.start_measurement()
 
         # self.saveSettings()
 
