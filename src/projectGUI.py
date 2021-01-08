@@ -38,7 +38,8 @@ class ProjectGui:
         name = self.project_name_entry.get()
         description = self.project_descrip_text.get(1.0, tk.END)
 
-        # TODO if not self.main_gui.program.project.exists_data(): set_settings...
+        if self.main_gui.program.project.exists_data():
+            self.main_gui.sweep.send_settings()
         self.main_gui.program.file_manager.save_project(path, name, description)
 
     def load(self):

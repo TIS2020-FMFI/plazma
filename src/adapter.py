@@ -11,8 +11,8 @@ class Adapter:
     # vzdy defaultne vecie ako 0.05, pre pomalsie PC sa da zvacsit ak nieco pada
 
     def __init__(self, program):
-        self.testing = True
-        # self.testing = False
+        # self.testing = True
+        self.testing = False
         if self.testing:
             self.test = testing.Test()
 

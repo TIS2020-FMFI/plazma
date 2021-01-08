@@ -6,41 +6,90 @@ from tkinter import filedialog
 class FileManager:
     def __init__(self, program):
         # self.settings = {}  # None    #  Dictionary, dict()
-        self.filepath = None
+        # self.filepath = None
+        self.description = ""
         self.program = program
 
-    def save_project(self, path, name, description):
-        self.filepath = os.path.join(path, name)
+    def save_project(self, path, project_name, description):
+        # TODO savuje aj ked kliknem na Cancel
+        filepath = os.path.join(path, project_name)
+
         now = datetime.now()
-        date = datetime.date(now)
-        if not os.path.exists(self.filepath):
-            os.mkdir(self.filepath)
-            name = "description.txt"
-            file_path = os.path.join(self.filepath, name)
+        time = datetime.timestamp(now)
+        date = datetime.fromtimestamp(time)
+        date = str(date)
+        date = date.replace(":", "-")
+
+        if os.path.exists(filepath):
+            filepath += " " + str(date)
+
+        os.mkdir(filepath)
+
+        # Description
+        name = "description.txt"
+        file_path = os.path.join(filepath, name)
+        f = open(file_path, "w")
+        f.write(description)
+        f.close()
+
+        # settings
+        settings = self.program.settings.print_settings()
+        name = "settings.txt"
+        file_path = os.path.join(filepath, name)
+        f = open(file_path, "w")
+        f.write(settings)
+        f.close()
+
+        # State
+        state = self.program.project.get_state()
+        if state is not None:
+            name = "state.txt"
+            file_path = os.path.join(filepath, name)
             f = open(file_path, "w")
-            f.write(description)
+            f.write(state)
             f.close()
-        else:
-            os.mkdir(self.filepath + " " + str(date))
-            name = "description.txt"
-            file_path = os.path.join(self.filepath + " " + str(date), name)
+
+        # Calibration
+        calibration = self.program.project.get_calibration()
+        if calibration is not None:
+            name = "calibration.txt"
+            file_path = os.path.join(filepath, name)
             f = open(file_path, "w")
-            f.write(description)
+            f.write(calibration)
             f.close()
-            self.filepath = self.filepath + " " + str(date)
 
+        # Data
+        os.mkdir(filepath + "\\measurements")
 
+        for i in range(self.program.project.data.get_number_of_measurements()):
+            data = self.program.project.data.print_measurement(i)
+            # data_time = self.program.project.data.print_measurement_date()
+            # data_time = data_time.replace(":", "-")
+            if data is not None:
+                name = "measurements\\measurement" + str(i+1) + ".s2p"  # + data_time + ".s2p"
+                file_path = os.path.join(filepath, name)
+                f = open(file_path, "w")
+                f.write(data)
+                f.close()
 
-        # doplnit a osetrit vsetky vynimky
-        # co ked taky path uz existuje...? pridat ku menu cislo...?
-        self.save_settings()
-        pass
+    def load_project(self, path):
+        filepath = path + "/" + "description.txt"
+        with open(filepath) as file:
+            for line in file:
+                self.description += line
+        print(self.description)
 
-    def load_project(self): #path
-
-        directory = filedialog.askdirectory()
-        self.filepath = directory
-        print(self.filepath)
+        filepath = path + "/" + "settings.txt"
+        zoznam = []
+        with open(filepath) as f:
+            for line in f:
+                value = line.split("=")[-1].strip()
+                zoznam.append(value)
+        # self.set_settings(zoznam[0], zoznam[1], zoznam[2], zoznam[3], zoznam[4], zoznam[5], zoznam[6], zoznam[7], zoznam[8],
+        #                   zoznam[9], zoznam[10], zoznam[11])
+        # self.program.project.set_state(stav)
+        #  stav = self.program.project.get_state()
+        # self.program.project.set_calibration(kalibracia)
         pass
 
     # def get_settings(self):

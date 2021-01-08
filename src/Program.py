@@ -59,7 +59,7 @@ class Program:
             self.project.set_state(state)
             self.gui.info.change_state_label()
 
-        # #  ---- len na testovanie adapter.restart_hpctrl()
+        #  ---- len na testovanie adapter.restart_hpctrl()
         # print('help', file=self.adapter.process.stdin)
         # self.adapter.process.stdin.flush()
         # time.sleep(1)
@@ -68,7 +68,7 @@ class Program:
         #     print("responsive")
         # else:
         #     print("NOT responsive")
-        #
+
         # self.adapter.send("help")
         #
         # output = self.adapter.get_output()  # moze vratit None

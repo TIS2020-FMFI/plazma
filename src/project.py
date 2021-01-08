@@ -52,7 +52,7 @@ class Project:
     class Data:
         def __init__(self, param_11, param_12, param_21, param_22):
             self.number_of_measurements = 0
-            self.parameters = {"S11": param_11, "S12": param_12, "S21": param_21,
+            self.parameters = {"S11": param_11, "S21": param_12, "S12": param_21,
                                "S22": param_22}  # dict()  self.parameters["S11"] = True
             self.measurements_list = []  # [(hlavicka1, meranie1_list), (hlavicka2, meranie2_list), ...]
             # self.data_type = None  # real/imag....
@@ -103,14 +103,14 @@ class Project:
                 measurement[key] = copy.copy(val[s_param])
             return measurement  # vráti slovník pre grafy, measurement[frekvencia] = (hodnota1, hodnota2)
 
-        def print_measurement(self, measurement_index = 0):
+        def print_measurement(self, measurement_index=0):
             result = self.measurements_list[measurement_index][0] + '\n'
             for key, val in self.measurements_list[measurement_index][1].items():
                 result += key
                 for value1, value2 in val.values():
                     result += ' ' + value1 + ' ' + value2
                 result += '\n'
-            return result  
+            return result
 
 #        def set_data_type(self, type):
 #            pass

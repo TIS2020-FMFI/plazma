@@ -13,6 +13,21 @@ class Settings:
         self.parameters = "S21"   # TODO checknut defaults
         self.continuous = False
 
+    def print_settings(self):
+        result = ""
+        result += "address = " + str(self.get_address()) + "\n"
+        result += "port1 = " + str(self.get_port1()) + "\n"
+        result += "port2 = " + str(self.get_port2()) + "\n"
+        result += "vel_factor = " + str(self.get_vel_factor()) + "\n"
+        result += "freq_unit = " + str(self.get_freq_unit()) + "\n"
+        result += "freq_start = " + str(self.get_freq_start()) + "\n"
+        result += "freq_stop = " + str(self.get_freq_stop()) + "\n"
+        result += "points = " + str(self.get_points()) + "\n"
+        result += "parameters = " + str(self.get_parameters()) + "\n"
+        result += "parameter_format = " + str(self.get_parameter_format()) + "\n"
+        result += "continuous = " + str(self.get_continuous())
+        return result
+
     def set_address(self, address):
         self.address = address
 
