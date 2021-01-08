@@ -18,6 +18,18 @@
 
 #define FTOI(x) (S32((x)+0.5))
 
+#define SESSION_LOGGING
+
+//DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD
+void log_session(const char *a, const char *b)
+{
+#ifdef SESSION_LOGGING
+    FILE* f = fopen("log_session.txt", "a+");
+    fprintf(f, "%s %s\n", a, b);
+    fclose(f);
+#endif
+}
+
 static int cmdline_i = 0;
 static int cmdline_a = 16;
 static int cmdline_s11 = 0;
@@ -1184,7 +1196,7 @@ void factory_reset()
     }
 }
 
-void direct_command()
+void direct_command(action_type requested_action, const char *string_to_send)
 {
     // s string   - send string using gpib_puts()
     // q query    - send string using gpib_query() and print result
@@ -1205,13 +1217,15 @@ void direct_command()
         return;
     }
 
-    switch (action)
+    switch (requested_action)
     {
     case action_cmd_puts:
-        GPIB_puts(ln + 2);
+        //DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD
+	    log_session("! GPIB_puts: '", string_to_send);
+        GPIB_puts(string_to_send);
         break;
     case action_cmd_query:
-        response = GPIB_query(ln + 2);
+        response = GPIB_query(string_to_send);
         printf("%s", response);
         fflush(stdout);
         break;
@@ -1372,6 +1386,8 @@ void set_sending_format(char f)
 
 DWORD WINAPI interactive_thread(LPVOID arg)
 {
+    action = action_none;
+
     do {
         if (current_input_mode == mode_input_blocked)
         {
@@ -1386,12 +1402,19 @@ DWORD WINAPI interactive_thread(LPVOID arg)
             }
             current_input_mode = mode_menu;
         }
+
+        while (action != action_none) Sleep(1);
+
         fgets(ln, 50, stdin);
-        ln[strlen(ln) - 1] = 0; //strip EOL
+        while ((ln[strlen(ln) -1] == 13) || (ln[strlen(ln) - 1] == 10)) 
+            ln[strlen(ln) - 1] = 0; //strip CR,LF
         if (strlen(ln) == 0) continue;
 
-        action = action_none;
-
+        //DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD
+        char loooog[1000];
+        sprintf(loooog, "'%s', len=%d, stricmp:%d", ln, strlen(ln), _stricmp("CMD", ln));
+        log_session("! processing input line: '", loooog);
+		
         if (current_input_mode == mode_menu)
         { 
             if (_stricmp(ln, "HELP") == 0) help();
@@ -1431,6 +1454,7 @@ DWORD WINAPI interactive_thread(LPVOID arg)
         else if (current_input_mode == mode_cmd)
         {
             if (ln[0] == '.') current_input_mode = mode_menu;
+            else if (!ready_to_receive_command) printf("!not ready, try again later (%s)\n", ln);
             else if ((ln[0] == 's') && (strlen(ln) > 2)) action = action_cmd_puts;
             else if ((ln[0] == 'q') && (strlen(ln) > 2)) action = action_cmd_query;
             else if (ln[0] == 'a') action = action_cmd_read_asc;
@@ -1510,8 +1534,11 @@ void create_event_and_thread()
     }
 }
 
+#define MAX_LN_COPY_CHARS 100
 void main_action_loop()
 {
+    static char ln_copy[MAX_LN_COPY_CHARS + 1];
+
     while (running)
     {
         DWORD event = WaitForSingleObject(
@@ -1525,7 +1552,13 @@ void main_action_loop()
             exit(1);
         }
 
-        switch (action)
+        action_type requested_action = action;
+        strncpy(ln_copy, ln, MAX_LN_COPY_CHARS);
+        ln_copy[MAX_LN_COPY_CHARS] = 0;
+
+        action = action_none;
+
+        switch (requested_action)
         {
         case action_connect: connect();
             break;
@@ -1560,7 +1593,7 @@ void main_action_loop()
         case action_cmd_continuous_asc:
         case action_cmd_repeated_asc:
         case action_cmd_read_bin:
-            direct_command();
+            direct_command(requested_action, ln_copy + 2);
             break;
         case action_exit: running = 0;
             break;
@@ -1583,7 +1616,7 @@ void interactive()
 }
 
 const char* test1argv[] = { "hpctrl", "-a", "16", "-s11", "-s12", "-s21", "-s22" };
-const char* test2argv[] = { "hpctrl", "-a", "19", "-i" };
+const char* test2argv[] = { "hpctrl", "-a", "16", "-i" };
 
 int test1argc = 7;
 int test2argc = 4;

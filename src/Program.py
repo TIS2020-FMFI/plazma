@@ -163,6 +163,7 @@ class Program:
 
         # data = self.adapter.retrieve_measurement_data()
 
+        data = data.strip()
         print("Data ktore prisli: \n" + data)
 
         self.project.data.add_measurement(data)
@@ -208,6 +209,7 @@ class Program:
                 return
             print("Data ktore prisli: \n" + data)
 
+            data = data.strip()
             self.project.data.add_measurement(data)
             # TODO refreshni Frame
             print()

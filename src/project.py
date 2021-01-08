@@ -80,7 +80,7 @@ class Project:
                 line.strip()
                 if len(line) == 0:
                     print("Prisiel prazdny riadok do data !!!")
-                    return
+                    continue
                 if line[0] in ('!', '#'):
                     header.append(line)
 

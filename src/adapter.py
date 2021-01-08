@@ -3,11 +3,13 @@ import subprocess
 import threading
 import queue
 import testing
+import os
+from datetime import datetime
 
 
 class Adapter:
     MAX_RESPONSE_TIME = 10.0  # ako dlho caka na pristroj aby odpovedal, v sekundach
-    MAX_HPCTRL_RESPONSE_TIME = 0.05  # ako dlho caka na program HPCTRL aby vyprintoval dalsi riadok, v sekundach
+    MAX_HPCTRL_RESPONSE_TIME = 0.5  # ako dlho caka na program HPCTRL aby vyprintoval dalsi riadok, v sekundach
     # vzdy defaultne vecie ako 0.05, pre pomalsie PC sa da zvacsit ak nieco pada
 
     def __init__(self, program):
@@ -49,9 +51,10 @@ class Adapter:
                 return
             if line:
                 self.out_queue.put(line)
-                # print("enqueue" + line)
+          
             else:
-                time.sleep(self.MAX_HPCTRL_RESPONSE_TIME)
+                time.sleep(0.001)
+            print("enqueue" + line)
             # nekonecny cyklus, thread vzdy cita z pipe a hadze do out_queue po riadkoch
         # out.close()
         # time.sleep(1)
@@ -63,22 +66,29 @@ class Adapter:
         max_cycles = max(self.MAX_RESPONSE_TIME / max(self.MAX_HPCTRL_RESPONSE_TIME, 0.05), 2)
 
         while out_str.strip() == "" or slept:
-            print("zacinam")
+            # print("zacinam")
             try:
                 while True:
-                    print("kek, out_str: \n" + out_str)
+                    # print("kek, out_str: \n" + out_str)	
                     out_str += self.out_queue.get_nowait()
                     slept = False
                     counter = 0
 
             except queue.Empty:
-                print("empty queue, slept: " + str(slept))
+                # print("empty queue, slept: " + str(slept))
                 if slept and out_str.strip() != "":
                     return out_str
-                time.sleep(self.MAX_HPCTRL_RESPONSE_TIME)   # uistenie sa ze na 100% vytiahnem cely vystup, a nie iba cast
-                slept = True
+				
+                wait_started = time.time()
+                while self.out_queue.empty() and (time.time() < wait_started + self.MAX_HPCTRL_RESPONSE_TIME):
+                    pass				
+                slept = self.out_queue.empty()
+				
+                # time.sleep(self.MAX_HPCTRL_RESPONSE_TIME)   # uistenie sa ze na 100% vytiahnem cely vystup, a nie iba cast
+                # slept = True
+                
                 counter += 1
-                print(counter)
+                # print(counter)
                 if counter > max_cycles:
                     print(f"Presiel som {max_cycles} cyklov(minimalne {self.MAX_RESPONSE_TIME}s)"
                           + " a nedostal som odpoved z pristroja")
@@ -100,6 +110,7 @@ class Adapter:
         # if out[0] == "!unknown" and out[1] == "command":
         #     return True
 
+        print(out.strip())
         print("HPCTRL returned something unexpected")
         self.restart_hpctrl()
         return False
@@ -109,7 +120,7 @@ class Adapter:
             print(message, file=self.process.stdin)
             self.process.stdin.flush()
             print("Poslal som: " + message)
-            time.sleep(0.5)  # aby HPCTRL stihol spracovat prikaz, inak vypisuje !not ready, try again later (ping)
+            time.sleep(0.8)  # aby HPCTRL stihol spracovat prikaz, inak vypisuje !not ready, try again later (ping)
             return True
         except OSError:
             print("Padol HPCTRL")
@@ -131,6 +142,8 @@ class Adapter:
             self.process = None
         self.out_queue = None
 
+
+        time.sleep(5)
         # TODO napisat do GUI spatnu vazbu ak je zla cesta...
         # try:
         self.process = subprocess.Popen(["hpctrl-main/src/Debug/hpctrl.exe", "-i"], stdin=subprocess.PIPE,
@@ -277,7 +290,7 @@ class Adapter:
         pass
 
     def set_frequency_unit(self):  # asi nebude v adaptery? bar ni v tomto tvare
-        unit = self.program.settings.get_freq_unit.strip()
+        unit = self.program.settings.get_freq_unit().strip()
         if unit.upper() not in ("GHZ", "MHZ"):
             print("Zla jednotka frekvencie !!!")
             return False
@@ -290,14 +303,14 @@ class Adapter:
                 return False
 
         if self.connected:
-            if self.send("FREQ " + unit):
+            if self.send("FREQ " + unit + "\n"):
                 return True
             else:
                 return None
         return False
 
     def set_start_frequency(self):
-        unit = self.program.settings.get_freq_unit.strip()
+        unit = self.program.settings.get_freq_unit().strip()
         value = self.program.settings.get_freq_start()
         if self.testing:
             if self.connected:
@@ -314,14 +327,14 @@ class Adapter:
                 return False
 
         if self.connected:
-            if self.send("CMD s STAR " + value + " " + unit + "\n."):  # este overit ci mozem takto z CMD ist von
+            if self.send("CMD\ns STAR " + value + " " + unit + "\n.\n"):  # este overit ci mozem takto z CMD ist von
                 return True
             else:
                 return None
         return False
 
     def set_stop_frequency(self):
-        unit = self.program.settings.get_freq_unit.strip()
+        unit = self.program.settings.get_freq_unit().strip()
         value = self.program.settings.get_freq_stop()
         if self.testing:
             if self.connected:
@@ -338,7 +351,7 @@ class Adapter:
                 return False
 
         if self.connected:
-            if self.send("CMD s STOP " + value + " " + unit + "\n."):  # este overit ci mozem takto z CMD ist von
+            if self.send("CMD\ns STOP " + value + " " + unit + "\n.\n"):  # este overit ci mozem takto z CMD ist von
                 return True
             else:
                 return None
@@ -354,7 +367,7 @@ class Adapter:
                 return False
 
         if self.connected:
-            if self.send("CMD s POIN " + value + "\n."):  # este overit ci mozem takto z CMD ist von
+            if self.send("CMD\ns POIN " + value + "\n.\n"):  # este overit ci mozem takto z CMD ist von
                 return True
             else:
                 return None
