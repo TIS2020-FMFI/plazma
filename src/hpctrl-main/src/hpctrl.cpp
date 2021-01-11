@@ -713,9 +713,283 @@ void disconnect()
     connected = 0;
 }
 
-void getstate(int include_cal)
+void getcalib()
 {
+    uint8_t* data;
+    S32 len;
+    S32 actual = 0;
     int CALIONE2 = 1;
+    if (!connected)
+    {
+        printf("!not connected\n");
+        fflush(stdout);
+        return;
+    }
+    Sleep(500);
+
+    GPIB_write("FORM1;");
+
+    if (is_8510())
+    {
+        //
+        // Determine active HP 8510 calibration type and set #
+        //
+
+        const C8* types[] = { "RESPONSE", "RESPONSE & ISOL'N", "S11 1-PORT", "S22 1-PORT", "2-PORT" };
+        const C8* names[] = { "CALIRESP", "CALIRAI",           "CALIS111",   "CALIS221",   "CALIFUL2" };
+        const S32 cnts[] = { 1,          2,                   3,            3,            12 };
+
+        S32 active_cal_type = -1;
+        S32 active_cal_set = -1;
+
+        S32 n_types = ARY_CNT(cnts);
+
+        C8* result = GPIB_query("CALI?;");
+        C8* term = strrchr(result, '"');                          // Remove leading and trailing quotes returned by 8510
+
+        if (term != NULL)
+        {
+            *term = 0;
+            result++;
+        }
+
+        for (S32 i = 0; i < n_types; i++)
+        {
+            if (!_stricmp(result, types[i]))
+            {
+                active_cal_type = i;
+                active_cal_set = atoi(GPIB_query("CALS?;"));
+                break;
+            }
+        }
+
+        if ((active_cal_type != -1) && (active_cal_set > 0))
+        {
+            const C8* active_cal_name = names[active_cal_type];   // Get name of active calibration type
+            S32       n_arrays = cnts[active_cal_type];    // Get # of data arrays for active calibration type
+
+            data = (uint8_t*)GPIB_query("POIN;OUTPACTI;");                  // Get # of points in calibrated trace 
+            DOUBLE fnpts = 0.0;
+            sscanf((C8*)data, "%lf", &fnpts);
+            S32 trace_points = FTOI(fnpts);
+
+            if ((trace_points < 1) || (trace_points > 1000000))
+            {
+                printf("Error: trace_points = %d\n", trace_points);
+                return;
+            }
+
+            S32 array_bytes = trace_points * 6;
+            S32 total_bytes = array_bytes * n_arrays;
+
+            printf("CORROFF;HOLD;FORM1;%s;", active_cal_name);
+
+            //
+            // For each array....
+            // 
+
+            S32 n = 0;
+
+            for (S32 j = 0; j < n_arrays; j++)
+            {
+                n += array_bytes;
+
+                GPIB_printf("FORM1;OUTPCALC%d%d;", (j + 1) / 10, (j + 1) % 10);
+
+                data = (uint8_t*)GPIB_read_BIN(2);
+
+                if ((data[0] != '#') || (data[1] != 'A'))
+                {
+                    printf("Error: OUTPCALC FORM1 block header was 0x%.2X 0x%.2X", data[0], data[1]);
+                    return;
+                }
+
+                U16 H = *(U16*)data;
+
+                data = (uint8_t*)GPIB_read_BIN(2);
+
+                len = S16_BE((C8*)data);
+
+                if (len != array_bytes)
+                {
+                    printf("Error: OUTPCALC returned %d bytes, expected %d", len, array_bytes);
+                    return;
+                }
+
+                U16 N = *(U16*)data;
+
+                printf("%d\n", H);
+                printf("%d\n", N);
+                printf("INPUCALC%d%d;", (j + 1) / 10, (j + 1) % 10);
+
+                C8* IQ = GPIB_read_BIN(array_bytes, TRUE, FALSE, &actual);
+
+                if (actual != array_bytes)
+                {
+                    printf("Error: OUTPCALC%d%d returned %d bytes, expected %d", (j + 1) / 10, (j + 1) % 10, actual, array_bytes);
+                    return;
+                }
+
+                printf("%d\n", array_bytes);
+                for (int i = 0; i < array_bytes; i++)
+                {
+                    printf("%02x", IQ[i]);
+                    if ((i % 40 == 39) && (i < array_bytes - 1)) printf("\n");
+                }
+                printf("\n");
+            }
+
+            assert(n == total_bytes);
+
+            printf("SAVC; CALS%d; CORROFF;", active_cal_set);
+
+            //
+            // Write second copy of learn string command to file
+            //
+            // On the 8510, the learn string state must be restored before its 
+            // accompanying calibration data.  Otherwise, SAVC will incorrectly 
+            // associate the prior instrument state with the cal set's limited 
+            // instrument state.  This would be fine except that the CALIxxxx commands 
+            // switch to single-parameter display mode, regardless of what was saved 
+            // in the learn string.
+            //
+            // So, we work around this lameness by recording the learn string twice, once
+            // before the calibration data and again after it...
+        }
+    }
+    else
+    {
+        //
+        // Determine active HP 8753 calibration type
+        //
+        // TODO: what about CALIONE2? (and CALITRL2 and CALRCVR on 8510?)
+        //
+        //   8510-90280 p. C-13: CALIONE2 not recommended for use with S-param sets, since the same
+        //   forward error terms will be used in both directions.  Use CALIONE2 with T/R sets.
+        //
+        //   8510-90280 p. PC-41: CALI? apparently does not return CALITRL or CALIONE2
+        //              p. I-4: If INPUCALC'ing CALIONE2, you must issue CALIFUL2 with all 12 coeffs
+        //
+        // Note: on 8753A/B/C at least, only the active channel's calibration type query returns '1'.
+        // E.g., CALIS111 and CALIS221 may both be valid and available, but only one will be 
+        // saved with the instrument state.  (Or neither, if an uncalibrated response parameter is 
+        // being displayed in the active channel.)
+        //
+        // V1.56: added CALIONE2 for 8753C per G. Anagnostopoulos email of 25-Apr-16
+        // V1.57: added check box for CALIONE2 to avoid 8719C lockups, per M. Swanberg email of 28-Oct-16
+        //
+
+        const C8* types[] = { "CALIRESP", "CALIRAI", "CALIS111", "CALIS221", "CALIFUL2", "CALIONE2" };
+        const S32 cnts[] = { 1,          2,         3,          3,          12,         12 };
+
+        S32 active_cal_type = -1;
+        S32 n_types = ARY_CNT(cnts);
+
+        if (!CALIONE2)
+        {
+            n_types--;
+        }
+
+        for (S32 i = 0; i < n_types; i++)
+        {
+            GPIB_printf("%s?;", types[i]);
+            C8* result = GPIB_read_ASC();
+
+            if (result[0] == '1')
+            {
+                active_cal_type = i;
+                break;
+            }
+        }
+
+        if (active_cal_type != -1)
+        {
+            const C8* active_cal_name = types[active_cal_type];   // Get name of active calibration type
+            S32       n_arrays = cnts[active_cal_type];    // Get # of data arrays for active calibration type
+
+            data = (uint8_t*)GPIB_query("FORM3;POIN?;");                    // Get # of points in calibrated trace
+            DOUBLE fnpts = 0.0;
+            sscanf((C8*)data, "%lf", &fnpts);
+            S32 trace_points = FTOI(fnpts);
+
+            S32 array_bytes = trace_points * 6;
+            S32 total_bytes = array_bytes * n_arrays;
+
+            S32 cmdlen = 15 + strlen(active_cal_name);             // Write command to file that will select this calibration type
+
+            //printf("CORROFF;FORM1;%s;", active_cal_name);
+            printf("%s\n", active_cal_name);
+            printf("%d\n", n_arrays);
+            //
+            // For each array....
+            // 
+
+            S32 n = 0;
+
+            for (S32 j = 0; j < n_arrays; j++)
+            {
+                n += array_bytes;
+
+                GPIB_printf("FORM1;OUTPCALC%d%d;", (j + 1) / 10, (j + 1) % 10);
+
+                data = (uint8_t*)GPIB_read_BIN(2);
+
+                if ((data[0] != '#') || (data[1] != 'A'))
+                {
+                    printf("Error: OUTPCALC FORM1 block header was 0x%.2X 0x%.2X", data[0], data[1]);
+                    return;
+                }
+
+                U16 H = *(U16*)data;
+
+                data = (uint8_t*)GPIB_read_BIN(2);
+
+                len = S16_BE((C8*)data);
+
+                if (len != array_bytes)
+                {
+                    printf("Error: OUTPCALC returned %d bytes, expected %d", len, array_bytes);
+                    fflush(stdout);
+                    return;
+                }
+
+                U16 N = *(U16*)data;
+
+                //printf("INPUCALC%d%d;", (j + 1) / 10, (j + 1) % 10);
+
+                uint8_t* IQ = (uint8_t*)GPIB_read_BIN(array_bytes, TRUE, FALSE, &actual);
+
+                if (actual != array_bytes)
+                {
+                    printf("Error: OUTPCALC%d%d returned %d bytes, expected %d", (j + 1) / 10, (j + 1) % 10, actual, array_bytes);
+                    fflush(stdout);
+                    return;
+                }
+
+                printf("%d\n", array_bytes);
+                for (int i = 0; i < array_bytes; i++)
+                {
+                    printf("%02x", IQ[i]);
+                    if ((i % 40 == 39) && (i < array_bytes - 1)) printf("\n");
+                }
+                printf("\n");
+            }
+
+            assert(n == total_bytes);
+
+            // printf("OPC?;SAVC;\n");
+        }
+    }
+
+    printf("\n");
+    fflush(stdout);
+
+    Sleep(500);
+    GPIB_printf("DEBUOFF;CONT;");
+}
+
+void getstate()
+{
     if (!connected)
     {
         printf("!not connected\n");
@@ -801,273 +1075,68 @@ void getstate(int include_cal)
     printf("\n");
     fflush(stdout);
 
-    //
-    // Store calibration data
-    //
-
-    if (include_cal)
-    {
-        if (is_8510())
-        {
-            //
-            // Determine active HP 8510 calibration type and set #
-            //
-
-            const C8* types[] = { "RESPONSE", "RESPONSE & ISOL'N", "S11 1-PORT", "S22 1-PORT", "2-PORT" };
-            const C8* names[] = { "CALIRESP", "CALIRAI",           "CALIS111",   "CALIS221",   "CALIFUL2" };
-            const S32 cnts[] = { 1,          2,                   3,            3,            12 };
-
-            S32 active_cal_type = -1;
-            S32 active_cal_set = -1;
-
-            S32 n_types = ARY_CNT(cnts);
-
-            C8* result = GPIB_query("CALI?;");
-            C8* term = strrchr(result, '"');                          // Remove leading and trailing quotes returned by 8510
-
-            if (term != NULL)
-            {
-                *term = 0;
-                result++;
-            }
-
-            for (S32 i = 0; i < n_types; i++)
-            {
-                if (!_stricmp(result, types[i]))
-                {
-                    active_cal_type = i;
-                    active_cal_set = atoi(GPIB_query("CALS?;"));
-                    break;
-                }
-            }
-
-            if ((active_cal_type != -1) && (active_cal_set > 0))
-            {
-                const C8* active_cal_name = names[active_cal_type];   // Get name of active calibration type
-                S32       n_arrays = cnts[active_cal_type];    // Get # of data arrays for active calibration type
-
-                data = (uint8_t *)GPIB_query("POIN;OUTPACTI;");                  // Get # of points in calibrated trace 
-                DOUBLE fnpts = 0.0;
-                sscanf((C8 *)data, "%lf", &fnpts);
-                S32 trace_points = FTOI(fnpts);
-
-                if ((trace_points < 1) || (trace_points > 1000000))
-                {
-                    printf("Error: trace_points = %d\n", trace_points);
-                    return;
-                }
-
-                S32 array_bytes = trace_points * 6;
-                S32 total_bytes = array_bytes * n_arrays;
-
-                printf("CORROFF;HOLD;FORM1;%s;", active_cal_name);
-
-                //
-                // For each array....
-                // 
-
-                S32 n = 0;
-
-                for (S32 j = 0; j < n_arrays; j++)
-                {
-                    n += array_bytes;
-
-                    GPIB_printf("FORM1;OUTPCALC%d%d;", (j + 1) / 10, (j + 1) % 10);
-
-                    data = (uint8_t *)GPIB_read_BIN(2);
-
-                    if ((data[0] != '#') || (data[1] != 'A'))
-                    {
-                        printf("Error: OUTPCALC FORM1 block header was 0x%.2X 0x%.2X", data[0], data[1]);
-                        return;
-                    }
-
-                    U16 H = *(U16*)data;
-
-                    data = (uint8_t *)GPIB_read_BIN(2);
-
-                    len = S16_BE((C8 *)data);
-
-                    if (len != array_bytes)
-                    {
-                        printf("Error: OUTPCALC returned %d bytes, expected %d", len, array_bytes);
-                        return;
-                    }
-
-                    U16 N = *(U16*)data;
-
-                    printf("%d\n", H);
-                    printf("%d\n", N);
-                    printf("INPUCALC%d%d;", (j + 1) / 10, (j + 1) % 10);
-
-                    C8* IQ = GPIB_read_BIN(array_bytes, TRUE, FALSE, &actual);
-
-                    if (actual != array_bytes)
-                    {
-                        printf("Error: OUTPCALC%d%d returned %d bytes, expected %d", (j + 1) / 10, (j + 1) % 10, actual, array_bytes);
-                        return;
-                    }
-
-                    printf("%d\n", array_bytes);
-                    for (int i = 0; i < array_bytes; i++)
-                    {
-                        printf("%02x", IQ[i]);
-                        if ((i % 40 == 39) && (i < array_bytes - 1)) printf("\n");
-                    }
-                    printf("\n");
-                }
-
-                assert(n == total_bytes);
-
-                printf("SAVC; CALS%d; CORROFF;", active_cal_set);
-
-                //
-                // Write second copy of learn string command to file
-                //
-                // On the 8510, the learn string state must be restored before its 
-                // accompanying calibration data.  Otherwise, SAVC will incorrectly 
-                // associate the prior instrument state with the cal set's limited 
-                // instrument state.  This would be fine except that the CALIxxxx commands 
-                // switch to single-parameter display mode, regardless of what was saved 
-                // in the learn string.
-                //
-                // So, we work around this lameness by recording the learn string twice, once
-                // before the calibration data and again after it...
-            }
-        }
-        else
-        {
-            //
-            // Determine active HP 8753 calibration type
-            //
-            // TODO: what about CALIONE2? (and CALITRL2 and CALRCVR on 8510?)
-            //
-            //   8510-90280 p. C-13: CALIONE2 not recommended for use with S-param sets, since the same
-            //   forward error terms will be used in both directions.  Use CALIONE2 with T/R sets.
-            //
-            //   8510-90280 p. PC-41: CALI? apparently does not return CALITRL or CALIONE2
-            //              p. I-4: If INPUCALC'ing CALIONE2, you must issue CALIFUL2 with all 12 coeffs
-            //
-            // Note: on 8753A/B/C at least, only the active channel's calibration type query returns '1'.
-            // E.g., CALIS111 and CALIS221 may both be valid and available, but only one will be 
-            // saved with the instrument state.  (Or neither, if an uncalibrated response parameter is 
-            // being displayed in the active channel.)
-            //
-            // V1.56: added CALIONE2 for 8753C per G. Anagnostopoulos email of 25-Apr-16
-            // V1.57: added check box for CALIONE2 to avoid 8719C lockups, per M. Swanberg email of 28-Oct-16
-            //
-
-            const C8* types[] = { "CALIRESP", "CALIRAI", "CALIS111", "CALIS221", "CALIFUL2", "CALIONE2" };
-            const S32 cnts[] = { 1,          2,         3,          3,          12,         12 };
-
-            S32 active_cal_type = -1;
-            S32 n_types = ARY_CNT(cnts);
-
-            if (!CALIONE2)
-            {
-                n_types--;
-            }
-
-            for (S32 i = 0; i < n_types; i++)
-            {
-                GPIB_printf("%s?;", types[i]);
-                C8* result = GPIB_read_ASC();
-
-                if (result[0] == '1')
-                {
-                    active_cal_type = i;
-                    break;
-                }
-            }
-
-            if (active_cal_type != -1)
-            {
-                const C8* active_cal_name = types[active_cal_type];   // Get name of active calibration type
-                S32       n_arrays = cnts[active_cal_type];    // Get # of data arrays for active calibration type
-
-                data = (uint8_t *)GPIB_query("FORM3;POIN?;");                    // Get # of points in calibrated trace
-                DOUBLE fnpts = 0.0;
-                sscanf((C8 *)data, "%lf", &fnpts);
-                S32 trace_points = FTOI(fnpts);
-
-                S32 array_bytes = trace_points * 6;
-                S32 total_bytes = array_bytes * n_arrays;
-
-                S32 cmdlen = 15 + strlen(active_cal_name);             // Write command to file that will select this calibration type
-                    
-                //printf("CORROFF;FORM1;%s;", active_cal_name);
-                printf("%s\n", active_cal_name);
-                printf("%d\n", n_arrays);
-                //
-                // For each array....
-                // 
-
-                S32 n = 0;
-
-                for (S32 j = 0; j < n_arrays; j++)
-                {
-                    n += array_bytes;
-
-                    GPIB_printf("FORM1;OUTPCALC%d%d;", (j + 1) / 10, (j + 1) % 10);
-                    
-                    data = (uint8_t *)GPIB_read_BIN(2);
-
-                    if ((data[0] != '#') || (data[1] != 'A'))
-                    {
-                        printf("Error: OUTPCALC FORM1 block header was 0x%.2X 0x%.2X", data[0], data[1]);
-                        return;
-                    }
-
-                    U16 H = *(U16*)data;
-
-                    data = (uint8_t *)GPIB_read_BIN(2);
-
-                    len = S16_BE((C8 *)data);
-
-                    if (len != array_bytes)
-                    {
-                        printf("Error: OUTPCALC returned %d bytes, expected %d", len, array_bytes);
-                        fflush(stdout);
-                        return;
-                    }
-
-                    U16 N = *(U16*)data;
-
-                    //printf("INPUCALC%d%d;", (j + 1) / 10, (j + 1) % 10);
-                    
-                    uint8_t* IQ = (uint8_t *)GPIB_read_BIN(array_bytes, TRUE, FALSE, &actual);
-
-                    if (actual != array_bytes)
-                    {
-                        printf("Error: OUTPCALC%d%d returned %d bytes, expected %d", (j + 1) / 10, (j + 1) % 10, actual, array_bytes);
-                        fflush(stdout);
-                        return;
-                    }
-
-                    printf("%d\n", array_bytes);
-                    for (int i = 0; i < array_bytes; i++)
-                    {
-                        printf("%02x", IQ[i]);
-                        if ((i % 40 == 39) && (i < array_bytes - 1)) printf("\n");
-                    }
-                    printf("\n");
-                }
-
-                assert(n == total_bytes);
-
-               // printf("OPC?;SAVC;\n");
-            }
-        }
-    }
-
-    printf("\n");
-    fflush(stdout);
-
     Sleep(500);
     GPIB_printf("DEBUOFF;CONT;");
 }
 
-void setstate(int include_cal)
+void setcalib()
+{
+    if (!connected)
+    {
+        printf("!not connected\n");
+        fflush(stdout);
+        return;
+    }
+   
+    char active_cal_name[20];
+    int n_arrays;
+    scanf("%20s\n", active_cal_name);
+    GPIB_printf("CORROFF;FORM1;%s;", active_cal_name);
+    scanf("%d", &n_arrays);
+    for (int i = 0; i < n_arrays; i++)
+    {
+        int array_bytes, val;
+
+        scanf("\n%d\n", &array_bytes);
+        uint8_t* data = (uint8_t*)malloc(15 + array_bytes);
+
+        sprintf((char*)data, "INPUCALC%d%d;", (i + 1) / 10, (i + 1) % 10);
+        data[11] = '#';
+        data[12] = 'A';
+        data[13] = (array_bytes >> 8);
+        data[14] = (array_bytes & 255);
+
+        for (int i = 0; i < array_bytes; i++)
+        {
+            scanf("%02x", &val);
+            data[15 + i] = (uint8_t)val;
+            if ((i % 40 == 39) && (i < array_bytes - 1)) scanf("\n");
+        }
+        
+        GPIB_write_BIN(data, 15 + array_bytes);
+        Sleep(250);
+
+        GPIB_printf("CLES;SRE 32;ESE 1;OPC;SAVC;");
+
+        S32 st = timeGetTime();
+        while (1)
+        {
+            Sleep(100);
+            U8 result = GPIB_serial_poll();
+            if (result & 0x40)
+            {
+                printf("!Complete in %d ms\n", timeGetTime() - st);
+                break;
+            }
+        }
+        GPIB_printf("CLES;SRE 0;");
+        free(data);
+    }
+    Sleep(1500);
+    GPIB_printf("DEBUOFF;CONT;");    
+}
+
+void setstate()
 {
     if (!connected)
     {
@@ -1113,53 +1182,7 @@ void setstate(int include_cal)
         
     GPIB_write_BIN(data, length + 19);    
     Sleep(1500);
-    if (include_cal)
-    {
-        char active_cal_name[20];
-        int n_arrays;
-        scanf("%20s\n", active_cal_name);
-        GPIB_printf("CORROFF;FORM1;%s;", active_cal_name);        
-        scanf("%d\n", &n_arrays);
-        for (int i = 0; i < n_arrays; i++)
-        {
-            int array_bytes, val;
 
-            scanf("%d\n", &array_bytes);
-            uint8_t* data = (uint8_t*)malloc(15 + array_bytes);
-
-            sprintf((char *)data, "INPUCALC%d%d;", (i + 1) / 10, (i + 1) % 10);
-            data[11] = header[0];
-            data[12] = header[1];
-            data[13] = (array_bytes >> 8);
-            data[14] = (array_bytes & 255);
-            
-            for (int i = 0; i < array_bytes; i++)
-            {
-                scanf("%02x", &val);
-                data[15 + i] = (uint8_t)val;
-                if ((i % 40 == 39) && (i < array_bytes - 1)) scanf("\n");
-            }
-            scanf("\n");
-            GPIB_write_BIN(data, 15 + array_bytes);
-            Sleep(250);
-
-            GPIB_printf("CLES;SRE 32;ESE 1;OPC;SAVC;");
-
-            S32 st = timeGetTime();
-            while (1)
-            {
-                Sleep(100);
-                U8 result = GPIB_serial_poll();
-                if (result & 0x40)
-                {
-                    printf("!Complete in %d ms\n", timeGetTime() - st);
-                    break;
-                }
-            }
-            GPIB_printf("CLES;SRE 0;");            
-        }
-        Sleep(1500);
-    }    
     GPIB_printf("DEBUOFF;CONT;");
     free(data);
 }
@@ -1566,9 +1589,9 @@ void main_action_loop()
             break;
         case action_sweep: sweep();
             break;
-        case action_getstate: getstate(0);
+        case action_getstate: getstate();
             break;
-        case action_setstate: setstate(0);
+        case action_setstate: setstate();
             if (!SetEvent(end_of_input_event))
             {
                 printf("SetEvent failed (%d)\n", GetLastError());
@@ -1576,9 +1599,9 @@ void main_action_loop()
                 exit(1);
             }
             break;
-        case action_getcalib: getstate(1);
+        case action_getcalib: getcalib();
             break;
-        case action_setcalib: setstate(1);
+        case action_setcalib: setcalib();
             if (!SetEvent(end_of_input_event))
             {
                 printf("SetEvent failed (%d)\n", GetLastError());
