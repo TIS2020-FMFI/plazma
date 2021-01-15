@@ -163,6 +163,7 @@ class SweepGui:
         sweep_frame["height"] = 4000
 
     def start_measure(self):
+        # TODO ak nie je konektnuty tak nemoze kliknut na Run
         measure = True
 
         start = self.start_entry.get()
@@ -199,38 +200,76 @@ class SweepGui:
             measure = False
 
         if measure:
-            print("start measure")
             if self.run_button["text"] == "Run":
+                print("GUI start measure")
                 self.run_measure()
             else:
+                print("GUI stop measure")
                 self.stop_measure()
         else:
             print("bad input")
 
-
     def stop_measure(self):
-        print("zastavujem meranie")
+        print("GUI zastavujem meranie")
         self.run_button["text"] = "Run"
-        self.gui.program.adapter.end_measurement()
+        self.gui.program.end_measurement()
+        # self.gui.program.adapter.end_measurement()
 
     def run_measure(self):
         # TODO zmena stavu
         # TODO volanie všetkých metód
-        # TODO odosielať settings
+
+        self.send_settings()
+
+        # TODO pred meranim prejde do stavu 3(podla dokumentu v testovacich scenaroch)
+        if self.continuous.get() == 0:
+            self.gui.program.queue_function("measure()")
+            # print(self.gui.program.adapter.measure())
+        else:
+            self.run_button["text"] = "Stop"
+            self.gui.program.queue_function("start_measurement()")
+            # self.gui.program.adapter.start_measurement()
+
+        # self.saveSettings()
+
+    def send_settings(self):
+        unit = "MHz"
+        if self.freq_variable.get() == 1:
+            unit = "GHz"
+        self.gui.program.settings.set_freq_unit(unit)
+
+        self.gui.program.settings.set_freq_start(self.start_entry.get())
+        self.gui.program.settings.set_freq_stop(self.stop_entry.get())
+        self.gui.program.settings.set_points(self.points_entry.get())
+
+        params = ""
+        if self.s11.get():
+            params += "S11 "
+        if self.s21.get():
+            params += "S21 "
+        if self.s12.get():
+            params += "S12 "
+        if self.s22.get():
+            params += "S22 "
+        self.gui.program.settings.set_parameters(params)
+
+        if self.measure_variable.get() == 0:
+            param_format = "MA"
+        elif self.measure_variable.get() == 1:
+            param_format = "DB"
+        else:
+            param_format = "RI"
+        self.gui.program.settings.set_parameter_format(param_format)
+
+        if self.continuous.get() == 0:
+            self.gui.program.settings.set_continuous(False)
+        else:
+            self.gui.program.settings.set_continuous(True)
 
         if self.autosave.get() == 1:
             self.gui.project.save()
 
-        if self.continuous.get() == 1:
-            self.run_button["text"] = "Stop"
-
-        if self.continuous.get() == 0:
-            print(self.gui.program.adapter.measure())
-        else:
-            self.gui.program.adapter.start_measurement()
-
-
-        # self.saveSettings()
+        self.gui.program.settings.set_address(self.gui.gpib.address_entry.get())
 
     def visibility(self):
         if self.continuous.get() == 0:

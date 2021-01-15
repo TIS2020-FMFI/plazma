@@ -96,13 +96,15 @@ class CalibrationGui:
 
     def save_calibration(self):
         print("Ukladám kalilbráciu do pamäte")
-        self.main_gui.program.project.set_calibration(self.main_gui.program.adapter.get_calibration())
-        self.main_gui.info.change_calibration_label()
+        self.main_gui.program.queue_function("save_calib()")
+        # self.main_gui.program.project.set_calibration(self.main_gui.program.adapter.get_calibration())
+        # self.main_gui.info.change_calibration_label()
 
     def load_calibration(self):
         print("Načítavam kalibráciu")
-        self.main_gui.program.adapter.set_calibration(self.main_gui.program.project.get_calibration())
-        print(self.main_gui.program.project.get_calibration())
+        self.main_gui.program.queue_function("load_calib()")
+        # self.main_gui.program.adapter.set_calibration(self.main_gui.program.project.get_calibration())
+        # print(self.main_gui.program.project.get_calibration())
 
     def adjust(self):
         self.adjust_calibration()
