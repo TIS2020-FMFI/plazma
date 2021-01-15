@@ -21,6 +21,9 @@ class Project:
     def get_state(self):
         return self.state
 
+    def get_calibration_type(self):
+        return self.type
+
     def set_calibration(self, calibration):
         self.type = self.program.adapter.get_calibration_type()
         self.calibration = calibration

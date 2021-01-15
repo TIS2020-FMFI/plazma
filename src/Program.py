@@ -146,7 +146,7 @@ class Program:
         self.prepare_measurement()
         if self.project.data is None:  # ak neboli vybrate ziadne S-parametre, vymazu sa data z pameti
             # TODO prejde do stavu 2
-            # TODO refreshni Frame(vymazali sa data)
+            self.gui.sweep.refresh_frame()# TODO refreshni Frame(vymazali sa data)
             return
 
         data = self.adapter.measure()
@@ -167,7 +167,7 @@ class Program:
         print("Data ktore prisli: \n" + data)
 
         self.project.data.add_measurement(data)
-        # TODO refreshni Frame
+        self.gui.sweep.refresh_frame() # TODO refreshni Frame
         print()
         print("pocet merani: " + str(self.project.data.number_of_measurements))
         print("parametre: " + str(self.project.data.parameters))
@@ -180,7 +180,7 @@ class Program:
         self.prepare_measurement()
         if self.project.data is None:  # ak neboli vybrate ziadne S-parametre
             # TODO prejde do stavu 2
-            # TODO refreshni Frame(vymazali sa data)
+            self.gui.sweep.refresh_frame()# TODO refreshni Frame(vymazali sa data)
             return
 
         return_code = self.adapter.start_measurement()
@@ -211,7 +211,8 @@ class Program:
 
             data = data.strip()
             self.project.data.add_measurement(data)
-            # TODO refreshni Frame
+            print("idem na refresh")
+            self.gui.sweep.refresh_frame() # TODO refreshni Frame
             print()
             print("pocet merani: " + str(self.project.data.number_of_measurements))
             print("parametre: " + str(self.project.data.parameters))

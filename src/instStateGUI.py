@@ -19,6 +19,7 @@ class InstStateGui:
         self.preset_button = tk.Button(inst_state_frame, text="PRESET", bg='#bfc6db', fg='#323338',
                                        font=widget_button_font, command=self.preset)
         self.preset_button.grid(row=0, column=1, padx=10, pady=(10,5))
+        self.preset_button["state"] = tk.DISABLED
 
         line_label = tk.Label(inst_state_frame, text="_____________________________________________________",
                               fg="#b3b3b5", bg="#f2f3fc")
@@ -27,6 +28,7 @@ class InstStateGui:
         self.save_state_button = tk.Button(inst_state_frame, text="SAVE STATE", bg='#bfc6db',
                                            fg='#323338', font=widget_button_font, command=self.save_state)
         self.save_state_button.grid(row=4, column=1, columnspan=1, pady=(10,5))
+        self.save_state_button["state"] = tk.DISABLED
 
         self.recall_state_button = tk.Button(inst_state_frame, text="RECALL STATE", bg='#bfc6db',
                                              fg='#323338', font=widget_button_font, command=self.recall_state)
@@ -57,15 +59,19 @@ class InstStateGui:
     def allow_recall_state(self):
         self.recall_state_button["state"] = tk.NORMAL
 
-    def disable(self):
+    def instrumentstate_state_disconnected(self):
         self.preset_button["state"] = tk.DISABLED
         self.save_state_button["state"] = tk.DISABLED
         self.recall_state_button["state"] = tk.DISABLED
 
-    def enable(self):
+    def instrumentstate_state_connected(self):
         self.preset_button["state"] = tk.NORMAL
         self.save_state_button["state"] = tk.NORMAL
-        self.recall_state_button["state"] = tk.NORMAL
+        if self.main_gui.program.project.get_state() is None:
+            self.recall_state_button["state"] = tk.DISABLED
+        else:
+            self.recall_state_button["state"] = tk.NORMAL
+
 
     def save_state(self):
         print("GUI:ukladám stav prístroja do pamäte")
@@ -77,3 +83,7 @@ class InstStateGui:
         print("GUI:načítavam stav z pamäte do prístroja")
         self.main_gui.program.queue_function("recall_state()")
         # self.main_gui.program.adapter.set_state(self.main_gui.program.project.get_state())
+
+    def load_project_state(self):
+        pass
+        #TODO zistiť či je connect a či uložený stav, ak áno umožniť recall state tlačídlo
