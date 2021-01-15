@@ -1,7 +1,7 @@
+import tkinter
 import os
 from datetime import datetime
 from tkinter import filedialog
-
 
 class FileManager:
     def __init__(self, program):
@@ -19,10 +19,10 @@ class FileManager:
         date = datetime.fromtimestamp(time)
         date = str(date)
         date = date.replace(":", "-")
-
+        
         if os.path.exists(filepath):
-            filepath += " " + str(date)
-
+          filepath += " " + str(date)
+          
         os.mkdir(filepath)
 
         # Description
@@ -127,47 +127,4 @@ class FileManager:
     #     # vyrobi settings.txt v kazdom riadku  kluc = hodnota
     #     # address = 16
     #     pass
-
-
-#s = FileManager()
-#s.save_project("C:\\Users\\jozef\\Desktop","Projekkkt","descriptiiiiiiii")
-#s.save_project("D:\\Fakulta\\3_rocnik\\TIS\\zzzzProjekt\\plazma - Copy\\src","Projekkkt","descriptiiiiiiii")
-#print(datetime.now())
-#s.load_project()
-#s.set_settings(10,20,30,40,50,50,5,0,4,986,51,"ese")
-#s.save_settings()
-# def save(self):
-#     # TODO: save project
-#
-#     folder_name = tk.filedialog.askdirectory()
-#     if self.project_name_entry.get() == "Project Name" or self.project_name_entry.get() == "":
-#         now = datetime.now()
-#         date = datetime.date(now)
-#
-#         file_name = "PROJECT - " + str(date)
-#         path = os.path.join(folder_name, file_name)
-#         try:
-#             os.mkdir(path)
-#         except FileExistsError:
-#             os.mkdir(path)
-#     else:
-#         file_name = self.project_name_entry.get()
-#         path = os.path.join(folder_name, file_name)
-#         os.mkdir(path)
-#
-#     self.save_description(path)
-#
-# def save_description(self, path):
-#
-#     if (self.project_descrip_text.get(1.0, tk.END) != "Project Name" and self.project_descrip_text.get(1.0,
-#                                                                                                        tk.END) != ""):
-#         name = "description.txt"
-#         file_path = os.path.join(path, name)
-#         f = open(file_path, "w")
-#         f.write(self.project_descrip_text.get(1.0, tk.END))
-#         f.close()
-#
-# def load(self):
-#     # TODO: load project
-#
-#     folderName = tk.filedialog.askdirectory()
+    
