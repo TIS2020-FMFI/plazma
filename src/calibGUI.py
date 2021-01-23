@@ -19,10 +19,11 @@ class CalibrationGui:
                                           fg="#323338", bg='#f2f3fc', font=widget_title_font, relief=tk.RIDGE)
         calibration_frame.grid(row=0, rowspan=1, column=2, sticky=tk.N, padx=5)
 
-        save_calib_button = tk.Button(calibration_frame, text="SAVE CALIBRATION",
+        self.save_calib_button = tk.Button(calibration_frame, text="SAVE CALIBRATION",
                                       font=widget_button_font, bg='#bfc6db', fg='#323338',
                                       command=self.save_calibration)
-        save_calib_button.grid(row=0, column=0, pady=5, padx=5)
+        self.save_calib_button.grid(row=0, column=0, pady=5, padx=5)
+        self.save_calib_button["state"] = tk.DISABLED
 
         self.load_calib_button = tk.Button(calibration_frame, text="LOAD CALIBRATION",
                                       font=widget_button_font, bg='#bfc6db', fg='#323338',
@@ -48,6 +49,7 @@ class CalibrationGui:
                                          to=1.0000, increment=0.0001, format="%.4f", justify=tk.RIGHT,
                                          font=widget_port_font)
         self.port1_spin_box.grid(row=3, column=1, sticky=tk.W, pady=3)
+        self.port1_spin_box["state"] = tk.DISABLED
 
         port2_length_label = tk.Label(calibration_frame, text="PORT2 Length/(m): ", fg='#323338', bg="#f2f3fc",
                                       font=widget_port_font)
@@ -58,6 +60,7 @@ class CalibrationGui:
                                          from_=0.0000, to=1.0000, increment=0.0001, format="%.4f",
                                          justify=tk.RIGHT, font=widget_port_font)
         self.port2_spin_box.grid(row=4, column=1, sticky=tk.W, pady=3)
+        self.port2_spin_box["state"] = tk.DISABLED
 
         velocity_factor_label = tk.Label(calibration_frame, text="Velocity Factor:",
                                          fg='#323338', bg="#f2f3fc", font=widget_port_font)
@@ -68,11 +71,13 @@ class CalibrationGui:
                                             from_=0.00, to=1.00, increment=0.01, format="%.2f",
                                             justify=tk.RIGHT, font=widget_port_font)
         self.vel_fact_spin_box.grid(row=5, column=1, sticky=tk.W, pady=3)
+        self.vel_fact_spin_box["state"] = tk.DISABLED
 
         self.adjust_cal_button = tk.Button(calibration_frame, text="Adjust Calibration",
                                            font=widget_port_font, bg='#bfc6db')
         self.adjust_cal_button.grid(row=6, column=1, sticky=tk.W, pady=5)
         self.adjust_cal_button["command"] = self.adjust
+        self.adjust_cal_button["state"] = tk.DISABLED
 
     def allow_calibration_load(self):
         self.load_calib_button["state"] = tk.NORMAL
@@ -112,3 +117,30 @@ class CalibrationGui:
         self.main_gui.program.adapter.set_port1_length(self.port1_spin_box.get())
         self.main_gui.program.adapter.set_port2_length(self.port2_spin_box.get())
 
+    def calibration_state_connected(self):
+        self.save_calib_button["state"] = tk.NORMAL
+
+        if self.main_gui.program.project.get_calibration() is None:
+            self.load_calib_button["state"] = tk.DISABLED
+        else:
+            self.load_calib_button["state"] = tk.NORMAL
+
+        self.adjust_cal_button["state"] = tk.NORMAL
+        self.port1_spin_box["state"] = tk.NORMAL
+        self.port2_spin_box["state"] = tk.NORMAL
+        self.vel_fact_spin_box["state"] = tk.NORMAL
+
+    def calibration_state_disconnected(self):
+        self.save_calib_button["state"] = tk.DISABLED
+        self.load_calib_button["state"] = tk.DISABLED
+        self.adjust_cal_button["state"] = tk.DISABLED
+        self.port1_spin_box["state"] = tk.DISABLED
+        self.port2_spin_box["state"] = tk.DISABLED
+        self.vel_fact_spin_box["state"] = tk.DISABLED
+
+    def load_project_calibration(self):
+        self.vel_fact = str(self.main_gui.program.settings.vel_factor)
+        self.port1 = str(self.main_gui.program.settings.port1)
+        self.port2 = str(self.main_gui.program.settings.port2)
+
+        #TODO ak conneced a načítana calib - load calib

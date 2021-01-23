@@ -123,12 +123,13 @@ class SweepGui:
         self.continuous_checkbutton = tk.Checkbutton(sweep_frame, variable=self.continuous, text="continuous",
                                                      font=widget_port_font, bg='#f2f3fc')
         self.continuous_checkbutton.grid(row=14, column=0, columnspan=2, sticky=tk.W, pady=(5, 0), padx=(30, 0))
-        self.continuous_checkbutton["command"] = self.visibility
+        self.continuous_checkbutton["state"] = tk.DISABLED
 
         self.autosave = tk.IntVar()
         self.autosave_checkbutton = tk.Checkbutton(sweep_frame, variable=self.autosave, text="autosave",
                                                    font=widget_port_font, bg='#f2f3fc')
         self.autosave_checkbutton.grid(row=14, column=2, columnspan=2, sticky=tk.W, pady=(5, 0))
+        self.autosave_checkbutton["state"] = tk.DISABLED
 
         line_label = tk.Label(sweep_frame, text="________________________________________________________________",
                               fg="#b3b3b5", bg="#f2f3fc")
@@ -156,14 +157,14 @@ class SweepGui:
         self.run_button = tk.Button(sweep_frame, text="Run", bg='#bfc6db', fg='#323338', font=widget_button_font,
                                     width=15, command=self.start_measure)
         self.run_button.grid(row=17, column=1, columnspan=3, pady=(30, 20), sticky=tk.W)
+        self.run_button["state"] = tk.DISABLED
 
-        self.visibility()
+        self.refresh_frame()
 
         sweep_frame["width"] = 4000
         sweep_frame["height"] = 4000
 
     def start_measure(self):
-        # TODO ak nie je konektnuty tak nemoze kliknut na Run
         measure = True
 
         start = self.start_entry.get()
@@ -271,8 +272,19 @@ class SweepGui:
 
         self.gui.program.settings.set_address(self.gui.gpib.address_entry.get())
 
-    def visibility(self):
-        if self.continuous.get() == 0:
+    def refresh_frame(self):
+        if self.gui.program.project.exists_data():
+            self.frame_entry.delete(0, tk.END)
+            self.frame_entry.insert(tk.END, "0")  # TODO: aktuálny frame
+            self.frame_entry["state"] = tk.NORMAL
+            self.max_label["text"] = " / " + str(self.gui.program.project.data.get_number_of_measurements())
+            self.frame_down_button["state"] = tk.NORMAL
+            self.frame_up_button["state"] = tk.NORMAL
+            self.frame_last_button["state"] = tk.NORMAL
+            self.gui.info.change_data_label()
+
+        else:
+
             self.frame_entry.delete(0, tk.END)
             self.frame_entry.insert(tk.END, "0")
             self.frame_entry["state"] = tk.DISABLED
@@ -280,11 +292,37 @@ class SweepGui:
             self.frame_down_button["state"] = tk.DISABLED
             self.frame_up_button["state"] = tk.DISABLED
             self.frame_last_button["state"] = tk.DISABLED
+            self.gui.info.change_data_label()
+
+    def sweep_state_connected(self):
+        self.autosave_checkbutton["state"] = tk.NORMAL
+        self.continuous_checkbutton["state"] = tk.NORMAL
+        self.run_button["state"] = tk.NORMAL
+        self.refresh_frame()
+
+    def sweep_state_disconnected(self):
+        self.autosave_checkbutton["state"] = tk.DISABLED
+        self.continuous_checkbutton["state"] = tk.DISABLED
+        self.run_button["state"] = tk.DISABLED
+        self.refresh_frame()
+
+    def load_project_sweep(self):
+        if self.gui.program.settings.get_freq_unit() == "MHz":
+            self.freq_variable.set(0)
         else:
-            self.frame_entry.delete(0, tk.END)
-            self.frame_entry.insert(tk.END, "0")  # TODO: aktuálny frame
-            self.frame_entry["state"] = tk.NORMAL
-            self.max_label["text"] = "/ 10"  # TODO: počet Frame
-            self.frame_down_button["state"] = tk.NORMAL
-            self.frame_up_button["state"] = tk.NORMAL
-            self.frame_last_button["state"] = tk.NORMAL
+            self.freq_variable.set(1)
+
+        self.start_entry["text"] = self.gui.program.settings.get_freq_start()
+        self.stop_entry["text"] = self.gui.program.settings.get_freq_stop()
+        self.points_entry["text"] = self.gui.program.settings.get_points()
+
+        #TODO - nastaviť jednotlivé parametre
+
+        if self.gui.program.settings.get_parameter_format() == "RI":
+            self.measure_variable.set(2)
+        elif self.gui.program.settings.get_parameter_format() == "MA":
+            self.measure_variable.set(0)
+        else:
+            self.measure_variable.set(1)
+
+        self.refresh_frame()

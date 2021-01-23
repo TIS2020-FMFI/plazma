@@ -59,18 +59,22 @@ class FileManager:
             f.close()
 
         # Data
-        os.mkdir(filepath + "\\measurements")
+        if self.program.project.data is not None:
+            os.mkdir(filepath + "\\measurements")
 
-        for i in range(self.program.project.data.get_number_of_measurements()):
-            data = self.program.project.data.print_measurement(i)
-            # data_time = self.program.project.data.print_measurement_date()
-            # data_time = data_time.replace(":", "-")
-            if data is not None:
-                name = "measurements\\measurement" + str(i+1) + ".s2p"  # + data_time + ".s2p"
-                file_path = os.path.join(filepath, name)
-                f = open(file_path, "w")
-                f.write(data)
-                f.close()
+            for i in range(self.program.project.data.get_number_of_measurements()):
+                data = self.program.project.data.print_measurement(i)
+                # data_time = self.program.project.data.print_measurement_date()
+                # data_time = data_time.replace(":", "-")
+                if data is not None:
+                    name = "measurements\\measurement" + str(i+1) + ".s2p"  # + data_time + ".s2p"
+                    file_path = os.path.join(filepath, name)
+                    f = open(file_path, "w")
+                    f.write(data)
+                    f.close()
+
+        # po ulozeni projektu sa zavola metoda v INFO GUI aby pouzivatel videl ze ulozil
+        self.program.gui.info.change_project_label()
 
     def load_project(self, path):
         filepath = path + "/" + "description.txt"
@@ -85,12 +89,6 @@ class FileManager:
             for line in f:
                 value = line.split("=")[-1].strip()
                 zoznam.append(value)
-        # self.set_settings(zoznam[0], zoznam[1], zoznam[2], zoznam[3], zoznam[4], zoznam[5], zoznam[6], zoznam[7], zoznam[8],
-        #                   zoznam[9], zoznam[10], zoznam[11])
-        # self.program.project.set_state(stav)
-        #  stav = self.program.project.get_state()
-        # self.program.project.set_calibration(kalibracia)
-        pass
 
     # def get_settings(self):
     #     return self.settings

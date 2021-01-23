@@ -49,12 +49,15 @@ class GpibGui:
                                      command=self.open_gpib_terminal)
         self.gpib_button['font'] = widget_button_font
         self.gpib_button.grid(row=4, column=2, padx=(10,20), pady=15)
+        self.gpib_button["state"] = tk.DISABLED
 
-    def disable(self):
-        self.address_entry["state"] = tk.DISABLED
-
-    def enable(self):
+    def gpib_state_disconnected(self):
         self.address_entry["state"] = tk.NORMAL
+        self.gpib_button["state"] = tk.DISABLED
+
+    def gpib_state_connected(self):
+        self.address_entry["state"] = tk.DISABLED
+        self.gpib_button["state"] = tk.NORMAL
 
     def open_gpib_terminal(self):
         # TODO: otvorít GPIB terminál
@@ -78,10 +81,13 @@ class GpibGui:
         print("Pripájam prístroj")
         self.connect_button['text'] = "OFF"
         self.connect_button["bg"] = "#b5555a"
-        self.disable()
+        self.main_gui.state_connected()
 
-    def update_button_disconnected(self):       # toto sa bude spustat threadom adapteru
+    def update_button_disconnected(self):
         print("Odpájam prístroj")
         self.connect_button["text"] = "ON"
         self.connect_button["bg"] = "#5bb38a"
-        self.enable()
+        self.main_gui.state_disconnected()
+
+    def load_project_settings(self, address):
+        self.address_entry["text"] = str(address)
