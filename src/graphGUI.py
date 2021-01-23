@@ -133,7 +133,6 @@ class GraphsGui:
         self.graph2_S22_radiobutton = tk.Radiobutton(self.graph2, text="S22", bg='#f2f3fc', fg="#323338", command=self.graph2_plot_draw,
                                                      variable=self.graph2_s_variable, value=3, font=widget_label_font)
 
-
         self.graph2_S11_radiobutton.grid(row=3, column=0, padx=(10, 0), sticky=tk.N + tk.W)
         self.graph2_S12_radiobutton.grid(row=3, column=0, padx=(70, 0), sticky=tk.N + tk.W)
         self.graph2_S21_radiobutton.grid(row=4, column=0, padx=(10, 0), pady=(0, 0), sticky=tk.N + tk.W)
