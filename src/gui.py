@@ -31,6 +31,9 @@ class Gui:
         # PROJECT
         self.project = ProjectGui(self)
 
+        # INFO
+        self.info = InfoGui(self)
+
         # CALIBRATIONPART
         self.calibration = CalibrationGui(self)
 
@@ -40,14 +43,18 @@ class Gui:
         # GRAPHS
         self.graphs = GraphsGui(self)
 
-        # INFO
-        self.info = InfoGui(self)
 
-    def disable_buttons(self):
-        self.gpib.disable()
-        self.state.disable()
 
-    def enable_buttons(self):
-        self.gpib.enable()
-        self.state.enable()
+    def state_connected(self):
+        self.gpib.gpib_state_connected()
+        self.state.instrumentstate_state_connected()
+        self.calibration.calibration_state_connected()
+        self.sweep.sweep_state_connected()
+
+    def state_disconnected(self):
+        self.gpib.gpib_state_disconnected()
+        self.state.instrumentstate_state_disconnected()
+        self.calibration.calibration_state_disconnected()
+        self.sweep.sweep_state_disconnected()
+
 

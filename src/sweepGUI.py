@@ -7,6 +7,8 @@ class SweepGui:
     def __init__(self, main_gui):
         self.gui = main_gui
         self.create_sweep_gui()
+        self.current_frame = 0
+        self.on_last_frame = True
 
     def create_sweep_gui(self):
         widget_title_font = tk_font.Font(family="Tw Cen MT", size=16, weight="bold")
@@ -123,12 +125,13 @@ class SweepGui:
         self.continuous_checkbutton = tk.Checkbutton(sweep_frame, variable=self.continuous, text="continuous",
                                                      font=widget_port_font, bg='#f2f3fc')
         self.continuous_checkbutton.grid(row=14, column=0, columnspan=2, sticky=tk.W, pady=(5, 0), padx=(30, 0))
-        self.continuous_checkbutton["command"] = self.visibility
+        self.continuous_checkbutton["state"] = tk.DISABLED
 
         self.autosave = tk.IntVar()
         self.autosave_checkbutton = tk.Checkbutton(sweep_frame, variable=self.autosave, text="autosave",
                                                    font=widget_port_font, bg='#f2f3fc')
         self.autosave_checkbutton.grid(row=14, column=2, columnspan=2, sticky=tk.W, pady=(5, 0))
+        self.autosave_checkbutton["state"] = tk.DISABLED
 
         line_label = tk.Label(sweep_frame, text="________________________________________________________________",
                               fg="#b3b3b5", bg="#f2f3fc")
@@ -137,27 +140,31 @@ class SweepGui:
         self.frame_label = tk.Label(sweep_frame, text="Frame:", fg="#323338", bg='#f2f3fc', font=widget_label_font)
         self.frame_label.grid(row=16, column=0, sticky=tk.W, pady=(2, 0), padx=(30, 0))
 
-        self.frame_entry = tk.Entry(sweep_frame, width=3, fg="#838691", font=widget_label_font)
+        self.frame_entry = tk.Entry(sweep_frame, width=3, fg="black", font=widget_label_font)
         self.frame_entry.grid(row=16, column=1, sticky=tk.W, pady=(15, 10))
         self.frame_entry.insert(tk.END, "1")
 
         self.max_label = tk.Label(sweep_frame, text="/10", fg="#323338", bg='#f2f3fc', font=widget_label_font)
         self.max_label.grid(row=16, column=1, sticky=tk.W, padx=(30, 0))
 
-        self.frame_down_button = tk.Button(sweep_frame, text="<", bg='#bfc6db', fg='#323338', font=widget_button_font)
+        self.frame_down_button = tk.Button(sweep_frame, text="<", bg='#bfc6db', fg='#323338', font=widget_button_font,
+                                           command=self.previous_frame)
         self.frame_down_button.grid(row=16, column=2, pady=5, sticky=tk.W)
 
-        self.frame_up_button = tk.Button(sweep_frame, text=">", bg='#bfc6db', fg='#323338', font=widget_button_font)
+        self.frame_up_button = tk.Button(sweep_frame, text=">", bg='#bfc6db', fg='#323338', font=widget_button_font,
+                                         command=self.next_frame)
         self.frame_up_button.grid(row=16, column=2, padx=(30, 0), pady=2, sticky=tk.W)
 
-        self.frame_last_button = tk.Button(sweep_frame, text=">>", bg='#bfc6db', fg='#323338', font=widget_button_font)
+        self.frame_last_button = tk.Button(sweep_frame, text=">>", bg='#bfc6db', fg='#323338', font=widget_button_font,
+                                           command=self.last_frame)
         self.frame_last_button.grid(row=16, column=2, columnspan=3, pady=2, padx=(60, 0), sticky=tk.W)
 
         self.run_button = tk.Button(sweep_frame, text="Run", bg='#bfc6db', fg='#323338', font=widget_button_font,
                                     width=15, command=self.start_measure)
         self.run_button.grid(row=17, column=1, columnspan=3, pady=(30, 20), sticky=tk.W)
+        self.run_button["state"] = tk.DISABLED
 
-        self.visibility()
+        self.reset_frame()
 
         sweep_frame["width"] = 4000
         sweep_frame["height"] = 4000
@@ -199,53 +206,163 @@ class SweepGui:
             measure = False
 
         if measure:
-            print("start measure")
             if self.run_button["text"] == "Run":
+                print("GUI start measure")
                 self.run_measure()
             else:
+                print("GUI stop measure")
                 self.stop_measure()
         else:
             print("bad input")
 
-
     def stop_measure(self):
-        print("zastavujem meranie")
+        print("GUI zastavujem meranie")
         self.run_button["text"] = "Run"
-        self.gui.program.adapter.end_measurement()
+        self.gui.program.end_measurement()
+        # self.gui.program.adapter.end_measurement()
 
     def run_measure(self):
         # TODO zmena stavu
         # TODO volanie všetkých metód
-        # TODO odosielať settings
+
+        self.send_settings()
+
+        # TODO pred meranim prejde do stavu 3(podla dokumentu v testovacich scenaroch)
+        if self.continuous.get() == 0:
+            self.gui.program.queue_function("measure()")
+            # print(self.gui.program.adapter.measure())
+        else:
+            self.run_button["text"] = "Stop"
+            self.gui.program.queue_function("start_measurement()")
+            # self.gui.program.adapter.start_measurement()
+
+        # self.saveSettings()
+
+    def send_settings(self):
+        unit = "MHz"
+        if self.freq_variable.get() == 1:
+            unit = "GHz"
+        self.gui.program.settings.set_freq_unit(unit)
+
+        self.gui.program.settings.set_freq_start(self.start_entry.get())
+        self.gui.program.settings.set_freq_stop(self.stop_entry.get())
+        self.gui.program.settings.set_points(self.points_entry.get())
+
+        params = ""
+        if self.s11.get():
+            params += "S11 "
+        if self.s21.get():
+            params += "S21 "
+        if self.s12.get():
+            params += "S12 "
+        if self.s22.get():
+            params += "S22 "
+        self.gui.program.settings.set_parameters(params)
+
+        if self.measure_variable.get() == 0:
+            param_format = "MA"
+        elif self.measure_variable.get() == 1:
+            param_format = "DB"
+        else:
+            param_format = "RI"
+        self.gui.program.settings.set_parameter_format(param_format)
+
+        if self.continuous.get() == 0:
+            self.gui.program.settings.set_continuous(False)
+        else:
+            self.gui.program.settings.set_continuous(True)
 
         if self.autosave.get() == 1:
             self.gui.project.save()
 
-        if self.continuous.get() == 1:
-            self.run_button["text"] = "Stop"
+        self.gui.program.settings.set_address(self.gui.gpib.address_entry.get())
 
-        if self.continuous.get() == 0:
-            print(self.gui.program.adapter.measure())
-        else:
-            self.gui.program.adapter.start_measurement()
+    def refresh_frame(self):
+        if self.gui.program.project.exists_data():
+            max_frames = self.gui.program.project.data.get_number_of_measurements()
+            if self.on_last_frame:
+                # TODO updatnut to cislo
+                # TODO Refreshni grafy
+                self.current_frame = max_frames
 
 
-        # self.saveSettings()
-
-    def visibility(self):
-        if self.continuous.get() == 0:
-            self.frame_entry.delete(0, tk.END)
-            self.frame_entry.insert(tk.END, "0")
-            self.frame_entry["state"] = tk.DISABLED
-            self.max_label["text"] = "/ ---"
-            self.frame_down_button["state"] = tk.DISABLED
-            self.frame_up_button["state"] = tk.DISABLED
-            self.frame_last_button["state"] = tk.DISABLED
-        else:
-            self.frame_entry.delete(0, tk.END)
-            self.frame_entry.insert(tk.END, "0")  # TODO: aktuálny frame
+            # self.frame_entry.insert(tk.END, str(self.gui.program.project.data.get_number_of_measurements()))  # TODO: aktuálny frame
             self.frame_entry["state"] = tk.NORMAL
-            self.max_label["text"] = "/ 10"  # TODO: počet Frame
+            self.frame_entry.delete(0, tk.END)
+            self.frame_entry.insert(tk.END, str(self.current_frame))
+            self.frame_entry["state"] = tk.DISABLED
+            self.max_label["text"] = " / " + str(max_frames)
             self.frame_down_button["state"] = tk.NORMAL
             self.frame_up_button["state"] = tk.NORMAL
             self.frame_last_button["state"] = tk.NORMAL
+            self.gui.info.change_data_label()
+
+        else:
+            self.reset_frame()
+
+        self.gui.graphs.refresh_all_graphs()
+
+    def reset_frame(self):
+        self.current_frame = 0
+        self.frame_entry.delete(0, tk.END)
+        self.frame_entry.insert(tk.END, "0")
+        self.frame_entry["state"] = tk.DISABLED
+        self.max_label["text"] = "/ ---"
+        self.frame_down_button["state"] = tk.DISABLED
+        self.frame_up_button["state"] = tk.DISABLED
+        self.frame_last_button["state"] = tk.DISABLED
+        self.gui.info.change_data_label()
+
+    def sweep_state_connected(self):
+        self.autosave_checkbutton["state"] = tk.NORMAL
+        self.continuous_checkbutton["state"] = tk.NORMAL
+        self.run_button["state"] = tk.NORMAL
+        # self.refresh_frame()
+
+    def sweep_state_disconnected(self):
+        self.autosave_checkbutton["state"] = tk.DISABLED
+        self.continuous_checkbutton["state"] = tk.DISABLED
+        self.run_button["state"] = tk.DISABLED
+        # self.refresh_frame()
+
+    def load_project_sweep(self):
+        if self.gui.program.settings.get_freq_unit() == "MHz":
+            self.freq_variable.set(0)
+        else:
+            self.freq_variable.set(1)
+
+        self.start_entry["text"] = self.gui.program.settings.get_freq_start()
+        self.stop_entry["text"] = self.gui.program.settings.get_freq_stop()
+        self.points_entry["text"] = self.gui.program.settings.get_points()
+
+        #TODO - nastaviť jednotlivé parametre
+
+        if self.gui.program.settings.get_parameter_format() == "RI":
+            self.measure_variable.set(2)
+        elif self.gui.program.settings.get_parameter_format() == "MA":
+            self.measure_variable.set(0)
+        else:
+            self.measure_variable.set(1)
+
+        self.refresh_frame()
+
+    def next_frame(self):
+        print("Som rychly!")
+        if self.current_frame < self.gui.program.project.data.get_number_of_measurements():
+            self.current_frame += 1
+            self.refresh_frame()
+        else:
+            self.on_last_frame = True
+
+    def previous_frame(self):
+        print("Som rychly!")
+        self.on_last_frame = False
+        if self.current_frame > 0:
+            self.current_frame -= 1
+            self.refresh_frame()
+
+    def last_frame(self):
+        print("Som rychly!")
+        self.on_last_frame = True
+        self.current_frame = self.gui.program.project.data.get_number_of_measurements()
+        self.refresh_frame()
