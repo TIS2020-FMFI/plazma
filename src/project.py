@@ -100,11 +100,15 @@ class Project:
             self.measurements_list.append(('\n'.join(header), data_dict))
             self.number_of_measurements += 1
 
-        def get_measurement(self, s_param, measurement_index = 0):
+        def get_measurement(self, s_param, measurement_index=0):
             measurement = {}
-            for key, val in self.measurements_list[measurement_index][1].items():
-                measurement[key] = copy.copy(val[s_param])
-            return measurement  # vráti slovník pre grafy, measurement[frekvencia] = (hodnota1, hodnota2)
+            try:
+                for key, val in self.measurements_list[measurement_index][1].items():
+                    # measurement[key] = copy.copy(val[s_param])
+                    measurement[float(key)] = (float(val[s_param][0]), float(val[s_param][1]))
+                return measurement  # vráti slovník pre grafy, measurement[frekvencia] = (hodnota1, hodnota2)
+            except (KeyError, IndexError):
+                return None
 
         def print_measurement(self, measurement_index=0):
             result = self.measurements_list[measurement_index][0] + '\n'

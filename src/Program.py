@@ -146,7 +146,8 @@ class Program:
         self.prepare_measurement()
         if self.project.data is None:  # ak neboli vybrate ziadne S-parametre, vymazu sa data z pameti
             # TODO prejde do stavu 2
-            self.gui.sweep.refresh_frame()# TODO refreshni Frame(vymazali sa data)
+            self.gui.window.after_idle(self.gui.sweep.refresh_frame)
+            # self.gui.sweep.refresh_frame()  # TODO refreshni Frame(vymazali sa data)
             return
 
         data = self.adapter.measure()
@@ -167,7 +168,8 @@ class Program:
         print("Data ktore prisli: \n" + data)
 
         self.project.data.add_measurement(data)
-        self.gui.sweep.refresh_frame() # TODO refreshni Frame
+        self.gui.window.after_idle(self.gui.sweep.refresh_frame)
+        # self.gui.sweep.refresh_frame()  # TODO refreshni Frame
         print()
         print("pocet merani: " + str(self.project.data.number_of_measurements))
         print("parametre: " + str(self.project.data.parameters))
@@ -180,7 +182,8 @@ class Program:
         self.prepare_measurement()
         if self.project.data is None:  # ak neboli vybrate ziadne S-parametre
             # TODO prejde do stavu 2
-            self.gui.sweep.refresh_frame()# TODO refreshni Frame(vymazali sa data)
+            self.gui.window.after_idle(self.gui.sweep.refresh_frame)
+            # self.gui.sweep.refresh_frame()  # TODO refreshni Frame(vymazali sa data)
             return
 
         return_code = self.adapter.start_measurement()
@@ -212,7 +215,9 @@ class Program:
             data = data.strip()
             self.project.data.add_measurement(data)
             print("idem na refresh")
-            self.gui.sweep.refresh_frame() # TODO refreshni Frame
+            # self.gui.window.after_idle(func=self.gui.sweep.refresh_frame)
+            self.gui.window.after_idle(self.gui.sweep.refresh_frame)
+            # self.gui.sweep.refresh_frame()  # TODO refreshni Frame
             print()
             print("pocet merani: " + str(self.project.data.number_of_measurements))
             print("parametre: " + str(self.project.data.parameters))
@@ -249,6 +254,19 @@ class Program:
         finish_thread = threading.Thread(target=finish)
         finish_thread.daemon = True
         finish_thread.start()
+
+    def get_data_for_graph(self, measurement_index, s_param):
+        measurement = self.project.data.get_measurement(s_param, measurement_index)
+        if measurement is None:
+            return None
+        freq = measurement.keys()
+        value1 = []
+        value2 = []
+        for v1, v2 in measurement.values():
+            value1.append(v1)
+            value2.append(v2)
+
+        return freq, value1, value2
 
 
 if __name__ == '__main__':

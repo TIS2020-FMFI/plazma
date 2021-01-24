@@ -10,7 +10,7 @@ class Settings:
         self.freq_stop = 2.0
         self.points = 201
         self.parameter_format = "RI"
-        self.parameters = "S21"   # TODO checknut defaults
+        self.parameters = ""   # TODO checknut defaults
         self.continuous = False
 
     def print_settings(self):

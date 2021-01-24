@@ -3,13 +3,13 @@ import tkinter.font as tk_font
 
 from PIL import ImageTk, Image
 
+from graphs import Graphs
+
 
 class GraphsGui:
     def __init__(self, main_gui):
         self.main_gui = main_gui
-        self.create_graphs_gui()
 
-    def create_graphs_gui(self):
         widget_label_font = tk_font.Font(family="Tw Cen MT", size=11)
         widget_title_font = tk_font.Font(family="Tw Cen MT", size=13, weight="bold")
         widget_scale_font = tk_font.Font(family="Tw Cen MT", size=11, weight="bold")
@@ -28,9 +28,10 @@ class GraphsGui:
         self.graph1.grid(row=0, column=0, sticky=tk.N, rowspan=5)
 
         # TODO: Vložiť graf
-        self.graph1_plot = tk.Label(self.graph1, image=photo, width=400, height=300)
-        self.graph1_plot.image = photo
-        self.graph1_plot.grid(row=0, column=0, padx=10, pady=10)
+        # self.graph1_plot = tk.Label(self.graph1, image=photo, width=400, height=300)
+        # self.graph1_plot.image = photo
+        # self.graph1_plot.grid(row=0, column=0, padx=10, pady=10)
+        self.graph1_plot = Graphs(self.graph1, self.main_gui.program)
 
         self.graph1_variable = tk.IntVar()
         self.graph1_XYY_radiobutton = tk.Radiobutton(self.graph1, text="XYY", bg='#f2f3fc', fg="#323338", command=self.graph1_plot_draw,
@@ -100,9 +101,10 @@ class GraphsGui:
         self.graph2.grid(row=0, column=1, sticky=tk.N, rowspan=15)
 
         # TODO: vložiť graf2
-        self.graph2_plot = tk.Label(self.graph2, image=photo, width=400, height=300)
-        self.graph2_plot.image = photo
-        self.graph2_plot.grid(row=0, column=0, padx=10, pady=10)
+        # self.graph2_plot = tk.Label(self.graph2, image=photo, width=400, height=300)
+        # self.graph2_plot.image = photo
+        # self.graph2_plot.grid(row=0, column=0, padx=10, pady=10)
+        self.graph2_plot = Graphs(self.graph2, self.main_gui.program)
 
         self.graph2_variable = tk.IntVar()
         self.graph2_XYY_radiobutton = tk.Radiobutton(self.graph2, text="XYY", bg='#f2f3fc', fg="#323338", command=self.graph2_plot_draw,
@@ -130,7 +132,6 @@ class GraphsGui:
                                                      variable=self.graph2_s_variable, value=2, font=widget_label_font)
         self.graph2_S22_radiobutton = tk.Radiobutton(self.graph2, text="S22", bg='#f2f3fc', fg="#323338", command=self.graph2_plot_draw,
                                                      variable=self.graph2_s_variable, value=3, font=widget_label_font)
-
 
         self.graph2_S11_radiobutton.grid(row=3, column=0, padx=(10, 0), sticky=tk.N + tk.W)
         self.graph2_S12_radiobutton.grid(row=3, column=0, padx=(70, 0), sticky=tk.N + tk.W)
@@ -171,9 +172,10 @@ class GraphsGui:
         self.graph3.grid(row=5, column=0, sticky=tk.N, rowspan=5)
 
         # TODO: vložiť graf3
-        self.graph3_plot = tk.Label(self.graph3, image=photo, width=400, height=300)
-        self.graph3_plot.image = photo
-        self.graph3_plot.grid(row=0, column=0, padx=10, pady=10)
+        # self.graph3_plot = tk.Label(self.graph3, image=photo, width=400, height=300)
+        # self.graph3_plot.image = photo
+        # self.graph3_plot.grid(row=0, column=0, padx=10, pady=10)
+        self.graph3_plot = Graphs(self.graph3, self.main_gui.program)
 
         self.graph3_variable = tk.IntVar()
         self.graph3_XYY_radiobutton = tk.Radiobutton(self.graph3, text="XYY", bg='#f2f3fc', fg="#323338", command=self.graph3_plot_draw,
@@ -241,10 +243,10 @@ class GraphsGui:
         self.graph4.grid(row=5, column=1, sticky=tk.N, rowspan=5)
 
         # TODO vložiť graf č.4:
-        self.graph4_plot = tk.Label(self.graph4, image=photo, width=400, height=300)
-        self.graph4_plot.image = photo
-        self.graph4_plot.grid(row=0, column=0, padx=10, pady=10)
-
+        # self.graph4_plot = tk.Label(self.graph4, image=photo, width=400, height=300)
+        # self.graph4_plot.image = photo
+        # self.graph4_plot.grid(row=0, column=0, padx=10, pady=10)
+        self.graph4_plot = Graphs(self.graph4, self.main_gui.program)
 
         self.graph4_variable = tk.IntVar()
         self.graph4_XYY_radiobutton = tk.Radiobutton(self.graph4, text="XYY", bg='#f2f3fc', fg="#323338", command=self.graph4_plot_draw,
@@ -358,66 +360,100 @@ class GraphsGui:
         # TODO: kresliť graf č.4
         print("kreslim graf č.4")
         if self.graph4_variable.get() == 0:
-            print("kreslim XYY")
+            self.graph4_plot.set_type("XYY")
         else:
-            print("kreslim smith")
+            self.graph4_plot.set_type("Smith")
 
         if self.graph4_s_variable.get() == 0:
-            print("kreslim S11")
+            self.graph4_plot.set_s_param("S11")
         elif self.graph4_s_variable.get() == 1:
-            print("kreslim S12")
+            self.graph4_plot.set_s_param("S12")
         elif self.graph4_s_variable.get() == 2:
-            print("kreslim S21")
+            self.graph4_plot.set_s_param("S21")
         else:
-            print("kreslim S22")
+            self.graph4_plot.set_s_param("S22")
+
+        if self.graph4_autoscale.get():
+            self.graph4_plot.set_autoscale(True)
+        else:
+            self.graph4_plot.set_autoscale(False)
+
+        self.graph4_plot.draw_measurement(self.main_gui.sweep.current_frame - 1)
 
     def graph3_plot_draw(self):
         # TODO: kresliť graf č.3
         print("kreslim graf č.3")
         if self.graph3_variable.get() == 0:
-            print("kreslim XYY")
+            self.graph3_plot.set_type("XYY")
         else:
-            print("kreslim smith")
+            self.graph3_plot.set_type("Smith")
 
         if self.graph3_s_variable.get() == 0:
-            print("kreslim S11")
+            self.graph3_plot.set_s_param("S11")
         elif self.graph3_s_variable.get() == 1:
-            print("kreslim S12")
+            self.graph3_plot.set_s_param("S12")
         elif self.graph3_s_variable.get() == 2:
-            print("kreslim S21")
+            self.graph3_plot.set_s_param("S21")
         else:
-            print("kreslim S22")
+            self.graph3_plot.set_s_param("S22")
+
+        if self.graph3_autoscale.get():
+            self.graph3_plot.set_autoscale(True)
+        else:
+            self.graph3_plot.set_autoscale(False)
+
+        self.graph3_plot.draw_measurement(self.main_gui.sweep.current_frame - 1)
 
     def graph2_plot_draw(self):
         # TODO: kresliť graf č.2
         print("kreslim graf č.2")
         if self.graph2_variable.get() == 0:
-            print("kreslim XYY")
+            self.graph2_plot.set_type("XYY")
         else:
-            print("kreslim smith")
+            self.graph2_plot.set_type("Smith")
 
         if self.graph2_s_variable.get() == 0:
-            print("kreslim S11")
+            self.graph2_plot.set_s_param("S11")
         elif self.graph2_s_variable.get() == 1:
-            print("kreslim S12")
+            self.graph2_plot.set_s_param("S12")
         elif self.graph2_s_variable.get() == 2:
-            print("kreslim S21")
+            self.graph2_plot.set_s_param("S21")
         else:
-            print("kreslim S22")
+            self.graph2_plot.set_s_param("S22")
+
+        if self.graph2_autoscale.get():
+            self.graph2_plot.set_autoscale(True)
+        else:
+            self.graph2_plot.set_autoscale(False)
+
+        self.graph2_plot.draw_measurement(self.main_gui.sweep.current_frame - 1)
 
     def graph1_plot_draw(self):
         # TODO: kresliť graf č.1
         print("kreslim graf č.1")
         if self.graph1_variable.get() == 0:
-            print("kreslim XYY")
+            self.graph1_plot.set_type("XYY")
         else:
-            print("kreslim smith")
+            self.graph1_plot.set_type("Smith")
 
         if self.graph1_s_variable.get() == 0:
-            print("kreslim S11")
+            self.graph1_plot.set_s_param("S11")
         elif self.graph1_s_variable.get() == 1:
-            print("kreslim S12")
+            self.graph1_plot.set_s_param("S12")
         elif self.graph1_s_variable.get() == 2:
-            print("kreslim S21")
+            self.graph1_plot.set_s_param("S21")
         else:
-            print("kreslim S22")
+            self.graph1_plot.set_s_param("S22")
+
+        if self.graph1_autoscale.get():
+            self.graph1_plot.set_autoscale(True)
+        else:
+            self.graph1_plot.set_autoscale(False)
+
+        self.graph1_plot.draw_measurement(self.main_gui.sweep.current_frame-1)
+
+    def refresh_all_graphs(self):
+        self.graph1_plot_draw()
+        self.graph2_plot_draw()
+        self.graph3_plot_draw()
+        self.graph4_plot_draw()
