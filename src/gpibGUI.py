@@ -1,6 +1,7 @@
 import tkinter as tk
 import tkinter.font as tkFont
 import data_validation
+from terminal import Terminal
 
 
 class GpibGui:
@@ -9,7 +10,7 @@ class GpibGui:
         self.create_gpib_gui()
 
     def create_gpib_gui(self):
-
+        self.terminal = Terminal(self)
         widget_title_font = tkFont.Font(family="Tw Cen MT", size=16, weight="bold")
         widget_label_font = tkFont.Font(family="Tw Cen MT", size=13)
         widget_button_font = tkFont.Font(family="Tw Cen MT", size=13)
@@ -61,7 +62,7 @@ class GpibGui:
 
     def open_gpib_terminal(self):
         # TODO: otvorít GPIB terminál
-
+        self.terminal.openNewWindow()
         print("Otváram GPIB terminál.")
 
     def start_connect(self):
