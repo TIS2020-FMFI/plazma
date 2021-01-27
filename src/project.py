@@ -1,8 +1,6 @@
-import copy
-
-
 class Project:
     def __init__(self, program):
+        self.START_OF_THE_LINE_WITH_PARAMS = "!    Params:"
         self.program = program
 
         self.state = None   # string
@@ -20,6 +18,12 @@ class Project:
 
     def get_state(self):
         return self.state
+
+    def reset_state(self):
+        self.state = None
+
+    def reset_calib(self):
+        self.calibration = None
 
     def get_calibration_type(self):
         return self.type
@@ -51,11 +55,20 @@ class Project:
             self.data = None
 
         # prípadne nastaviť self.data_type alebo aj number_of_parameters
-        
+
+    def get_params_string_from_data(self, data):
+        data_lines = data.split("\n")
+        for line in data_lines:
+            if "!    Params:" in line:
+                line = line[len(self.START_OF_THE_LINE_WITH_PARAMS):]
+                line = line.strip()
+                return line
+        return ""
+
     class Data:
         def __init__(self, param_11, param_12, param_21, param_22):
             self.number_of_measurements = 0
-            self.parameters = {"S11": param_11, "S21": param_12, "S12": param_21,
+            self.parameters = {"S11": param_11, "S12": param_12, "S21": param_21,
                                "S22": param_22}  # dict()  self.parameters["S11"] = True
             self.measurements_list = []  # [(hlavicka1, meranie1_list), (hlavicka2, meranie2_list), ...]
             # self.data_type = None  # real/imag....
@@ -72,8 +85,8 @@ class Project:
             for key, val in self.parameters.items():
                 if val:
                     true_params.append(key)
-            true_params.sort()                         # asi nie su v tomto poradi, vymenit poradie !
-            if "S12" in true_params and "S21" in true_params:  # TODO vylepsit, toto je iba narychlo
+            true_params.sort()
+            if "S12" in true_params and "S21" in true_params:
                 i_s12 = true_params.index("S12")
                 i_s21 = true_params.index("S21")
                 true_params[i_s12] = "S21"
@@ -101,12 +114,12 @@ class Project:
             self.number_of_measurements += 1
 
         def get_measurement(self, s_param, measurement_index=0):
+            # vráti slovník pre grafy, measurement[frekvencia] = (hodnota1, hodnota2)
             measurement = {}
             try:
                 for key, val in self.measurements_list[measurement_index][1].items():
-                    # measurement[key] = copy.copy(val[s_param])
                     measurement[float(key)] = (float(val[s_param][0]), float(val[s_param][1]))
-                return measurement  # vráti slovník pre grafy, measurement[frekvencia] = (hodnota1, hodnota2)
+                return measurement
             except (KeyError, IndexError):
                 return None
 
@@ -121,4 +134,3 @@ class Project:
 
 #        def set_data_type(self, type):
 #            pass
-
