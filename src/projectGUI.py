@@ -84,35 +84,29 @@ class InfoGui:
 
         self.calibration_label = tk.Label(info_frame, text="Calibration", fg="#323338", bg='#f2f3fc',
                                            font=widget_label_font)
-        self.calibration_label.place(x=15, y=40)
+        self.calibration_label.place(x=15, y=50)
 
         self.calib_load_label = tk.Label(info_frame, text="NULL", fg="#323338", bg='#f2f3fc', font=widget_label_font)
-        self.calib_load_label.place(x=170, y=40)
+        self.calib_load_label.place(x=170, y=50)
 
         self.calibration_type_label = tk.Label(info_frame, text="Calibration type", fg="#323338", bg='#f2f3fc',
                                           font=widget_label_font)
-        self.calibration_type_label.place(x=15, y=60)
+        self.calibration_type_label.place(x=15, y=70)
 
         self.calib_type_load_label = tk.Label(info_frame, text="NULL", fg="#323338", bg='#f2f3fc', font=widget_label_font)
-        self.calib_type_load_label.place(x=170, y=60)
+        self.calib_type_load_label.place(x=170, y=70)
 
         self.state_label = tk.Label(info_frame, text="State", fg="#323338", bg='#f2f3fc', font=widget_label_font)
-        self.state_label.place(x=15, y=90)
+        self.state_label.place(x=15, y=110)
 
         self.state_load_label = tk.Label(info_frame, text="NULL", fg="#323338", bg='#f2f3fc', font=widget_label_font)
-        self.state_load_label.place(x=170, y=90)
+        self.state_load_label.place(x=170, y=110)
 
         self.measurements_label = tk.Label(info_frame, text="Data", fg="#323338", bg='#f2f3fc', font=widget_label_font)
-        self.measurements_label.place(x=15, y=120)
+        self.measurements_label.place(x=15, y=150)
 
         self.measurements_data = tk.Label(info_frame, text="NULL", fg="#323338", bg='#f2f3fc', font=widget_label_font)
-        self.measurements_data.place(x = 170, y = 120)
-
-        self.project_label = tk.Label(info_frame, text="Project", fg="#323338", bg='#f2f3fc', font=widget_label_font)
-        self.project_label.place(x=15, y=150)
-
-        self.project_data_label = tk.Label(info_frame, text="NULL", fg="#323338", bg='#f2f3fc', font=widget_label_font)
-        self.project_data_label.place(x=170, y=150)
+        self.measurements_data.place(x = 170, y = 150)
 
     def change_connect_label(self):
         if self.connect_info_label["text"] == " • Disconnected ":
@@ -144,5 +138,3 @@ class InfoGui:
         else:
             self.measurements_data["text"] = "NULL"
 
-    def change_project_label(self):
-        self.project_data_label["text"] = "SAVED"
