@@ -257,6 +257,7 @@ class GraphsGui:
 
         self.graph1_plot.draw_measurement(self.main_gui.sweep.current_frame-1)
 
+
     def refresh_all_graphs(self):
         self.graph1_plot_draw()
         self.graph2_plot_draw()

@@ -93,7 +93,6 @@ class Graphs:
             self.toolbarFrame = Frame(master=self.gui)
             self.toolbarFrame.grid(row=1, column=0)
             self.toolbar = NavigationToolbar2Tk(self.canvas, self.toolbarFrame)
-
         else:
             plt.close(self.fig)
             self.fig, self.ax1 = plt.subplots(1, figsize=(4.8, 3.35))
