@@ -6,11 +6,11 @@ import data_validation
 class SweepGui:
     def __init__(self, main_gui):
         self.gui = main_gui
-        self.create_sweep_gui()
         self.current_frame = 0
         self.on_last_frame = True
-
-    def create_sweep_gui(self):
+    #     self.create_sweep_gui()
+    #
+    # def create_sweep_gui(self):
         widget_title_font = tk_font.Font(family="Tw Cen MT", size=16, weight="bold")
         widget_label_font = tk_font.Font(family="Tw Cen MT", size=13)
         widget_port_font = tk_font.Font(family="Tw Cen MT", size=11)
@@ -219,7 +219,6 @@ class SweepGui:
         print("GUI zastavujem meranie")
         self.run_button["text"] = "Run"
         self.gui.program.end_measurement()
-        # self.gui.program.adapter.end_measurement()
 
     def run_measure(self):
         # TODO zmena stavu
@@ -230,13 +229,9 @@ class SweepGui:
         # TODO pred meranim prejde do stavu 3(podla dokumentu v testovacich scenaroch)
         if self.continuous.get() == 0:
             self.gui.program.queue_function("measure()")
-            # print(self.gui.program.adapter.measure())
         else:
             self.run_button["text"] = "Stop"
             self.gui.program.queue_function("start_measurement()")
-            # self.gui.program.adapter.start_measurement()
-
-        # self.saveSettings()
 
     def send_settings(self):
         unit = "MHz"
@@ -281,12 +276,8 @@ class SweepGui:
         if self.gui.program.project.exists_data():
             max_frames = self.gui.program.project.data.get_number_of_measurements()
             if self.on_last_frame:
-                # TODO updatnut to cislo
-                # TODO Refreshni grafy
                 self.current_frame = max_frames
 
-
-            # self.frame_entry.insert(tk.END, str(self.gui.program.project.data.get_number_of_measurements()))  # TODO: aktuálny frame
             self.frame_entry["state"] = tk.NORMAL
             self.frame_entry.delete(0, tk.END)
             self.frame_entry.insert(tk.END, str(self.current_frame))
@@ -299,7 +290,6 @@ class SweepGui:
 
         else:
             self.reset_frame()
-
         self.gui.graphs.refresh_all_graphs()
 
     def reset_frame(self):
@@ -317,13 +307,11 @@ class SweepGui:
         self.autosave_checkbutton["state"] = tk.NORMAL
         self.continuous_checkbutton["state"] = tk.NORMAL
         self.run_button["state"] = tk.NORMAL
-        # self.refresh_frame()
 
     def sweep_state_disconnected(self):
         self.autosave_checkbutton["state"] = tk.DISABLED
         self.continuous_checkbutton["state"] = tk.DISABLED
         self.run_button["state"] = tk.DISABLED
-        # self.refresh_frame()
 
     def load_project_sweep(self):
         if self.gui.program.settings.get_freq_unit() == "MHz":
@@ -331,11 +319,31 @@ class SweepGui:
         else:
             self.freq_variable.set(1)
 
-        self.start_entry["text"] = self.gui.program.settings.get_freq_start()
-        self.stop_entry["text"] = self.gui.program.settings.get_freq_stop()
-        self.points_entry["text"] = self.gui.program.settings.get_points()
+        self.start_entry.delete(0, tk.END)
+        self.start_entry.insert(tk.END, self.gui.program.settings.get_freq_start())
+        self.stop_entry.delete(0, tk.END)
+        self.stop_entry.insert(tk.END, self.gui.program.settings.get_freq_stop())
+        self.points_entry.delete(0, tk.END)
+        self.points_entry.insert(tk.END, self.gui.program.settings.get_points())
 
-        #TODO - nastaviť jednotlivé parametre
+        params = self.gui.program.settings.get_parameters()
+        params_value = params.split(",")
+        if "S11" in params_value:
+            self.s11.set(1)
+        else:
+            self.s11.set(0)
+        if "S12" in params_value:
+            self.s12.set(1)
+        else:
+            self.s12.set(0)
+        if "S22" in params_value:
+            self.s22.set(1)
+        else:
+            self.s22.set(0)
+        if "S21" in params_value:
+            self.s21.set(1)
+        else:
+            self.s21.set(0)
 
         if self.gui.program.settings.get_parameter_format() == "RI":
             self.measure_variable.set(2)
@@ -344,10 +352,14 @@ class SweepGui:
         else:
             self.measure_variable.set(1)
 
+        if self.gui.program.settings.get_continuous():
+            self.continuous.set(1)
+        else:
+            self.continuous.set(0)
+
         self.refresh_frame()
 
     def next_frame(self):
-        print("Som rychly!")
         if self.current_frame < self.gui.program.project.data.get_number_of_measurements():
             self.current_frame += 1
             self.refresh_frame()
@@ -355,14 +367,12 @@ class SweepGui:
             self.on_last_frame = True
 
     def previous_frame(self):
-        print("Som rychly!")
         self.on_last_frame = False
         if self.current_frame > 0:
             self.current_frame -= 1
             self.refresh_frame()
 
     def last_frame(self):
-        print("Som rychly!")
         self.on_last_frame = True
         self.current_frame = self.gui.program.project.data.get_number_of_measurements()
         self.refresh_frame()

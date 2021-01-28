@@ -13,6 +13,7 @@ def validate_address(value):
     except ValueError:
         return False
 
+
 def validate_port_length(value):
     # TODO overiť dĺžku - rozmedzie
 
@@ -21,6 +22,7 @@ def validate_port_length(value):
             return True
     except ValueError:
         return False
+
 
 def validate_velocity_factor(value):
     try:

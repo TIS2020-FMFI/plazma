@@ -3,18 +3,19 @@ import subprocess
 import threading
 import queue
 import testing
-import os
-from datetime import datetime
+# import os
+# from datetime import datetime
 
 
 class Adapter:
     MAX_RESPONSE_TIME = 10.0  # ako dlho caka na pristroj aby odpovedal, v sekundach
     MAX_HPCTRL_RESPONSE_TIME = 0.5  # ako dlho caka na program HPCTRL aby vyprintoval dalsi riadok, v sekundach
+
     # vzdy defaultne vecie ako 0.05, pre pomalsie PC sa da zvacsit ak nieco pada
 
     def __init__(self, program):
         self.testing = True
-        #self.testing = False
+        # self.testing = False
         if self.testing:
             self.test = testing.Test()
 
@@ -51,7 +52,7 @@ class Adapter:
                 return
             if line:
                 self.out_queue.put(line)
-          
+
             else:
                 time.sleep(0.001)
             print("enqueue" + line)
@@ -78,15 +79,16 @@ class Adapter:
                 # print("empty queue, slept: " + str(slept))
                 if slept and out_str.strip() != "":
                     return out_str
-				
+
                 wait_started = time.time()
                 while self.out_queue.empty() and (time.time() < wait_started + self.MAX_HPCTRL_RESPONSE_TIME):
-                    pass				
+                    pass
                 slept = self.out_queue.empty()
-				
-                # time.sleep(self.MAX_HPCTRL_RESPONSE_TIME)   # uistenie sa ze na 100% vytiahnem cely vystup, a nie iba cast
+
+                # time.sleep(self.MAX_HPCTRL_RESPONSE_TIME)
+                # uistenie sa ze na 100% vytiahnem cely vystup, a nie iba cast
                 # slept = True
-                
+
                 counter += 1
                 # print(counter)
                 if counter > max_cycles:
@@ -141,7 +143,6 @@ class Adapter:
             # self.process.terminate()
             self.process = None
         self.out_queue = None
-
 
         time.sleep(5)
         # TODO napisat do GUI spatnu vazbu ak je zla cesta...
@@ -542,13 +543,9 @@ class Adapter:
 
         return self.get_output()
 
-
 # open_terminal()
 # close_terminal()
 # send_command(command)
 # ping()
 # restart_connection()
 # time.sleep() pouzivat vsade po kazdom prikaze alebo nejako inak?
-
-
-

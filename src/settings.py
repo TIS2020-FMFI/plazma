@@ -9,7 +9,7 @@ class Settings:
         self.freq_start = 1.0
         self.freq_stop = 2.0
         self.points = 201
-        self.parameter_format = "RI"
+        self.parameter_format = "MA"
         self.parameters = ""   # TODO checknut defaults
         self.continuous = False
 

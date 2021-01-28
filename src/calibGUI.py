@@ -7,9 +7,9 @@ import data_validation
 class CalibrationGui:
     def __init__(self, main_gui):
         self.main_gui = main_gui
-        self.create_calib_gui()
-
-    def create_calib_gui(self):
+        #     self.create_calib_gui()
+        #
+        # def create_calib_gui(self):
         widget_title_font = tkFont.Font(family="Tw Cen MT", size=16, weight="bold")
         widget_button_font = tkFont.Font(family="Tw Cen MT", size=13)
         widget_label_bold_font = tkFont.Font(family="Tw Cen MT", size=14, weight="bold")
@@ -20,14 +20,14 @@ class CalibrationGui:
         calibration_frame.grid(row=0, rowspan=1, column=2, sticky=tk.N, padx=5)
 
         self.save_calib_button = tk.Button(calibration_frame, text="SAVE CALIBRATION",
-                                      font=widget_button_font, bg='#bfc6db', fg='#323338',
-                                      command=self.save_calibration)
+                                           font=widget_button_font, bg='#bfc6db', fg='#323338',
+                                           command=self.save_calibration)
         self.save_calib_button.grid(row=0, column=0, pady=5, padx=5)
         self.save_calib_button["state"] = tk.DISABLED
 
         self.load_calib_button = tk.Button(calibration_frame, text="LOAD CALIBRATION",
-                                      font=widget_button_font, bg='#bfc6db', fg='#323338',
-                                      command=self.load_calibration)
+                                           font=widget_button_font, bg='#bfc6db', fg='#323338',
+                                           command=self.load_calibration)
         self.load_calib_button.grid(row=0, column=1, pady=5, padx=5)
         self.load_calib_button["state"] = tk.DISABLED
 
@@ -82,8 +82,10 @@ class CalibrationGui:
     def allow_calibration_load(self):
         self.load_calib_button["state"] = tk.NORMAL
 
-    def adjust_calibration(self):
+    def disable_calibration_load(self):
+        self.load_calib_button["state"] = tk.DISABLED
 
+    def adjust_calibration(self):
         if data_validation.validate_velocity_factor(self.vel_fact_spin_box.get()):
             self.vel_fact_spin_box["fg"] = "black"
         else:
@@ -143,4 +145,4 @@ class CalibrationGui:
         self.port1 = str(self.main_gui.program.settings.port1)
         self.port2 = str(self.main_gui.program.settings.port2)
 
-        #TODO ak conneced a načítana calib - load calib
+        # TODO ak conneced a načítana calib - load calib

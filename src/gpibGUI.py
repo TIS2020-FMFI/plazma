@@ -1,5 +1,5 @@
 import tkinter as tk
-import tkinter.font as tkFont
+import tkinter.font as tk_font
 import data_validation
 from terminal import Terminal
 
@@ -7,17 +7,17 @@ from terminal import Terminal
 class GpibGui:
     def __init__(self, main_gui):
         self.main_gui = main_gui
-        self.create_gpib_gui()
-
-    def create_gpib_gui(self):
+    #     self.create_gpib_gui()
+    #
+    # def create_gpib_gui(self):
         self.terminal = Terminal(self)
-        widget_title_font = tkFont.Font(family="Tw Cen MT", size=16, weight="bold")
-        widget_label_font = tkFont.Font(family="Tw Cen MT", size=13)
-        widget_button_font = tkFont.Font(family="Tw Cen MT", size=13)
+        widget_title_font = tk_font.Font(family="Tw Cen MT", size=16, weight="bold")
+        widget_label_font = tk_font.Font(family="Tw Cen MT", size=13)
+        widget_button_font = tk_font.Font(family="Tw Cen MT", size=13)
 
         gpib_frame = tk.LabelFrame(self.main_gui.window, text="GPIB", fg="#323338", bg='#f2f3fc',
                                    font=widget_title_font, relief=tk.RIDGE)
-        gpib_frame.grid(row=0, column=1, sticky=tk.N, pady=(0,10))
+        gpib_frame.grid(row=0, column=1, sticky=tk.N, pady=(0, 10))
 
         address_label = tk.Label(gpib_frame, text="Address:", fg="#323338", bg='#f2f3fc', font=widget_label_font)
         address_label.grid(row=0, column=1, sticky=tk.W, padx=20)
@@ -26,7 +26,7 @@ class GpibGui:
         self.address_entry.insert(tk.END, "16")
         self.address_entry["fg"] = "#2f3136"
         self.address_entry["font"] = widget_label_font
-        self.address_entry.grid(row=0, column=1, sticky=tk.W, padx=(100,0), pady=3)
+        self.address_entry.grid(row=0, column=1, sticky=tk.W, padx=(100, 0), pady=3)
 
         line_label = tk.Label(gpib_frame, text="_____________________________________________________",
                               fg="#b3b3b5", bg="#f2f3fc")
@@ -49,7 +49,7 @@ class GpibGui:
         self.gpib_button = tk.Button(gpib_frame, text="OPEN", bg='#bfc6db', fg='#323338',
                                      command=self.open_gpib_terminal)
         self.gpib_button['font'] = widget_button_font
-        self.gpib_button.grid(row=4, column=2, padx=(10,20), pady=15)
+        self.gpib_button.grid(row=4, column=2, padx=(10, 20), pady=15)
         self.gpib_button["state"] = tk.DISABLED
 
     def gpib_state_disconnected(self):
@@ -62,7 +62,7 @@ class GpibGui:
 
     def open_gpib_terminal(self):
         # TODO: otvorít GPIB terminál
-        self.terminal.openNewWindow()
+        self.terminal.open_new_window()
         print("Otváram GPIB terminál.")
 
     def start_connect(self):
@@ -90,5 +90,6 @@ class GpibGui:
         self.connect_button["bg"] = "#5bb38a"
         self.main_gui.state_disconnected()
 
-    def load_project_settings(self, address):
-        self.address_entry["text"] = str(address)
+    def load_project_settings(self):
+        self.address_entry.delete(0, tk.END)
+        self.address_entry.insert(tk.END, self.main_gui.program.settings.get_address())

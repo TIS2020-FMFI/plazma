@@ -15,9 +15,9 @@ class Gui:
         self.connect = False
         self.program = program
 
-        self.create_widgets()
-
-    def create_widgets(self):
+    #     self.create_widgets()
+    #
+    # def create_widgets(self):
 
         self.window['padx'] = 5
         self.window['pady'] = 5
@@ -43,8 +43,6 @@ class Gui:
         # GRAPHS
         self.graphs = GraphsGui(self)
 
-
-
     def state_connected(self):
         self.gpib.gpib_state_connected()
         self.state.instrumentstate_state_connected()
@@ -56,5 +54,3 @@ class Gui:
         self.state.instrumentstate_state_disconnected()
         self.calibration.calibration_state_disconnected()
         self.sweep.sweep_state_disconnected()
-
-

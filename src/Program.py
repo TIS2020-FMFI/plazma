@@ -10,11 +10,11 @@ from settings import Settings
 
 class Program:
     def __init__(self):
+        self.settings = Settings()
         self.adapter = Adapter(self)
         self.project = Project(self)
         self.gui = Gui(self)
         self.file_manager = FileManager(self)
-        self.settings = Settings()
 
         self.function_queue = queue.Queue()
         self.work_thread = threading.Thread(target=self.execute_functions)

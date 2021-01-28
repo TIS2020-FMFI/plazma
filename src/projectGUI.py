@@ -1,3 +1,4 @@
+import os
 import tkinter as tk
 from tkinter import filedialog
 import tkinter.font as tk_font
@@ -6,9 +7,9 @@ import tkinter.font as tk_font
 class ProjectGui:
     def __init__(self, main_gui):
         self.main_gui = main_gui
-        self.create_project_gui()
-
-    def create_project_gui(self):
+        #     self.create_project_gui()
+        #
+        # def create_project_gui(self):
         widget_title_font = tk_font.Font(family="Tw Cen MT", size=16, weight="bold")
         widget_label_font = tk_font.Font(family="Tw Cen MT", size=13)
         widget_button_font = tk_font.Font(family="Tw Cen MT", size=13)
@@ -35,6 +36,8 @@ class ProjectGui:
 
     def save(self):
         path = tk.filedialog.askdirectory()
+        if path == "":
+            return
         name = self.project_name_entry.get()
         description = self.project_descrip_text.get(1.0, tk.END)
 
@@ -44,18 +47,22 @@ class ProjectGui:
 
     def load(self):
         path = tk.filedialog.askdirectory()
+        if path == "":
+            return
         self.main_gui.program.file_manager.load_project(path)
 
-        #Nastavovanie jednotlivých údajov v GUI
+        # Nastavovanie jednotlivých údajov v GUI
 
-        self.main_gui.gpib.load_project_settings(self.main_gui.program.settings.address)
+        self.main_gui.gpib.load_project_settings()
 
         self.main_gui.state.load_project_state()
         self.main_gui.info.change_state_label()
 
-        self.project_name_entry["text"] = "" #zistiť nazov
-        self.project_descrip_text.insert(tk.END, "") #zistiť description
-        self.main_gui.info.change_project_label()
+        self.project_name_entry.delete(0, tk.END)
+        name = os.path.basename(path)
+        self.project_name_entry.insert(tk.END, name)
+        self.project_descrip_text.delete(1.0, tk.END)
+        self.project_descrip_text.insert(tk.END, self.main_gui.program.file_manager.description)
 
         self.main_gui.calibration.load_project_calibration()
         self.main_gui.info.change_calibration_label()
@@ -66,9 +73,9 @@ class ProjectGui:
 class InfoGui:
     def __init__(self, main_gui):
         self.main_gui = main_gui
-        self.create_info_widget()
-
-    def create_info_widget(self):
+        #     self.create_info_widget()
+        #
+        # def create_info_widget(self):
         widget_title_font = tk_font.Font(family="Tw Cen MT", size=16, weight="bold")
         widget_label_font = tk_font.Font(family="Tw Cen MT", size=13)
 
@@ -76,24 +83,26 @@ class InfoGui:
                                    font=widget_title_font, relief=tk.RIDGE, width=300, height=217)
         info_frame.grid(row=1, column=1, sticky=tk.N + tk.W, pady=(250, 0))
 
-        self.connect_info_label = tk.Label(info_frame, text=" • Disconnected ", fg="#d44242", bg='#f2f3fc', font=widget_label_font)
-        self.connect_info_label.place(x=10,y=10)
+        self.connect_info_label = tk.Label(info_frame, text=" • Disconnected ", fg="#d44242", bg='#f2f3fc',
+                                           font=widget_label_font)
+        self.connect_info_label.place(x=10, y=10)
 
-        self.device_label = tk.Label(info_frame,text="from device",fg="#323338", bg='#f2f3fc', font=widget_label_font)
-        self.device_label.place(x=120,y=10)
+        self.device_label = tk.Label(info_frame, text="from device", fg="#323338", bg='#f2f3fc', font=widget_label_font)
+        self.device_label.place(x=120, y=10)
 
         self.calibration_label = tk.Label(info_frame, text="Calibration", fg="#323338", bg='#f2f3fc',
-                                           font=widget_label_font)
+                                          font=widget_label_font)
         self.calibration_label.place(x=15, y=50)
 
         self.calib_load_label = tk.Label(info_frame, text="NULL", fg="#323338", bg='#f2f3fc', font=widget_label_font)
         self.calib_load_label.place(x=170, y=50)
 
         self.calibration_type_label = tk.Label(info_frame, text="Calibration type", fg="#323338", bg='#f2f3fc',
-                                          font=widget_label_font)
+                                               font=widget_label_font)
         self.calibration_type_label.place(x=15, y=70)
 
-        self.calib_type_load_label = tk.Label(info_frame, text="NULL", fg="#323338", bg='#f2f3fc', font=widget_label_font)
+        self.calib_type_load_label = tk.Label(info_frame, text="NULL", fg="#323338", bg='#f2f3fc',
+                                              font=widget_label_font)
         self.calib_type_load_label.place(x=170, y=70)
 
         self.state_label = tk.Label(info_frame, text="State", fg="#323338", bg='#f2f3fc', font=widget_label_font)
@@ -106,7 +115,7 @@ class InfoGui:
         self.measurements_label.place(x=15, y=150)
 
         self.measurements_data = tk.Label(info_frame, text="NULL", fg="#323338", bg='#f2f3fc', font=widget_label_font)
-        self.measurements_data.place(x = 170, y = 150)
+        self.measurements_data.place(x=170, y=150)
 
     def change_connect_label(self):
         if self.connect_info_label["text"] == " • Disconnected ":
@@ -123,18 +132,25 @@ class InfoGui:
     def change_state_label(self):
         if self.main_gui.program.project.get_state() is not None:
             self.state_load_label["text"] = "SAVED"
-            self.main_gui.state.allow_recall_state()
+            if self.main_gui.program.adapter.connected:
+                self.main_gui.state.allow_recall_state()
+        else:
+            self.state_load_label["text"] = "NULL"
+            self.main_gui.state.disable_recall_state()
 
     def change_calibration_label(self):
         if self.main_gui.program.project.get_calibration() is not None:
             self.calib_load_label["text"] = "SAVED"
             self.calib_type_load_label["text"] = str(self.main_gui.program.project.get_calibration_type())
-            self.main_gui.calibration.allow_calibration_load()
+            if self.main_gui.program.adapter.connected:
+                self.main_gui.calibration.allow_calibration_load()
+        else:
+            self.calib_load_label["text"] = "NULL"
+            self.calib_type_load_label["text"] = "NULL"
+            self.main_gui.calibration.disable_calibration_load()
 
     def change_data_label(self):
         if self.main_gui.program.project.exists_data():
             self.measurements_data["text"] = "measured"
-            print("zapisuj")
         else:
             self.measurements_data["text"] = "NULL"
-
