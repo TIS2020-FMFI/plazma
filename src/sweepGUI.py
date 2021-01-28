@@ -8,17 +8,15 @@ class SweepGui:
         self.gui = main_gui
         self.current_frame = 0
         self.on_last_frame = True
-    #     self.create_sweep_gui()
-    #
-    # def create_sweep_gui(self):
-        widget_title_font = tk_font.Font(family="Tw Cen MT", size=16, weight="bold")
-        widget_label_font = tk_font.Font(family="Tw Cen MT", size=13)
-        widget_port_font = tk_font.Font(family="Tw Cen MT", size=11)
-        widget_button_font = tk_font.Font(family="Tw Cen MT", size=13)
 
-        sweep_frame = tk.LabelFrame(self.gui.window, width=1000, height=3000, text="SWEEP", fg="#323338", bg='#f2f3fc',
+        widget_title_font = tk_font.Font(family="Tw Cen MT", size=self.gui.title_font_size, weight="bold")
+        widget_label_font = tk_font.Font(family="Tw Cen MT", size=self.gui.label_font)
+        widget_port_font = tk_font.Font(family="Tw Cen MT", size=self.gui.label_font_small)
+        widget_button_font = tk_font.Font(family="Tw Cen MT", size=self.gui.label_font)
+
+        sweep_frame = tk.LabelFrame(self.gui.window, text="SWEEP", fg="#323338", bg='#f2f3fc',
                                     font=widget_title_font, relief=tk.RIDGE)
-        sweep_frame.grid(row=0, column=2, rowspan=8, sticky=tk.NW, padx=6, pady=(255, 0))
+        sweep_frame.grid(row=1, column=2, rowspan=3, sticky=tk.W,pady=(self.gui.pady_2,0), padx=(self.gui.padx, 0))
 
         freq_measure_label = tk.Label(sweep_frame, text="Frequency Measure", fg='#323338', bg="#f2f3fc")
         freq_measure_label["font"] = widget_label_font
@@ -161,7 +159,7 @@ class SweepGui:
 
         self.run_button = tk.Button(sweep_frame, text="Run", bg='#bfc6db', fg='#323338', font=widget_button_font,
                                     width=15, command=self.start_measure)
-        self.run_button.grid(row=17, column=1, columnspan=3, pady=(30, 20), sticky=tk.W)
+        self.run_button.grid(row=17, column=1, columnspan=3, pady=20-self.gui.minus, sticky=tk.W)
         self.run_button["state"] = tk.DISABLED
 
         self.reset_frame()
@@ -221,9 +219,6 @@ class SweepGui:
         self.gui.program.end_measurement()
 
     def run_measure(self):
-        # TODO zmena stavu
-        # TODO volanie všetkých metód
-
         self.send_settings()
 
         # TODO pred meranim prejde do stavu 3(podla dokumentu v testovacich scenaroch)
@@ -239,9 +234,10 @@ class SweepGui:
             unit = "GHz"
         self.gui.program.settings.set_freq_unit(unit)
 
-        self.gui.program.settings.set_freq_start(self.start_entry.get())
-        self.gui.program.settings.set_freq_stop(self.stop_entry.get())
-        self.gui.program.settings.set_points(self.points_entry.get())
+        print("posielam settings")
+        self.gui.program.settings.set_freq_start(float(self.start_entry.get()))
+        self.gui.program.settings.set_freq_stop(float(self.stop_entry.get()))
+        self.gui.program.settings.set_points(float(self.points_entry.get()))
 
         params = ""
         if self.s11.get():
@@ -252,6 +248,7 @@ class SweepGui:
             params += "S12 "
         if self.s22.get():
             params += "S22 "
+        print("params: ", params)
         self.gui.program.settings.set_parameters(params)
 
         if self.measure_variable.get() == 0:

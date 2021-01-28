@@ -9,14 +9,15 @@ matplotlib.use('TkAgg')
 
 
 class Graphs:
-    def __init__(self, gui, program):
+    def __init__(self, gui, program,a,b):
         self.gui = gui
         self.program = program
-
         self.type = "XYY"
         self.s_param = "S11"
+        self.a = a
+        self.b = b
 
-        self.fig, self.ax1 = plt.subplots(1, figsize=(4.8, 3.35))
+        self.fig, self.ax1 = plt.subplots(1, figsize=(a, b))
         self.ax2 = self.ax1.twinx()
 
         color1 = 'tab:red'
@@ -56,7 +57,7 @@ class Graphs:
             plt.close(self.fig)
             self.canvas.get_tk_widget().grid_forget()
             self.toolbar.grid_forget()
-            self.fig, self.ax1 = plt.subplots(1, figsize=(4.8, 3.35))
+            self.fig, self.ax1 = plt.subplots(1, figsize=(self.a, self.b))
             self.ax2 = self.ax1.twinx()
 
             color1 = 'tab:red'
@@ -95,7 +96,7 @@ class Graphs:
             self.toolbar = NavigationToolbar2Tk(self.canvas, self.toolbarFrame)
         else:
             plt.close(self.fig)
-            self.fig, self.ax1 = plt.subplots(1, figsize=(4.8, 3.35))
+            self.fig, self.ax1 = plt.subplots(1, figsize=(self.a, self.b))
             self.fig.clear()
             # self.val1 = []
             val1 = []

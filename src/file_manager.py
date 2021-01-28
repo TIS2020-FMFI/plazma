@@ -173,4 +173,3 @@ class FileManager:
         self.program.project.reset_data()
         self.program.gui.info.change_data_label()
         return
-

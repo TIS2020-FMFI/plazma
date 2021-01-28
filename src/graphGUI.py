@@ -8,28 +8,18 @@ class GraphsGui:
     def __init__(self, main_gui):
         self.main_gui = main_gui
 
-        widget_label_font = tk_font.Font(family="Tw Cen MT", size=11)
-        widget_title_font = tk_font.Font(family="Tw Cen MT", size=13, weight="bold")
-        # widget_scale_font = tk_font.Font(family="Tw Cen MT", size=11, weight="bold")
+        widget_label_font = tk_font.Font(family="Tw Cen MT", size=self.main_gui.label_font_small)
+        widget_title_font = tk_font.Font(family="Tw Cen MT", size=self.main_gui.label_font, weight="bold")
 
         graph_frame = tk.LabelFrame(self.main_gui.window, text="GRAPHS",
                                     fg="#323338", bg='#f2f3fc', font=widget_title_font, relief=tk.RIDGE)
-        graph_frame.grid(row=0, column=3, sticky=tk.N, rowspan=15)
-
-        # image = Image.open("graf.png")
-        # photo = ImageTk.PhotoImage(image)
+        graph_frame.grid(row=0, column=3, sticky=tk.N, rowspan=15,  padx=(self.main_gui.padx, 0))
 
         # TODO: GRAPH n.1:
-
-        self.graph1 = tk.LabelFrame(graph_frame, fg="#323338", bg='#f2f3fc', font=widget_title_font, relief=tk.RIDGE,
-                                    width=400, height=300)
+        self.graph1 = tk.LabelFrame(graph_frame, fg="#323338", bg='#f2f3fc', font=widget_title_font, relief=tk.RIDGE)
         self.graph1.grid(row=0, column=0, sticky=tk.N, rowspan=4)
 
-        # TODO: Vložiť graf
-        # self.graph1_plot = tk.Label(self.graph1, image=photo, width=400, height=300)
-        # self.graph1_plot.image = photo
-        # self.graph1_plot.grid(row=0, column=0, padx=10, pady=10)
-        self.graph1_plot = Graphs(self.graph1, self.main_gui.program)
+        self.graph1_plot = Graphs(self.graph1, self.main_gui.program,self.main_gui.fig_a, self.main_gui.fig_b)
 
         self.graph1_variable = tk.IntVar()
         self.graph1_XYY_radiobutton = tk.Radiobutton(self.graph1, text="XYY", bg='#f2f3fc', fg="#323338",
@@ -39,8 +29,8 @@ class GraphsGui:
                                                        command=self.graph1_plot_draw, variable=self.graph1_variable,
                                                        value=1, font=widget_label_font)
 
-        self.graph1_XYY_radiobutton.grid(row=3, column=0, padx=(400, 0), sticky=tk.N + tk.W)
-        self.graph1_Smith_radiobutton.grid(row=4, column=0, padx=(400, 0), sticky=tk.N + tk.W)
+        self.graph1_XYY_radiobutton.grid(row=3, column=0, padx=(self.main_gui.fig_padx, 0), sticky=tk.N + tk.W)
+        self.graph1_Smith_radiobutton.grid(row=4, column=0, padx=(self.main_gui.fig_padx , 0), sticky=tk.N + tk.W)
 
         self.graph1_s_variable = tk.IntVar()
         self.graph1_S11_radiobutton = tk.Radiobutton(self.graph1, text="S11", bg='#f2f3fc', fg="#323338",
@@ -63,15 +53,10 @@ class GraphsGui:
         self.graph1_S22_radiobutton.grid(row=4, column=0, padx=(70, 0), pady=(0, 0), sticky=tk.N + tk.W)
 
         # TODO: GRAPH n.2:
-        self.graph2 = tk.LabelFrame(graph_frame, fg="#323338", bg='#f2f3fc', font=widget_title_font, relief=tk.RIDGE,
-                                    width=400, height=300)
+        self.graph2 = tk.LabelFrame(graph_frame, fg="#323338", bg='#f2f3fc', font=widget_title_font, relief=tk.RIDGE)
         self.graph2.grid(row=0, column=1, sticky=tk.N, rowspan=5)
 
-        # TODO: vložiť graf2
-        # self.graph2_plot = tk.Label(self.graph2, image=photo, width=400, height=300)
-        # self.graph2_plot.image = photo
-        # self.graph2_plot.grid(row=0, column=0, padx=10, pady=10)
-        self.graph2_plot = Graphs(self.graph2, self.main_gui.program)
+        self.graph2_plot = Graphs(self.graph2, self.main_gui.program,self.main_gui.fig_a, self.main_gui.fig_b)
 
         self.graph2_variable = tk.IntVar()
         self.graph2_XYY_radiobutton = tk.Radiobutton(self.graph2, text="XYY", bg='#f2f3fc', fg="#323338",
@@ -81,8 +66,8 @@ class GraphsGui:
                                                        command=self.graph2_plot_draw, variable=self.graph2_variable,
                                                        value=1, font=widget_label_font)
 
-        self.graph2_XYY_radiobutton.grid(row=3, column=0, padx=(400, 0), sticky=tk.N + tk.W)
-        self.graph2_Smith_radiobutton.grid(row=4, column=0, padx=(400, 0), sticky=tk.N + tk.W)
+        self.graph2_XYY_radiobutton.grid(row=3, column=0, padx=(self.main_gui.fig_padx , 0), sticky=tk.N + tk.W)
+        self.graph2_Smith_radiobutton.grid(row=4, column=0, padx=(self.main_gui.fig_padx , 0), sticky=tk.N + tk.W)
 
         self.graph2_s_variable = tk.IntVar()
         self.graph2_S11_radiobutton = tk.Radiobutton(self.graph2, text="S11", bg='#f2f3fc', fg="#323338",
@@ -104,15 +89,10 @@ class GraphsGui:
         self.graph2_S22_radiobutton.grid(row=4, column=0, padx=(70, 0), pady=(0, 0), sticky=tk.N + tk.W)
 
         # TODO: GRAPH n.3:
-        self.graph3 = tk.LabelFrame(graph_frame, fg="#323338", bg='#f2f3fc', font=widget_title_font, relief=tk.RIDGE,
-                                    width=400, height=300)
+        self.graph3 = tk.LabelFrame(graph_frame, fg="#323338", bg='#f2f3fc', font=widget_title_font, relief=tk.RIDGE)
         self.graph3.grid(row=5, column=0, sticky=tk.N, rowspan=5)
 
-        # TODO: vložiť graf3
-        # self.graph3_plot = tk.Label(self.graph3, image=photo, width=400, height=300)
-        # self.graph3_plot.image = photo
-        # self.graph3_plot.grid(row=0, column=0, padx=10, pady=10)
-        self.graph3_plot = Graphs(self.graph3, self.main_gui.program)
+        self.graph3_plot = Graphs(self.graph3, self.main_gui.program,self.main_gui.fig_a, self.main_gui.fig_b)
 
         self.graph3_variable = tk.IntVar()
         self.graph3_XYY_radiobutton = tk.Radiobutton(self.graph3, text="XYY", bg='#f2f3fc', fg="#323338",
@@ -122,8 +102,8 @@ class GraphsGui:
                                                        command=self.graph3_plot_draw, variable=self.graph3_variable,
                                                        value=1, font=widget_label_font)
 
-        self.graph3_XYY_radiobutton.grid(row=8, column=0, padx=(400, 0), sticky=tk.N + tk.W)
-        self.graph3_Smith_radiobutton.grid(row=9, column=0, padx=(400, 0), sticky=tk.N + tk.W)
+        self.graph3_XYY_radiobutton.grid(row=8, column=0, padx=(self.main_gui.fig_padx , 0), sticky=tk.N + tk.W)
+        self.graph3_Smith_radiobutton.grid(row=9, column=0, padx=(self.main_gui.fig_padx , 0), sticky=tk.N + tk.W)
 
         self.graph3_s_variable = tk.IntVar()
         self.graph3_S11_radiobutton = tk.Radiobutton(self.graph3, text="S11", bg='#f2f3fc', fg="#323338",
@@ -145,15 +125,10 @@ class GraphsGui:
         self.graph3_S22_radiobutton.grid(row=9, column=0, padx=(70, 0), pady=(0, 0), sticky=tk.N + tk.W)
 
         # TODO: GRAPH n.4:
-        self.graph4 = tk.LabelFrame(graph_frame, fg="#323338", bg='#f2f3fc', font=widget_title_font, relief=tk.RIDGE,
-                                    width=400, height=300)
+        self.graph4 = tk.LabelFrame(graph_frame, fg="#323338", bg='#f2f3fc', font=widget_title_font, relief=tk.RIDGE)
         self.graph4.grid(row=6, column=1, sticky=tk.N, rowspan=5)
 
-        # TODO vložiť graf č.4:
-        # self.graph4_plot = tk.Label(self.graph4, image=photo, width=400, height=300)
-        # self.graph4_plot.image = photo
-        # self.graph4_plot.grid(row=0, column=0, padx=10, pady=10)
-        self.graph4_plot = Graphs(self.graph4, self.main_gui.program)
+        self.graph4_plot = Graphs(self.graph4, self.main_gui.program,self.main_gui.fig_a, self.main_gui.fig_b)
 
         self.graph4_variable = tk.IntVar()
         self.graph4_XYY_radiobutton = tk.Radiobutton(self.graph4, text="XYY", bg='#f2f3fc', fg="#323338",
@@ -163,8 +138,8 @@ class GraphsGui:
                                                        command=self.graph4_plot_draw, variable=self.graph4_variable,
                                                        value=1, font=widget_label_font)
 
-        self.graph4_XYY_radiobutton.grid(row=8, column=0, padx=(400, 0), sticky=tk.N + tk.W)
-        self.graph4_Smith_radiobutton.grid(row=9, column=0, padx=(400, 0), sticky=tk.N + tk.W)
+        self.graph4_XYY_radiobutton.grid(row=8, column=0, padx=(self.main_gui.fig_padx , 0), sticky=tk.N + tk.W)
+        self.graph4_Smith_radiobutton.grid(row=9, column=0, padx=(self.main_gui.fig_padx , 0), sticky=tk.N + tk.W)
 
         self.graph4_s_variable = tk.IntVar()
         self.graph4_S11_radiobutton = tk.Radiobutton(self.graph4, text="S11", bg='#f2f3fc', fg="#323338",

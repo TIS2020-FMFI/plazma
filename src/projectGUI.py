@@ -7,22 +7,20 @@ import tkinter.font as tk_font
 class ProjectGui:
     def __init__(self, main_gui):
         self.main_gui = main_gui
-        #     self.create_project_gui()
-        #
-        # def create_project_gui(self):
-        widget_title_font = tk_font.Font(family="Tw Cen MT", size=16, weight="bold")
-        widget_label_font = tk_font.Font(family="Tw Cen MT", size=13)
-        widget_button_font = tk_font.Font(family="Tw Cen MT", size=13)
+
+        widget_title_font = tk_font.Font(family="Tw Cen MT", size=self.main_gui.title_font_size, weight="bold")
+        widget_label_font = tk_font.Font(family="Tw Cen MT", size=self.main_gui.label_font)
+        widget_button_font = tk_font.Font(family="Tw Cen MT", size=self.main_gui.label_font)
 
         project_frame = tk.LabelFrame(self.main_gui.window, text="PROJECT", fg="#323338", bg='#f2f3fc',
                                       font=widget_title_font, relief=tk.RIDGE)
-        project_frame.grid(row=1, column=1, sticky=tk.N, pady=(0, 0))
+        project_frame.grid(row=2, column=1, sticky=tk.N + tk.W, pady=(self.main_gui.pady_1, 0))
 
-        self.project_name_entry = tk.Entry(project_frame, width=30, fg="#b3b3b5", font=widget_label_font)
-        self.project_name_entry.grid(row=0, column=0, columnspan=4, sticky=tk.W, padx=10, pady=5)
+        self.project_name_entry = tk.Entry(project_frame, width=self.main_gui.project_weight, fg="#323338", font=widget_label_font)
+        self.project_name_entry.grid(row=0, column=0, columnspan=4, sticky=tk.W, padx=12, pady=5)
         self.project_name_entry.insert(tk.E, "Project Name")
 
-        self.project_descrip_text = tk.Text(project_frame, height=5, width=30, fg="#b3b3b5", font=widget_label_font)
+        self.project_descrip_text = tk.Text(project_frame, height=5, width=self.main_gui.project_weight, fg="#323338", font=widget_label_font)
         self.project_descrip_text.grid(row=1, column=0, columnspan=4, padx=10, pady=10)
         self.project_descrip_text.insert(tk.END, "Enter project description")
 
@@ -73,15 +71,13 @@ class ProjectGui:
 class InfoGui:
     def __init__(self, main_gui):
         self.main_gui = main_gui
-        #     self.create_info_widget()
-        #
-        # def create_info_widget(self):
-        widget_title_font = tk_font.Font(family="Tw Cen MT", size=16, weight="bold")
-        widget_label_font = tk_font.Font(family="Tw Cen MT", size=13)
+        widget_title_font = tk_font.Font(family="Tw Cen MT", size=self.main_gui.title_font_size, weight="bold")
+        widget_label_font = tk_font.Font(family="Tw Cen MT", size=self.main_gui.label_font)
 
         info_frame = tk.LabelFrame(self.main_gui.window, text="INFO", fg="#323338", bg='#f2f3fc',
-                                   font=widget_title_font, relief=tk.RIDGE, width=300, height=217)
-        info_frame.grid(row=1, column=1, sticky=tk.N + tk.W, pady=(250, 0))
+                                   font=widget_title_font, relief=tk.RIDGE, width=self.main_gui.info_weight,
+                                   height=self.main_gui.info_height)
+        info_frame.grid(row=3, column=1, sticky=tk.N + tk.W, pady=(self.main_gui.pady_1, 0))
 
         self.connect_info_label = tk.Label(info_frame, text=" • Disconnected ", fg="#d44242", bg='#f2f3fc',
                                            font=widget_label_font)
@@ -106,16 +102,16 @@ class InfoGui:
         self.calib_type_load_label.place(x=170, y=70)
 
         self.state_label = tk.Label(info_frame, text="State", fg="#323338", bg='#f2f3fc', font=widget_label_font)
-        self.state_label.place(x=15, y=110)
+        self.state_label.place(x=15, y=110-self.main_gui.minus)
 
         self.state_load_label = tk.Label(info_frame, text="NULL", fg="#323338", bg='#f2f3fc', font=widget_label_font)
-        self.state_load_label.place(x=170, y=110)
+        self.state_load_label.place(x=170, y=110-self.main_gui.minus)
 
         self.measurements_label = tk.Label(info_frame, text="Data", fg="#323338", bg='#f2f3fc', font=widget_label_font)
-        self.measurements_label.place(x=15, y=150)
+        self.measurements_label.place(x=15, y=150-self.main_gui.minus)
 
         self.measurements_data = tk.Label(info_frame, text="NULL", fg="#323338", bg='#f2f3fc', font=widget_label_font)
-        self.measurements_data.place(x=170, y=150)
+        self.measurements_data.place(x=170, y=150-self.main_gui.minus)
 
     def change_connect_label(self):
         if self.connect_info_label["text"] == " • Disconnected ":
