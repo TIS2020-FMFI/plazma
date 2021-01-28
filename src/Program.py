@@ -268,7 +268,14 @@ class Program:
 
         return freq, value1, value2
 
+    def quit_program(self):
+        # TODO: ukončiť správne program
+        self.gui.window.destroy()
+        quit()
+
+
 
 if __name__ == '__main__':
     main = Program()
+    main.gui.window.protocol("WM_DELETE_WINDOW", main.quit_program)
     main.gui.window.mainloop()

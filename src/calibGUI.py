@@ -1,5 +1,4 @@
 import tkinter as tk
-from tkinter import filedialog, ttk
 import tkinter.font as tkFont
 import data_validation
 
@@ -7,17 +6,15 @@ import data_validation
 class CalibrationGui:
     def __init__(self, main_gui):
         self.main_gui = main_gui
-        #     self.create_calib_gui()
-        #
-        # def create_calib_gui(self):
-        widget_title_font = tkFont.Font(family="Tw Cen MT", size=16, weight="bold")
-        widget_button_font = tkFont.Font(family="Tw Cen MT", size=13)
-        widget_label_bold_font = tkFont.Font(family="Tw Cen MT", size=14, weight="bold")
-        widget_port_font = tkFont.Font(family="Tw Cen MT", size=11)
+
+        widget_title_font = tkFont.Font(family="Tw Cen MT", size=self.main_gui.title_font_size, weight="bold")
+        widget_button_font = tkFont.Font(family="Tw Cen MT", size=self.main_gui.label_font)
+        widget_label_bold_font = tkFont.Font(family="Tw Cen MT", size=self.main_gui.label_font, weight="bold")
+        widget_port_font = tkFont.Font(family="Tw Cen MT", size=self.main_gui.label_font_small)
 
         calibration_frame = tk.LabelFrame(self.main_gui.window, text="CALIBRATION",
                                           fg="#323338", bg='#f2f3fc', font=widget_title_font, relief=tk.RIDGE)
-        calibration_frame.grid(row=0, rowspan=1, column=2, sticky=tk.N, padx=5)
+        calibration_frame.grid(row=0, rowspan=2, column=2, sticky=tk.N + tk.W, padx=(self.main_gui.padx, 0))
 
         self.save_calib_button = tk.Button(calibration_frame, text="SAVE CALIBRATION",
                                            font=widget_button_font, bg='#bfc6db', fg='#323338',
@@ -102,22 +99,20 @@ class CalibrationGui:
             self.port2_spin_box["fg"] = "red"
 
     def save_calibration(self):
-        print("Ukladám kalilbráciu do pamäte")
         self.main_gui.program.queue_function("save_calib()")
-        # self.main_gui.program.project.set_calibration(self.main_gui.program.adapter.get_calibration())
-        # self.main_gui.info.change_calibration_label()
 
     def load_calibration(self):
-        print("Načítavam kalibráciu")
         self.main_gui.program.queue_function("load_calib()")
-        # self.main_gui.program.adapter.set_calibration(self.main_gui.program.project.get_calibration())
-        # print(self.main_gui.program.project.get_calibration())
 
     def adjust(self):
         self.adjust_calibration()
-        self.main_gui.program.adapter.set_velocity_factor(self.vel_fact_spin_box.get())
-        self.main_gui.program.adapter.set_port1_length(self.port1_spin_box.get())
-        self.main_gui.program.adapter.set_port2_length(self.port2_spin_box.get())
+        self.main_gui.program.adapter.set_velocity_factor(self.vel_fact.get())
+        self.main_gui.program.adapter.set_port1_length(self.port1.get())
+        self.main_gui.program.adapter.set_port2_length(self.port2.get())
+
+        self.main_gui.program.settings.set_port1(str(self.port1.get()))
+        self.main_gui.program.settings.set_port2(str(self.port2.get()))
+        self.main_gui.program.settings.set_vel_factor(str(self.vel_fact.get()))
 
     def calibration_state_connected(self):
         self.save_calib_button["state"] = tk.NORMAL
@@ -141,8 +136,6 @@ class CalibrationGui:
         self.vel_fact_spin_box["state"] = tk.DISABLED
 
     def load_project_calibration(self):
-        self.vel_fact = str(self.main_gui.program.settings.vel_factor)
-        self.port1 = str(self.main_gui.program.settings.port1)
-        self.port2 = str(self.main_gui.program.settings.port2)
-
-        # TODO ak conneced a načítana calib - load calib
+        self.vel_fact.set(str(self.main_gui.program.settings.vel_factor))
+        self.port1.set(str(self.main_gui.program.settings.port1))
+        self.port2.set(str(self.main_gui.program.settings.port2))

@@ -6,23 +6,20 @@ import threading
 class InstStateGui:
     def __init__(self, main_gui):
         self.main_gui = main_gui
-    #     self.create_inst_state_gui()
-    #
-    # def create_inst_state_gui(self):
-        widget_title_font = tk_font.Font(family="Tw Cen MT", size=16, weight="bold")
-        widget_button_font = tk_font.Font(family="Tw Cen MT", size=13)
+
+        widget_title_font = tk_font.Font(family="Tw Cen MT", size=self.main_gui.title_font_size, weight="bold")
+        widget_button_font = tk_font.Font(family="Tw Cen MT", size=self.main_gui.label_font)
 
         inst_state_frame = tk.LabelFrame(self.main_gui.window, text="INST. STATE", fg="#323338",
                                          bg='#f2f3fc', font=widget_title_font, relief=tk.RIDGE)
-        inst_state_frame.grid(row=0, column=1, pady=(220, 10))
+        inst_state_frame.grid(row=1, column=1, pady=(self.main_gui.pady_1, 0), sticky=tk.N + tk.W)
 
         self.preset_button = tk.Button(inst_state_frame, text="PRESET", bg='#bfc6db', fg='#323338',
                                        font=widget_button_font, command=self.preset)
         self.preset_button.grid(row=0, column=1, padx=10, pady=(10, 5))
         self.preset_button["state"] = tk.DISABLED
 
-        line_label = tk.Label(inst_state_frame, text="_____________________________________________________",
-                              fg="#b3b3b5", bg="#f2f3fc")
+        line_label = tk.Label(inst_state_frame, text=self.main_gui.line_count * "_", fg="#b3b3b5", bg="#f2f3fc")
         line_label.grid(row=1, column=0, columnspan=3, sticky=tk.W + tk.N, padx=10)
 
         self.save_state_button = tk.Button(inst_state_frame, text="SAVE STATE", bg='#bfc6db',
@@ -77,15 +74,10 @@ class InstStateGui:
 
     def save_state(self):
         print("GUI:ukladám stav prístroja do pamäte")
-        # self.main_gui.program.project.set_state(self.main_gui.program.adapter.get_state())
         self.main_gui.program.queue_function("save_state()")
 
     def recall_state(self):
-        # TO DO: Načítať uložený stav do prístroja
         print("GUI:načítavam stav z pamäte do prístroja")
         self.main_gui.program.queue_function("recall_state()")
-        # self.main_gui.program.adapter.set_state(self.main_gui.program.project.get_state())
 
-    def load_project_state(self):
-        pass
-        # TODO zistiť či je connect a či uložený stav, ak áno umožniť recall state tlačídlo
+

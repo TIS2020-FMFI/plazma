@@ -7,17 +7,15 @@ from terminal import Terminal
 class GpibGui:
     def __init__(self, main_gui):
         self.main_gui = main_gui
-    #     self.create_gpib_gui()
-    #
-    # def create_gpib_gui(self):
+
         self.terminal = Terminal(self)
-        widget_title_font = tk_font.Font(family="Tw Cen MT", size=16, weight="bold")
-        widget_label_font = tk_font.Font(family="Tw Cen MT", size=13)
-        widget_button_font = tk_font.Font(family="Tw Cen MT", size=13)
+        widget_title_font = tk_font.Font(family="Tw Cen MT", size=self.main_gui.title_font_size, weight="bold")
+        widget_label_font = tk_font.Font(family="Tw Cen MT", size=self.main_gui.label_font)
+        widget_button_font = tk_font.Font(family="Tw Cen MT", size=self.main_gui.label_font)
 
         gpib_frame = tk.LabelFrame(self.main_gui.window, text="GPIB", fg="#323338", bg='#f2f3fc',
                                    font=widget_title_font, relief=tk.RIDGE)
-        gpib_frame.grid(row=0, column=1, sticky=tk.N, pady=(0, 10))
+        gpib_frame.grid(row=0, column=1, sticky=tk.N+tk.W, pady=(0, 0))
 
         address_label = tk.Label(gpib_frame, text="Address:", fg="#323338", bg='#f2f3fc', font=widget_label_font)
         address_label.grid(row=0, column=1, sticky=tk.W, padx=20)
@@ -28,7 +26,7 @@ class GpibGui:
         self.address_entry["font"] = widget_label_font
         self.address_entry.grid(row=0, column=1, sticky=tk.W, padx=(100, 0), pady=3)
 
-        line_label = tk.Label(gpib_frame, text="_____________________________________________________",
+        line_label = tk.Label(gpib_frame, text=self.main_gui.line_count * "_",
                               fg="#b3b3b5", bg="#f2f3fc")
         line_label.grid(row=1, column=0, columnspan=3, sticky=tk.W + tk.N, padx=10)
 
@@ -39,7 +37,7 @@ class GpibGui:
         self.connect_button["command"] = self.start_connect
         self.connect_button.grid(row=2, column=2, padx=10)
 
-        line_label = tk.Label(gpib_frame, text="_____________________________________________________",
+        line_label = tk.Label(gpib_frame, text=self.main_gui.line_count * "_",
                               fg="#b3b3b5", bg="#f2f3fc")
         line_label.grid(row=3, column=0, columnspan=3, sticky=tk.W + tk.N, padx=10)
 
@@ -49,7 +47,7 @@ class GpibGui:
         self.gpib_button = tk.Button(gpib_frame, text="OPEN", bg='#bfc6db', fg='#323338',
                                      command=self.open_gpib_terminal)
         self.gpib_button['font'] = widget_button_font
-        self.gpib_button.grid(row=4, column=2, padx=(10, 20), pady=15)
+        self.gpib_button.grid(row=4, column=2, padx=(10, 20), pady=self.main_gui.sweep_pady)
         self.gpib_button["state"] = tk.DISABLED
 
     def gpib_state_disconnected(self):
