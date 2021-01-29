@@ -7,6 +7,7 @@ from projectGUI import ProjectGui, InfoGui
 from sweepGUI import SweepGui
 from win32api import GetSystemMetrics
 
+
 class Gui:
     def __init__(self, program):
         self.window = tk.Tk()
@@ -17,7 +18,6 @@ class Gui:
 
         self.window['padx'] = 5
         self.window['pady'] = 5
-
 
         self.resize_by_screen()
 
@@ -43,7 +43,7 @@ class Gui:
         self.graphs = GraphsGui(self)
 
     def resize_by_screen(self):
-        if GetSystemMetrics(0) in range(1640,1925):
+        if GetSystemMetrics(0) in range(1640, 1925):
             self.title_font_size = 16
             self.label_font = 13
             self.label_font_small = 11
@@ -59,7 +59,7 @@ class Gui:
             self.sweep_pady = 20
             self.minus = 0
             self.project_weight = 29
-        elif GetSystemMetrics(0) in range(1480,1641):
+        elif GetSystemMetrics(0) in range(1480, 1641):
             self.title_font_size = 13
             self.label_font = 10
             self.label_font_small = 8
@@ -75,7 +75,7 @@ class Gui:
             self.sweep_pady = 20
             self.minus = 5
             self.project_weight = 32
-        elif GetSystemMetrics(0) in range(1380,1480):
+        elif GetSystemMetrics(0) in range(1380, 1480):
             self.title_font_size = 13
             self.label_font = 10
             self.label_font_small = 8

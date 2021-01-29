@@ -23,12 +23,13 @@ class Adapter:
         self.address = None
         self.connected = False
         # self.frequency_format = "GHz"
+        self.in_cmd_mode = False
 
         self.out_queue = None
         self.process = None
         self.out_thread = None
         self.out_thread_killed = False
-        self.restart_hpctrl()
+        self.start_hpctrl()
         # self.in_queue = None
 
         #####################################################
@@ -113,13 +114,15 @@ class Adapter:
         #     return True
 
         print(out.strip())
-        print("HPCTRL returned something unexpected")
+        print("HPCTRL returned something unexpected, restarting")
         self.restart_hpctrl()
         return False
 
     def send(self, message):
         try:
             print(message, file=self.process.stdin)
+            # if self.process is None:
+            #     self.start_hpctrl()
             self.process.stdin.flush()
             print("Poslal som: " + message)
             time.sleep(0.8)  # aby HPCTRL stihol spracovat prikaz, inak vypisuje !not ready, try again later (ping)
@@ -129,10 +132,7 @@ class Adapter:
             self.restart_hpctrl()
             return False
 
-    def restart_hpctrl(self):
-        # TODO NEFUNGUJE po 4h debugovania :(
-        print("RESTARTUJEM HPCTRL")
-
+    def kill_hpctrl(self):
         if self.out_thread is not None:
             self.out_thread_killed = True
             self.out_thread.join()
@@ -144,7 +144,7 @@ class Adapter:
             self.process = None
         self.out_queue = None
 
-        time.sleep(5)
+    def start_hpctrl(self):
         # TODO napisat do GUI spatnu vazbu ak je zla cesta...
         # try:
         self.process = subprocess.Popen(["hpctrl-main/Debug/hpctrl.exe", "-i"], stdin=subprocess.PIPE,
@@ -157,6 +157,13 @@ class Adapter:
         self.out_thread = threading.Thread(target=self.enqueue_output)
         self.out_thread.daemon = True
         self.out_thread.start()
+
+    def restart_hpctrl(self):
+        # TODO NEFUNGUJE po 4h debugovania :(
+        print("RESTARTUJEM HPCTRL")
+        self.kill_hpctrl()
+        time.sleep(5)
+        self.start_hpctrl()
 
     def connect(self, address):
         if self.testing:
@@ -245,9 +252,9 @@ class Adapter:
                 return None
         return False
 
-    def get_calibration_type(self):
-        # TODO zistit ako co
-        pass
+    # def get_calibration_type(self):
+    #     # TODO zistit ako co
+    #     pass
 
     def get_calibration(self):
         if self.testing:
@@ -542,6 +549,72 @@ class Adapter:
             return data
 
         return self.get_output()
+
+    def enter_cmd_mode(self):
+        # if self.testing:
+        #     if self.connected:
+        #         if not self.in_cmd_mode:
+        #             print("Terminal mode ON")
+        #             self.in_cmd_mode = True
+        #         return True
+        #     else:
+        #         return False
+
+        if self.connected:
+            if not self.in_cmd_mode:
+                if self.send("CMD\n"):
+                    self.in_cmd_mode = True
+                    return True
+                else:
+                    return None
+            return True
+        return False
+
+    def exit_cmd_mode(self):
+        # if self.testing:
+        #     if self.connected and self.in_cmd_mode:
+        #         print("Terminal mode OFF")
+        #         self.in_cmd_mode = False
+        #         return True
+        #     # else:
+        #     #     return False
+
+        if self.connected:
+            if self.in_cmd_mode:
+                if self.send("\n.\n"):  # este overit ci mozem takto z CMD ist von
+                    self.in_cmd_mode = False
+                    return True
+                else:
+                    return None
+            return True
+        return False
+
+    def cmd_send(self, message):
+        if self.connected:
+            if self.in_cmd_mode:
+                message = message.strip()
+                message = message.lower()
+                if message == "." or message == "cmd":
+                    print("Poslal si zakazany prikaz, ignorujem ho")
+                    return True
+                index = message.find(" ")
+                if index > 0:
+                    prve_slovo = message[:message.find(" ") + 1]
+                else:
+                    prve_slovo = message
+                # TODO poriesit ostatne vstupy atd
+                if self.send(f"{message}\n"):
+                    self.in_cmd_mode = True
+                    print("ADAPTER message:" + message)
+                    print("ADAPTER message:" + prve_slovo)
+                    if prve_slovo in ("q", "a", "b", "?", "help"):
+                        return self.get_output()
+                    return True
+                else:
+                    return None
+            print("not in cmd je False")
+            return False
+        return False
 
 # open_terminal()
 # close_terminal()

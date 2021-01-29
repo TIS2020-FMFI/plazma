@@ -1,14 +1,14 @@
 import tkinter as tk
 import tkinter.font as tk_font
 import data_validation
-from terminal import Terminal
+# from terminal import Terminal
 
 
 class GpibGui:
     def __init__(self, main_gui):
         self.main_gui = main_gui
 
-        self.terminal = Terminal(self)
+        # self.terminal = Terminal(self)
         widget_title_font = tk_font.Font(family="Tw Cen MT", size=self.main_gui.title_font_size, weight="bold")
         widget_label_font = tk_font.Font(family="Tw Cen MT", size=self.main_gui.label_font)
         widget_button_font = tk_font.Font(family="Tw Cen MT", size=self.main_gui.label_font)
@@ -60,8 +60,9 @@ class GpibGui:
 
     def open_gpib_terminal(self):
         # TODO: otvorít GPIB terminál
-        self.terminal.open_new_window()
-        print("Otváram GPIB terminál.")
+        # self.terminal.open_new_window()
+        self.main_gui.program.queue_function("open_terminal()")
+        print("GUI: Otváram GPIB terminál.")
 
     def start_connect(self):
         if self.connect_button["text"] == "ON":

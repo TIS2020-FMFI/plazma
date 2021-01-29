@@ -8,9 +8,14 @@ class Terminal:
         self.current = None
         self.text = None
         self.command = None
+        self.window = None
+
+    def is_open(self):
+        return self.window is not None
 
     def open_new_window(self):
-        new_window = tk.Toplevel(self.parent.main_gui.window, bg="black")
+        # TODO ked otvorim okno tak nech hned mozem pisat a nemusim kliknut do text boxu
+        new_window = tk.Toplevel(self.parent.gui.window, bg="black")
         new_window.bind("<Return>", lambda x: self.submit())
         new_window.bind('<Up>', lambda x: self.up())
         new_window.bind('<Down>', lambda x: self.down())
@@ -35,6 +40,7 @@ class Terminal:
 
         self.command = tk.Entry(new_window, bg="snow3", fg="black", bd=4)
         self.command.grid(row=1, column=1, sticky="N"+"S"+"E"+"W", padx=5)
+        self.command.focus_set()
 
         submit = tk.Button(new_window, text="Submit", command=self.submit, bg="gray13", fg="white", bd=6, padx=5)
         submit.grid(row=1, column=2, columnspan=2, sticky="E"+"W")
@@ -44,14 +50,27 @@ class Terminal:
         new_window.grid_columnconfigure(2, weight=3, minsize=50)
         new_window.grid_rowconfigure(0, weight=1)
 
+        new_window.protocol("WM_DELETE_WINDOW", self.close_window)
+        self.window = new_window
+
+    def close_window(self):
+        print("ZATVARAM TEMRINAL !!!")
+        self.window.destroy()
+        self.window = None
+        self.parent.queue_function("close_terminal()")
+
     def submit(self):
         txt = self.command.get()
         if len(txt) < 1:
             return
-        self.parent.main_gui.program.adapter.send(txt)
-        self.list.append(txt)
+        self.parent.queue_function(f"terminal_send('{txt}')")
+        self.print_message(txt)
+
+    def print_message(self, message):
+        # TODO posunut scroll na posledny riadok
+        self.list.append(message)
         self.current = None
-        self.text.insert(tk.END, "\n" + txt)
+        self.text.insert(tk.END, "\n" + message)
         self.command.delete(0, tk.END)
 
     def up(self):

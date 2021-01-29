@@ -6,7 +6,7 @@ class Project:
         self.state = None   # string
 
         self.calibration = None  # string
-        self.type = None  # string ale iba tie typy co mozu byt
+        self.calib_type = None  # string ale iba tie typy co mozu byt
         # self.port1 = 0
         # self.port2 = 0
         # self.velocity_factor = 0
@@ -26,10 +26,14 @@ class Project:
         self.calibration = None
 
     def get_calibration_type(self):
-        return self.type
+        return self.calib_type
 
     def set_calibration(self, calibration):
-        self.type = self.program.adapter.get_calibration_type()
+        # self.calib_type = self.program.adapter.get_calibration_type()
+        calibration = calibration.strip()
+        index = calibration.find("\n")
+        self.calib_type = calibration[:index]
+        print("TYP: " + self.calib_type)
         self.calibration = calibration
 
     def get_calibration(self):

@@ -6,6 +6,7 @@ import threading
 import queue
 import time
 from settings import Settings
+from terminal import Terminal
 
 
 class Program:
@@ -15,6 +16,7 @@ class Program:
         self.project = Project(self)
         self.gui = Gui(self)
         self.file_manager = FileManager(self)
+        self.terminal = Terminal(self)
 
         self.function_queue = queue.Queue()
         self.work_thread = threading.Thread(target=self.execute_functions)
@@ -43,6 +45,8 @@ class Program:
 
     # should be executed by self.work_thread only
     def disconnect(self):
+        if self.terminal.is_open():
+            self.close_terminal()
         self.adapter.disconnect()
         self.gui.gpib.update_button_disconnected()
         self.gui.info.change_connect_label()
@@ -268,11 +272,42 @@ class Program:
 
         return freq, value1, value2
 
+    def open_terminal(self):
+        return_code = self.adapter.enter_cmd_mode()
+        if not return_code and return_code is not None:
+            print("Ved ani nie si konektnuty")
+        elif return_code is None:
+            print("Error pri enter_terminal()")
+            # TODO prejde do stavu 1(nekonektnuty) lebo sa resetne hpctrl
+        else:
+            print('Podarilo sa vojst do terminal modu')
+            self.terminal.open_new_window()
+
+    def close_terminal(self):
+        return_code = self.adapter.exit_cmd_mode()
+        if return_code is None:
+            print("Error pri close_terminal()")
+            # TODO prejde do stavu 1(nekonektnuty) lebo sa resetne hpctrl
+        else:
+            print('Podarilo sa vinst von z terminal modu')
+
+    def terminal_send(self, message):
+        return_code = self.adapter.cmd_send(message)
+        if not return_code and return_code is not None:
+            print("Ved ani nie si konektnuty, alebo si spravne nevosiel do terminalu predtym")
+        elif return_code is None:
+            print("Error pri terminal_send()\n" + message)
+            # TODO prejde do stavu 1(nekonektnuty) lebo sa resetne hpctrl
+        else:
+            print("Podarilo sa poslat spravu:\n" + return_code)
+            if type(return_code) != bool:
+                print("Chcem vyprintovat spravu: " + return_code)
+                self.terminal.print_message(return_code)
+
     def quit_program(self):
         # TODO: ukončiť správne program
         self.gui.window.destroy()
         quit()
-
 
 
 if __name__ == '__main__':
