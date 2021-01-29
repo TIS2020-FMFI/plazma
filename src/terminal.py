@@ -67,10 +67,10 @@ class Terminal:
         self.print_message(txt)
 
     def print_message(self, message):
-        # TODO posunut scroll na posledny riadok
         self.list.append(message)
         self.current = None
         self.text.insert(tk.END, "\n" + message)
+        self.text.see(tk.END)
         self.command.delete(0, tk.END)
 
     def up(self):
