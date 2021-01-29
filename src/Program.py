@@ -299,10 +299,12 @@ class Program:
             print("Error pri terminal_send()\n" + message)
             # TODO prejde do stavu 1(nekonektnuty) lebo sa resetne hpctrl
         else:
-            print("Podarilo sa poslat spravu:\n" + return_code)
+            print("Podarilo sa poslat spravu:\n" + str(return_code))
             if type(return_code) != bool:
                 print("Chcem vyprintovat spravu: " + return_code)
                 self.terminal.print_message(return_code)
+            else:
+                print("VRATILO BOOL?")
 
     def quit_program(self):
         # TODO: ukončiť správne program

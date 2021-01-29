@@ -9,13 +9,13 @@ import testing
 
 class Adapter:
     MAX_RESPONSE_TIME = 10.0  # ako dlho caka na pristroj aby odpovedal, v sekundach
-    MAX_HPCTRL_RESPONSE_TIME = 0.5  # ako dlho caka na program HPCTRL aby vyprintoval dalsi riadok, v sekundach
+    MAX_HPCTRL_RESPONSE_TIME = 10  # ako dlho caka na program HPCTRL aby vyprintoval dalsi riadok, v sekundach
 
     # vzdy defaultne vecie ako 0.05, pre pomalsie PC sa da zvacsit ak nieco pada
 
     def __init__(self, program):
-        self.testing = True
-        # self.testing = False
+        # self.testing = True
+        self.testing = False
         if self.testing:
             self.test = testing.Test()
 
@@ -61,43 +61,61 @@ class Adapter:
         # out.close()
         # time.sleep(1)
 
+##    def get_output(self):
+##        out_str = ''
+##        slept = False
+##        counter = 0
+##        max_cycles = max(self.MAX_RESPONSE_TIME / max(self.MAX_HPCTRL_RESPONSE_TIME, 0.05), 2)
+##
+##        while out_str.strip() == "" or slept:
+##            print("zacinam")
+##            try:
+##                while True:
+##                    print("kek, out_str: \n" + out_str)	
+##                    out_str += self.out_queue.get_nowait()
+##                    slept = False
+##                    counter = 0
+##
+##            except queue.Empty:
+##                print("empty queue, slept: " + str(slept))
+##                if slept and out_str.strip() != "":
+##                    return out_str
+##
+##                wait_started = time.time()
+##                while self.out_queue.empty() and (time.time() < wait_started + self.MAX_HPCTRL_RESPONSE_TIME):
+##                    pass
+##                slept = self.out_queue.empty()
+##
+##                # time.sleep(self.MAX_HPCTRL_RESPONSE_TIME)
+##                # uistenie sa ze na 100% vytiahnem cely vystup, a nie iba cast
+##                # slept = True
+##
+##                counter += 1
+##                print(counter)
+##                if counter > max_cycles:
+##                    print(f"Presiel som {max_cycles} cyklov(minimalne {self.MAX_RESPONSE_TIME}s)"
+##                          + " a nedostal som odpoved z pristroja")
+##                    return None
+##        print("Error pri citani outputu - sem by sa nikdy nemalo dostat")
+
     def get_output(self):
-        out_str = ''
-        slept = False
+        out_str = ''        
+        get_started = time.time()
         counter = 0
-        max_cycles = max(self.MAX_RESPONSE_TIME / max(self.MAX_HPCTRL_RESPONSE_TIME, 0.05), 2)
 
-        while out_str.strip() == "" or slept:
-            # print("zacinam")
-            try:
-                while True:
-                    # print("kek, out_str: \n" + out_str)	
-                    out_str += self.out_queue.get_nowait()
-                    slept = False
-                    counter = 0
-
-            except queue.Empty:
-                # print("empty queue, slept: " + str(slept))
-                if slept and out_str.strip() != "":
-                    return out_str
-
-                wait_started = time.time()
-                while self.out_queue.empty() and (time.time() < wait_started + self.MAX_HPCTRL_RESPONSE_TIME):
-                    pass
-                slept = self.out_queue.empty()
-
-                # time.sleep(self.MAX_HPCTRL_RESPONSE_TIME)
-                # uistenie sa ze na 100% vytiahnem cely vystup, a nie iba cast
-                # slept = True
-
+        while (time.time() < get_started + self.MAX_HPCTRL_RESPONSE_TIME):
+            if self.out_queue.empty():
+                time.sleep(0.01)
                 counter += 1
-                # print(counter)
-                if counter > max_cycles:
-                    print(f"Presiel som {max_cycles} cyklov(minimalne {self.MAX_RESPONSE_TIME}s)"
-                          + " a nedostal som odpoved z pristroja")
-                    return None
-        print("Error pri citani outputu - sem by sa nikdy nemalo dostat")
-
+                if (counter > 300) and (out_str != ""):
+                    return out_str.strip()
+            else:
+                out_str += self.out_queue.get_nowait()
+                counter = 0
+                
+        print("read timeout")
+        return None
+        
     def hpctrl_is_responsive(self):
         if not self.send("ping"):
             return False
@@ -133,6 +151,9 @@ class Adapter:
             return False
 
     def kill_hpctrl(self):
+        if self.process is not None:
+            self.send("exit")
+            time.sleep(0.5)
         if self.out_thread is not None:
             self.out_thread_killed = True
             self.out_thread.join()
@@ -335,7 +356,7 @@ class Adapter:
                 return False
 
         if self.connected:
-            if self.send("CMD\ns STAR " + value + " " + unit + "\n.\n"):  # este overit ci mozem takto z CMD ist von
+            if self.send("CMD\ns STAR " + str(value) + " " + unit + "\n.\n"):  # este overit ci mozem takto z CMD ist von
                 return True
             else:
                 return None
@@ -359,7 +380,7 @@ class Adapter:
                 return False
 
         if self.connected:
-            if self.send("CMD\ns STOP " + value + " " + unit + "\n.\n"):  # este overit ci mozem takto z CMD ist von
+            if self.send("CMD\ns STOP " + str(value) + " " + unit + "\n.\n"):  # este overit ci mozem takto z CMD ist von
                 return True
             else:
                 return None
@@ -375,7 +396,7 @@ class Adapter:
                 return False
 
         if self.connected:
-            if self.send("CMD\ns POIN " + value + "\n.\n"):  # este overit ci mozem takto z CMD ist von
+            if self.send("CMD\ns POIN " + str(value) + "\n.\n"):  # este overit ci mozem takto z CMD ist von
                 return True
             else:
                 return None
@@ -418,10 +439,10 @@ class Adapter:
                 return False
 
         if self.connected:
-            if self.send(parameters):
-                return True
-            else:
-                return None
+            for param in parameters.split():
+                if not self.send(param):
+                    return None
+            return True
         return False
 
     def prepare_measurement(self):
@@ -594,12 +615,12 @@ class Adapter:
             if self.in_cmd_mode:
                 message = message.strip()
                 message = message.lower()
-                if message == "." or message == "cmd":
+                if message in (".", "cmd", "exit"):
                     print("Poslal si zakazany prikaz, ignorujem ho")
                     return True
                 index = message.find(" ")
                 if index > 0:
-                    prve_slovo = message[:message.find(" ") + 1]
+                    prve_slovo = message[:message.find(" ")]
                 else:
                     prve_slovo = message
                 # TODO poriesit ostatne vstupy atd
@@ -607,7 +628,9 @@ class Adapter:
                     self.in_cmd_mode = True
                     print("ADAPTER message:" + message)
                     print("ADAPTER message:" + prve_slovo)
+                    prve_slovo = prve_slovo.strip()
                     if prve_slovo in ("q", "a", "b", "?", "help"):
+                        print("CAKAM NA ODPOVED")
                         return self.get_output()
                     return True
                 else:

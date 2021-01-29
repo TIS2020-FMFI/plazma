@@ -53,7 +53,7 @@ class ProjectGui:
 
         self.main_gui.gpib.load_project_settings()
 
-        self.main_gui.state.load_project_state()
+        #self.main_gui.state.load_project_state()
         self.main_gui.info.change_state_label()
 
         self.project_name_entry.delete(0, tk.END)
