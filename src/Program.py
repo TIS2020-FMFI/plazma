@@ -307,6 +307,7 @@ class Program:
     def quit_program(self):
         # TODO: ukončiť správne program
         self.gui.window.destroy()
+        self.adapter.kill_hpctrl()
         quit()
 
 

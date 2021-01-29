@@ -147,7 +147,7 @@ class Adapter:
     def start_hpctrl(self):
         # TODO napisat do GUI spatnu vazbu ak je zla cesta...
         # try:
-        self.process = subprocess.Popen(["hpctrl-main/Debug/hpctrl.exe", "-i"], stdin=subprocess.PIPE,
+        self.process = subprocess.Popen(["hpctrl-main/src/Debug/hpctrl.exe", "-i"], stdin=subprocess.PIPE,
                                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         # except:
         #     pass
