@@ -14,8 +14,8 @@ class Adapter:
     # vzdy defaultne vecie ako 0.05, pre pomalsie PC sa da zvacsit ak nieco pada
 
     def __init__(self, program):
-        # self.testing = True
-        self.testing = False
+        self.testing = True
+        # self.testing = False
         if self.testing:
             self.test = testing.Test()
 
@@ -356,7 +356,8 @@ class Adapter:
                 return False
 
         if self.connected:
-            if self.send("CMD\ns STAR " + str(value) + " " + unit + "\n.\n"):  # este overit ci mozem takto z CMD ist von
+            if self.send("CMD\ns STAR " + str(value) + " " + unit + "\n.\n"):
+                # este overit ci mozem takto z CMD ist von
                 return True
             else:
                 return None
@@ -380,7 +381,8 @@ class Adapter:
                 return False
 
         if self.connected:
-            if self.send("CMD\ns STOP " + str(value) + " " + unit + "\n.\n"):  # este overit ci mozem takto z CMD ist von
+            if self.send("CMD\ns STOP " + str(value) + " " + unit + "\n.\n"):
+                # este overit ci mozem takto z CMD ist von
                 return True
             else:
                 return None
