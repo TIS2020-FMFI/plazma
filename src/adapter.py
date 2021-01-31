@@ -143,6 +143,7 @@ class Adapter:
             #     self.start_hpctrl()
             self.process.stdin.flush()
             print("Poslal som: " + message)
+            # TODO toto bolo pri hpctrl zmenene tak otestovat ci funguje bez sleep
             time.sleep(0.8)  # aby HPCTRL stihol spracovat prikaz, inak vypisuje !not ready, try again later (ping)
             return True
         except OSError:

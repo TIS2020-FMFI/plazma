@@ -16,7 +16,7 @@ class SweepGui:
 
         sweep_frame = tk.LabelFrame(self.gui.window, text="SWEEP", fg="#323338", bg='#f2f3fc',
                                     font=widget_title_font, relief=tk.RIDGE)
-        sweep_frame.grid(row=1, column=2, rowspan=3, sticky=tk.W,pady=(self.gui.pady_2,0), padx=(self.gui.padx, 0))
+        sweep_frame.grid(row=1, column=2, rowspan=3, sticky=tk.W, pady=(self.gui.pady_2, 0), padx=(self.gui.padx, 0))
 
         freq_measure_label = tk.Label(sweep_frame, text="Frequency Measure", fg='#323338', bg="#f2f3fc")
         freq_measure_label["font"] = widget_label_font
@@ -237,7 +237,7 @@ class SweepGui:
         print("posielam settings")
         self.gui.program.settings.set_freq_start(float(self.start_entry.get()))
         self.gui.program.settings.set_freq_stop(float(self.stop_entry.get()))
-        self.gui.program.settings.set_points(float(self.points_entry.get()))
+        self.gui.program.settings.set_points(int(float(self.points_entry.get())))  # musia byt oba
 
         params = ""
         if self.s11.get():
