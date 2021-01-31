@@ -307,10 +307,9 @@ class Program:
                 print("VRATILO BOOL?")
 
     def quit_program(self):
-        # TODO: ukončiť správne program
-        self.gui.window.destroy()
+        self.gui.window.quit()  # ukonci mainloop, takze __main__ skonci = cely program skonci bez chyby
+        self.gui.window.destroy()  # aby to spravne zavrelo window ked sa program spusti cez IDLE
         self.adapter.kill_hpctrl()
-        quit()
 
 
 if __name__ == '__main__':
