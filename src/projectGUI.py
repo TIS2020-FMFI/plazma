@@ -16,11 +16,13 @@ class ProjectGui:
                                       font=widget_title_font, relief=tk.RIDGE)
         project_frame.grid(row=2, column=1, sticky=tk.N + tk.W, pady=(self.main_gui.pady_1, 0))
 
-        self.project_name_entry = tk.Entry(project_frame, width=self.main_gui.project_weight, fg="#323338", font=widget_label_font)
+        self.project_name_entry = tk.Entry(project_frame, width=self.main_gui.project_weight, fg="#323338",
+                                           font=widget_label_font)
         self.project_name_entry.grid(row=0, column=0, columnspan=4, sticky=tk.W, padx=12, pady=5)
         self.project_name_entry.insert(tk.E, "Project Name")
 
-        self.project_descrip_text = tk.Text(project_frame, height=5, width=self.main_gui.project_weight, fg="#323338", font=widget_label_font)
+        self.project_descrip_text = tk.Text(project_frame, height=5, width=self.main_gui.project_weight,
+                                            fg="#323338", font=widget_label_font)
         self.project_descrip_text.grid(row=1, column=0, columnspan=4, padx=10, pady=10)
         self.project_descrip_text.insert(tk.END, "Enter project description")
 
@@ -39,7 +41,7 @@ class ProjectGui:
         name = self.project_name_entry.get()
         description = self.project_descrip_text.get(1.0, tk.END)
 
-        if self.main_gui.program.project.exists_data():
+        if not self.main_gui.program.project.exists_data():
             self.main_gui.sweep.send_settings()
         self.main_gui.program.file_manager.save_project(path, name, description)
 
@@ -53,7 +55,7 @@ class ProjectGui:
 
         self.main_gui.gpib.load_project_settings()
 
-        self.main_gui.state.load_project_state()
+        #  self.main_gui.state.load_project_state()
         self.main_gui.info.change_state_label()
 
         self.project_name_entry.delete(0, tk.END)

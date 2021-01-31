@@ -1,17 +1,28 @@
 class Settings:
+    default_address = 16
+    default_port1 = 0.0
+    default_port2 = 0.0
+    default_vel_factor = 1.0
+    default_freq_unit = "GHz"
+    default_freq_start = 1.0
+    default_freq_stop = 2.0
+    default_points = 201
+    default_parameter_format = "MA"
+    default_parameters = ""  # TODO checknut defaults
+    default_continuous = False
+
     def __init__(self):
         # defaults:
-        self.address = 16
-        self.port1 = 0.0
-        self.port2 = 0.0
-        self.vel_factor = 1.0
-        self.freq_unit = "GHz"
-        self.freq_start = 1.0
-        self.freq_stop = 2.0
-        self.points = 201
-        self.parameter_format = "MA"
-        self.parameters = ""   # TODO checknut defaults
-        self.continuous = False
+        self.address = self.default_address
+        self.port1 = self.default_port1
+        self.vel_factor = self.default_vel_factor
+        self.freq_unit = self.default_freq_unit
+        self.freq_start = self.default_freq_start
+        self.freq_stop = self.default_freq_stop
+        self.points = self.default_points
+        self.parameter_format = self.default_parameter_format
+        self.parameters = self.default_parameters
+        self.continuous = self.default_continuous
 
     def print_settings(self):
         result = ""

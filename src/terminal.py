@@ -14,7 +14,6 @@ class Terminal:
         return self.window is not None
 
     def open_new_window(self):
-        # TODO ked otvorim okno tak nech hned mozem pisat a nemusim kliknut do text boxu
         new_window = tk.Toplevel(self.parent.gui.window, bg="black")
         new_window.bind("<Return>", lambda x: self.submit())
         new_window.bind('<Up>', lambda x: self.up())
