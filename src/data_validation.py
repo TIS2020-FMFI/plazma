@@ -32,7 +32,16 @@ def validate_velocity_factor(value):
         return False
 
 
-def validate_start_stop(start, stop):
+def validate_start_stop(start, stop, freq_unit):
+
+    if freq_unit == 1:
+        print("unit is ghz", freq_unit)
+        if float(stop) > 3 or float(start) > 3:
+            print("return false")
+            return False
+    if freq_unit == 0:
+        if float(stop) > 30000 or float(start) > 30000:
+            return False
     # TODO - zistit rozmedzie start,stop frekvencie
     if float(start) < 0 or float(stop) < 0:
         return False

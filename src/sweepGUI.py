@@ -33,7 +33,10 @@ class SweepGui:
 
         self.mhz_radiobutton.select()
         self.ghz_radiobutton.deselect()
-        self.freq_variable.set(0)
+        if self.gui.program.settings.get_freq_unit() == "MHz":
+            self.freq_variable.set(0)
+        else:
+            self.freq_variable.set(1)
 
         line_label = tk.Label(sweep_frame, text="________________________________________________________________",
                               fg="#b3b3b5", bg="#f2f3fc")
@@ -44,7 +47,7 @@ class SweepGui:
 
         self.start_entry = tk.Entry(sweep_frame, width=5)
         self.start_entry.grid(row=3, column=1, sticky=tk.W, pady=(15, 0))
-        self.start_entry.insert(tk.END, "0")
+        self.start_entry.insert(tk.END, self.gui.program.settings.get_freq_start())
         self.start_entry["font"] = widget_label_font
 
         stop_label = tk.Label(sweep_frame, text="Stop:", fg="#323338", bg='#f2f3fc', font=widget_label_font)
@@ -52,7 +55,7 @@ class SweepGui:
 
         self.stop_entry = tk.Entry(sweep_frame, width=5)
         self.stop_entry.grid(row=3, column=3, sticky=tk.W, padx=(0, 30), pady=(15, 0))
-        self.stop_entry.insert(tk.END, "100")
+        self.stop_entry.insert(tk.END, self.gui.program.settings.get_freq_stop())
         self.stop_entry["font"] = widget_label_font
 
         points_label = tk.Label(sweep_frame, text="Points:", fg="#323338", bg='#f2f3fc', font=widget_label_font)
@@ -60,7 +63,7 @@ class SweepGui:
 
         self.points_entry = tk.Entry(sweep_frame, width=5)
         self.points_entry.grid(row=4, column=1, sticky=tk.W, pady=(5, 0))
-        self.points_entry.insert(tk.END, "200")
+        self.points_entry.insert(tk.END, self.gui.program.settings.get_points())
         self.points_entry["font"] = widget_label_font
 
         points_label = tk.Label(sweep_frame, text="(/1601)", fg="#323338", bg='#f2f3fc', font=widget_port_font)
@@ -109,10 +112,14 @@ class SweepGui:
         self.ma_radiobutton.grid(row=10, column=0, columnspan=4, sticky=tk.W, pady=(10, 0), padx=20)
         self.db_radiobutton.grid(row=11, column=0, columnspan=4, sticky=tk.W, pady=(0, 0), padx=20)
         self.ri_radiobutton.grid(row=12, column=0, columnspan=4, sticky=tk.W, pady=(0, 0), padx=20)
-        self.ma_radiobutton.select()
-        self.measure_variable.set(0)
-        self.db_radiobutton.deselect()
-        self.ri_radiobutton.deselect()
+
+        param = self.gui.program.settings.get_parameter_format()
+        if param == "MA":
+            self.measure_variable.set(0)
+        elif param == "DB":
+            self.measure_variable.set(1)
+        else:
+            self.measure_variable.set(2)
 
         line_label = tk.Label(sweep_frame, text="________________________________________________________________",
                               fg="#b3b3b5",
@@ -124,6 +131,10 @@ class SweepGui:
                                                      font=widget_port_font, bg='#f2f3fc')
         self.continuous_checkbutton.grid(row=14, column=0, columnspan=2, sticky=tk.W, pady=(5, 0), padx=(30, 0))
         self.continuous_checkbutton["state"] = tk.DISABLED
+        if self.gui.program.settings.get_continuous():
+            self.continuous.set(1)
+        else:
+            self.continuous.set(0)
 
         self.autosave = tk.IntVar()
         self.autosave_checkbutton = tk.Checkbutton(sweep_frame, variable=self.autosave, text="autosave",
@@ -153,9 +164,13 @@ class SweepGui:
                                          command=self.next_frame)
         self.frame_up_button.grid(row=16, column=2, padx=(30, 0), pady=2, sticky=tk.W)
 
+        self.frame_first_button = tk.Button(sweep_frame, text="<<", bg='#bfc6db', fg='#323338', font=widget_button_font,
+                                           command=self.first_frame)
+        self.frame_first_button.grid(row=16, column=2, columnspan=2, pady=2, padx=(60, 0), sticky=tk.W)
+
         self.frame_last_button = tk.Button(sweep_frame, text=">>", bg='#bfc6db', fg='#323338', font=widget_button_font,
                                            command=self.last_frame)
-        self.frame_last_button.grid(row=16, column=2, columnspan=3, pady=2, padx=(60, 0), sticky=tk.W)
+        self.frame_last_button.grid(row=16, column=2, columnspan=2, pady=2, padx=(100, 0), sticky=tk.W)
 
         self.run_button = tk.Button(sweep_frame, text="Run", bg='#bfc6db', fg='#323338', font=widget_button_font,
                                     width=15, command=self.start_measure)
@@ -177,7 +192,7 @@ class SweepGui:
         validation2 = data_validation.validate_float(self.stop_entry.get())
 
         if validation1 and validation2:
-            if data_validation.validate_start_stop(start, stop):
+            if data_validation.validate_start_stop(start, stop, self.freq_variable.get()):
                 self.start_entry["bg"] = "white"
                 self.stop_entry["bg"] = "white"
             else:
@@ -283,6 +298,7 @@ class SweepGui:
             self.frame_down_button["state"] = tk.NORMAL
             self.frame_up_button["state"] = tk.NORMAL
             self.frame_last_button["state"] = tk.NORMAL
+            self.frame_first_button["state"] = tk.NORMAL
             self.gui.info.change_data_label()
 
         else:
@@ -298,6 +314,7 @@ class SweepGui:
         self.frame_down_button["state"] = tk.DISABLED
         self.frame_up_button["state"] = tk.DISABLED
         self.frame_last_button["state"] = tk.DISABLED
+        self.frame_first_button["state"] = tk.DISABLED
         self.gui.info.change_data_label()
 
     def sweep_state_connected(self):
@@ -365,11 +382,16 @@ class SweepGui:
 
     def previous_frame(self):
         self.on_last_frame = False
-        if self.current_frame > 0:
+        if self.current_frame > 1:
             self.current_frame -= 1
             self.refresh_frame()
 
     def last_frame(self):
         self.on_last_frame = True
         self.current_frame = self.gui.program.project.data.get_number_of_measurements()
+        self.refresh_frame()
+
+    def first_frame(self):
+        self.on_last_frame = False
+        self.current_frame = 1
         self.refresh_frame()

@@ -21,7 +21,7 @@ class GpibGui:
         address_label.grid(row=0, column=1, sticky=tk.W, padx=20)
 
         self.address_entry = tk.Entry(gpib_frame, width=10)
-        self.address_entry.insert(tk.END, "16")
+        self.address_entry.insert(tk.END, self.main_gui.program.settings.get_address())
         self.address_entry["fg"] = "#2f3136"
         self.address_entry["font"] = widget_label_font
         self.address_entry.grid(row=0, column=1, sticky=tk.W, padx=(100, 0), pady=3)

@@ -20,6 +20,8 @@ class Graphs:
         self.fig, self.ax1 = plt.subplots(1, figsize=(a, b))
         self.ax2 = self.ax1.twinx()
 
+        self.ax2.format_coord = self.make_format(self.ax2, self.ax1)
+
         color1 = 'tab:red'
         color2 = 'tab:blue'
         self.ax1.set_xlabel('Frequency')
@@ -59,6 +61,8 @@ class Graphs:
             self.toolbar.grid_forget()
             self.fig, self.ax1 = plt.subplots(1, figsize=(self.a, self.b))
             self.ax2 = self.ax1.twinx()
+
+            self.ax2.format_coord = self.make_format(self.ax2, self.ax1)
 
             color1 = 'tab:red'
             color2 = 'tab:blue'
@@ -121,3 +125,13 @@ class Graphs:
             self.toolbarFrame = Frame(master=self.gui)
             self.toolbarFrame.grid(row=1, column=0)
             self.toolbar = NavigationToolbar2Tk(self.canvas, self.toolbarFrame)
+
+    def make_format(self, current, other):
+        def format_coord(x, y):
+            display_coord = current.transData.transform((x, y))
+            inv = other.transData.inverted()
+            ax_coord = inv.transform(display_coord)
+            coords = [ax_coord, (x, y)]
+            return ('L: {:<}  R: {:<}'
+                    .format(*['({:.4f}, {:.5f})'.format(x, y) for x, y in coords]))
+        return format_coord

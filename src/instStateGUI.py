@@ -34,24 +34,7 @@ class InstStateGui:
 
     def preset(self):
         self.main_gui.program.queue_function("preset()")
-        # self.main_gui.program.adapter.preset()
-        widget_title_font = tk_font.Font(family="Tw Cen MT", size=3)
-
-        root = tk.Tk()
-        root.config(bg="white")
-        root.geometry('230x50+200+500')
-        preset_frame = tk.LabelFrame(root, width=230, height=50,  fg="#323338", bg="#91b8a0",
-                                     relief=tk.RIDGE)
-        preset_frame.place(x=0, y=0)
-
-        reset = tk.Label(preset_frame, text="RESET SUCCESSFUL", fg='#323338', bg="#91b8a0")
-        reset["font"] = widget_title_font
-        reset.place(x=5, y=7)
-        root.overrideredirect(1)
-
-        threading.Timer(1.0, root.destroy).start()
-
-        root.mainloop()
+        tk.messagebox.showinfo(title="PRESET", message="Preset successful!")
 
     def allow_recall_state(self):
         self.recall_state_button["state"] = tk.NORMAL

@@ -44,6 +44,7 @@ class ProjectGui:
         if not self.main_gui.program.project.exists_data():
             self.main_gui.sweep.send_settings()
         self.main_gui.program.file_manager.save_project(path, name, description)
+        tk.messagebox.showinfo(title="Project", message="Project successfully saved!")
 
     def load(self):
         path = tk.filedialog.askdirectory()
@@ -68,6 +69,7 @@ class ProjectGui:
         self.main_gui.info.change_calibration_label()
 
         self.main_gui.sweep.load_project_sweep()
+        tk.messagebox.showinfo(title="Project", message="Project successfully loaded!")
 
 
 class InfoGui:

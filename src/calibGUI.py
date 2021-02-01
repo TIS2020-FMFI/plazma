@@ -47,6 +47,7 @@ class CalibrationGui:
                                          font=widget_port_font)
         self.port1_spin_box.grid(row=3, column=1, sticky=tk.W, pady=3)
         self.port1_spin_box["state"] = tk.DISABLED
+        self.port1.set(self.main_gui.program.settings.get_port1())
 
         port2_length_label = tk.Label(calibration_frame, text="PORT2 Length/(m): ", fg='#323338', bg="#f2f3fc",
                                       font=widget_port_font)
@@ -58,6 +59,7 @@ class CalibrationGui:
                                          justify=tk.RIGHT, font=widget_port_font)
         self.port2_spin_box.grid(row=4, column=1, sticky=tk.W, pady=3)
         self.port2_spin_box["state"] = tk.DISABLED
+        self.port2.set(self.main_gui.program.settings.get_port2())
 
         velocity_factor_label = tk.Label(calibration_frame, text="Velocity Factor:",
                                          fg='#323338', bg="#f2f3fc", font=widget_port_font)
@@ -69,6 +71,7 @@ class CalibrationGui:
                                             justify=tk.RIGHT, font=widget_port_font)
         self.vel_fact_spin_box.grid(row=5, column=1, sticky=tk.W, pady=3)
         self.vel_fact_spin_box["state"] = tk.DISABLED
+        self.vel_fact.set(self.main_gui.program.settings.get_vel_factor())
 
         self.adjust_cal_button = tk.Button(calibration_frame, text="Adjust Calibration",
                                            font=widget_port_font, bg='#bfc6db')
