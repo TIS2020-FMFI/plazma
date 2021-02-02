@@ -8,7 +8,7 @@ class Settings:
     default_freq_stop = 2.0
     default_points = 201
     default_parameter_format = "MA"
-    default_parameters = ""  # TODO checknut defaults
+    default_parameters = ""
     default_continuous = False
 
     def __init__(self):

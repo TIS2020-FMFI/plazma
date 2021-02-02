@@ -59,8 +59,6 @@ class GpibGui:
         self.gpib_button["state"] = tk.NORMAL
 
     def open_gpib_terminal(self):
-        # TODO: otvorít GPIB terminál
-        # self.terminal.open_new_window()
         self.main_gui.program.queue_function("open_terminal()")
         print("GUI: Otváram GPIB terminál.")
 

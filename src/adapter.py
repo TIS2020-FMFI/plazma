@@ -3,19 +3,18 @@ import subprocess
 import threading
 import queue
 import testing
-# import os
-# from datetime import datetime
+import tkinter as tk
 
 
 class Adapter:
-    MAX_RESPONSE_TIME = 10.0  # ako dlho caka na pristroj aby odpovedal, v sekundach
-    MAX_HPCTRL_RESPONSE_TIME = 10  # ako dlho caka na program HPCTRL aby vyprintoval dalsi riadok, v sekundach
+    # MAX_RESPONSE_TIME = 10.0  # ako dlho caka na pristroj aby odpovedal, v sekundach
+    # MAX_HPCTRL_RESPONSE_TIME = 10  # ako dlho caka na program HPCTRL aby vyprintoval dalsi riadok, v sekundach
 
     # vzdy defaultne vecie ako 0.05, pre pomalsie PC sa da zvacsit ak nieco pada
 
     def __init__(self, program):
-        self.testing = True
-        # self.testing = False
+        # self.testing = True
+        self.testing = False
         if self.testing:
             self.test = testing.Test()
 
@@ -53,10 +52,9 @@ class Adapter:
                 return
             if line:
                 self.out_queue.put(line)
-
             else:
                 time.sleep(0.001)
-            print("enqueue" + line)
+            print("enqueue:" + repr(line))
             # nekonecny cyklus, thread vzdy cita z pipe a hadze do out_queue po riadkoch
         # out.close()
         # time.sleep(1)
@@ -98,38 +96,55 @@ class Adapter:
 ##                    return None
 ##        print("Error pri citani outputu - sem by sa nikdy nemalo dostat")
 
-    def get_output(self):
-        out_str = ''        
-        get_started = time.time()
-        counter = 0
+    # def get_output(self):
+    #     out_str = ''
+    #     get_started = time.time()
+    #     counter = 0
+    #
+    #     while (time.time() < get_started + self.MAX_HPCTRL_RESPONSE_TIME):
+    #         if self.out_queue.empty():
+    #             time.sleep(0.01)
+    #             counter += 1
+    #             if (counter > 300) and (out_str != ""):
+    #                 return out_str.strip()
+    #         else:
+    #             out_str += self.out_queue.get_nowait()
+    #             counter = 0
+    #
+    #     print("read timeout")
+    #     return None
 
-        while (time.time() < get_started + self.MAX_HPCTRL_RESPONSE_TIME):
+    def get_output(self, timeout, lines=None):
+        out_str = ''
+        get_started = time.time()
+        line_counter = 0
+
+        while time.time() < get_started + timeout:
+            if lines is not None and line_counter >= lines:
+                return out_str.strip()
             if self.out_queue.empty():
-                time.sleep(0.01)
-                counter += 1
-                if (counter > 300) and (out_str != ""):
-                    return out_str.strip()
+                time.sleep(0.001)
             else:
                 out_str += self.out_queue.get_nowait()
-                counter = 0
-                
+                line_counter += 1
+
         print("read timeout")
+        out_str = out_str.strip()
+        if out_str:
+            return out_str
         return None
         
     def hpctrl_is_responsive(self):
         if not self.send("ping"):
             return False
 
-        out = self.get_output()
+        out = self.get_output(1, 1)
         if out is None:
             self.restart_hpctrl()  # restartujem ho, lebo nereaguje
             return False
 
         if out.strip() == "!unknown command ping":
             return True
-        # out = out.split(' ')
-        # if out[0] == "!unknown" and out[1] == "command":
-        #     return True
 
         print(out.strip())
         print("HPCTRL returned something unexpected, restarting")
@@ -144,50 +159,55 @@ class Adapter:
             self.process.stdin.flush()
             print("Poslal som: " + message)
             # TODO toto bolo pri hpctrl zmenene tak otestovat ci funguje bez sleep
-            time.sleep(0.8)  # aby HPCTRL stihol spracovat prikaz, inak vypisuje !not ready, try again later (ping)
+            time.sleep(0.1)  # aby HPCTRL stihol spracovat prikaz, inak vypisuje !not ready, try again later (ping)
             return True
         except OSError:
             print("Padol HPCTRL")
-            self.restart_hpctrl()
+            if message.strip().lower() != "exit":
+                self.restart_hpctrl()
             return False
 
     def kill_hpctrl(self):
+        print("zaciatok kill")
         if self.process is not None:
             self.send("exit")
-            time.sleep(0.5)
         if self.out_thread is not None:
             self.out_thread_killed = True
             self.out_thread.join()
             print("out_thread joined")
             self.out_thread = None
         if self.process is not None:
+            self.process.terminate()
             self.process.kill()
-            # self.process.terminate()
             self.process = None
         self.out_queue = None
+        print("Koniec kill")
 
     def start_hpctrl(self):
-        # TODO napisat do GUI spatnu vazbu ak je zla cesta...
-        # try:
-        self.process = subprocess.Popen(["hpctrl-main/src/Debug/hpctrl.exe", "-i"], stdin=subprocess.PIPE,
-                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-        # except:
-        #     pass
+        print("zaciatok start")
+        path = "hpctrl-main/src/Debug/hpctrl.exe"
+        try:
+            self.process = subprocess.Popen([path, "-i"], stdin=subprocess.PIPE,
+                                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        except FileNotFoundError:
+            tk.messagebox.showerror(title="HPCTRL error", message="Wrong HPCTRL path!\n"
+                                                                  f"Expected to find HPCTRL here: \"./{path}\"")
+            quit()
 
         self.out_queue = queue.Queue()
 
         self.out_thread = threading.Thread(target=self.enqueue_output)
         self.out_thread.daemon = True
         self.out_thread.start()
+        print("Koniec start")
 
     def restart_hpctrl(self):
-        # TODO NEFUNGUJE po 4h debugovania :(
-        print("RESTARTUJEM HPCTRL")
-        self.kill_hpctrl()
-        time.sleep(5)
+        print("RESTARTUJEM ")
+        self.kill_hpctrl()  # moze zase zavolat restart
         self.start_hpctrl()
 
     def connect(self, address):
+        print("CONNECT")
         if self.testing:
             if self.test.connect(address):
                 self.address = address
@@ -209,12 +229,11 @@ class Adapter:
         if self.testing:
             self.test.disconnect()
             self.connected = False
-            self.address = None  # potrebujem adresu vobec si pametat?
+            self.address = None
             return
 
         self.send("DISCONNECT")
-        # disconnect prikaz nevypisuje nic ak uz bol
-
+        # disconnect prikaz nevypisuje nic ak uz bol disconnectnuty
         self.address = None
         self.connected = False
 
@@ -231,7 +250,14 @@ class Adapter:
 
         if self.connected:
             if self.send("GETSTATE"):
-                return self.get_output()
+                output = self.get_output(4, 1)
+                if output is None:
+                    return None
+                output += "\n" + self.get_output(1)
+                if not self.out_queue.empty():
+                    print("Pri get_state: Queue nie je empty!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                    print("Nasl. riadok v queue: " + self.out_queue.get_nowait())
+                return output
             else:
                 return None
         return False
@@ -241,7 +267,6 @@ class Adapter:
         if state is None or state == "":
             print("Trying to send state, but state is empty")
             return False
-
         if self.testing:
             if self.connected:
                 self.test.set_state("------Toto je stav, ktory bol poslaty do pristroja: "
@@ -274,10 +299,6 @@ class Adapter:
                 return None
         return False
 
-    # def get_calibration_type(self):
-    #     # TODO zistit ako co
-    #     pass
-
     def get_calibration(self):
         if self.testing:
             if self.connected:
@@ -289,7 +310,14 @@ class Adapter:
 
         if self.connected:
             if self.send("GETCALIB"):
-                return self.get_output()
+                output = self.get_output(5, 1)  # 5s ci staci na poslanie aj 12 kaliracii?
+                if output is None:
+                    return None
+                output += "\n" + self.get_output(1)
+                if not self.out_queue.empty():
+                    print("Pri get_calibration: Queue nie je empty!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                    print("Nasl. riadok v queue: " + self.out_queue.get_nowait())
+                return output
             else:
                 return None
         return False
@@ -304,22 +332,67 @@ class Adapter:
                 return False
 
         if self.connected:
-            if self.send("SETCALIB\n" + calibration):  # neviem ci takto pojde alebo musim dat dalsi send()?
+            if self.send("SETCALIB\n" + calibration):
                 return True
             else:
                 return None
         return False
 
     def set_port1_length(self, value):
-        pass
+        print("Posielam port1: " + str(value))
+        if self.testing:
+            return True
+
+        if self.connected:
+            if self.enter_cmd_mode():
+                if self.send(f"s PORT1 {value}"):
+                    if self.exit_cmd_mode():
+                        return True
+                    else:
+                        return None
+                else:
+                    return None
+            else:
+                return None
+        return False
 
     def set_port2_length(self, value):
-        pass
+        print("Posielam port2: " + str(value))
+        if self.testing:
+            return True
+
+        if self.connected:
+            if self.enter_cmd_mode():
+                if self.send(f"s PORT2 {value}"):
+                    if self.exit_cmd_mode():
+                        return True
+                    else:
+                        return None
+                else:
+                    return None
+            else:
+                return None
+        return False
 
     def set_velocity_factor(self, value):
-        pass
+        print("Posielam vel_fact: " + str(value))
+        if self.testing:
+            return True
 
-    def set_frequency_unit(self):  # asi nebude v adaptery? bar ni v tomto tvare
+        if self.connected:
+            if self.enter_cmd_mode():
+                if self.send(f"s VELOFACT {value}"):
+                    if self.exit_cmd_mode():
+                        return True
+                    else:
+                        return None
+                else:
+                    return None
+            else:
+                return None
+        return False
+
+    def set_frequency_unit(self):
         unit = self.program.settings.get_freq_unit().strip()
         if unit.upper() not in ("GHZ", "MHZ"):
             print("Zla jednotka frekvencie !!!")
@@ -357,8 +430,7 @@ class Adapter:
                 return False
 
         if self.connected:
-            if self.send("CMD\ns STAR " + str(value) + " " + unit + "\n.\n"):
-                # este overit ci mozem takto z CMD ist von
+            if self.send("s STAR " + str(value) + " " + unit + "\n"):
                 return True
             else:
                 return None
@@ -382,8 +454,7 @@ class Adapter:
                 return False
 
         if self.connected:
-            if self.send("CMD\ns STOP " + str(value) + " " + unit + "\n.\n"):
-                # este overit ci mozem takto z CMD ist von
+            if self.send("s STOP " + str(value) + " " + unit + "\n"):
                 return True
             else:
                 return None
@@ -399,7 +470,7 @@ class Adapter:
                 return False
 
         if self.connected:
-            if self.send("CMD\ns POIN " + str(value) + "\n.\n"):  # este overit ci mozem takto z CMD ist von
+            if self.send("s POIN " + str(value) + "\n"):
                 return True
             else:
                 return None
@@ -414,13 +485,13 @@ class Adapter:
 
         if self.testing:
             if self.connected:
-                self.test.format = p_format  # nikdy sa negetuje asi
+                self.test.format = p_format
                 return True
             else:
                 return False
 
         if self.connected:
-            if self.send("FMT " + p_format):
+            if self.send("FMT " + p_format + "\n"):
                 return True
             else:
                 return None
@@ -441,8 +512,10 @@ class Adapter:
             else:
                 return False
 
+        parameters = parameters.split()
+        parameters.insert(0, "CLEAR")
         if self.connected:
-            for param in parameters.split():
+            for param in parameters:
                 if not self.send(param):
                     return None
             return True
@@ -458,25 +531,20 @@ class Adapter:
             self.test.format = self.program.settings.get_parameter_format()
             return True
 
-        functions = [self.set_frequency_unit,
+        functions = [self.set_data_format,
+                     self.set_parameters,
+                     self.set_frequency_unit,
+                     self.enter_cmd_mode,
                      self.set_start_frequency,
                      self.set_stop_frequency,
                      self.set_points,
-                     self.set_data_format,
-                     self.set_parameters]
+                     self.exit_cmd_mode]
 
         for f in functions:
             result = f()
             if not result:  # false alebo none
                 return result
         return True
-
-    # self.set_frequency_unit()
-    # self.set_start_frequency()
-    # self.set_stop_frequency()
-    # self.set_points()
-    # self.set_data_format()
-    # self.set_parameters()
 
     def measure(self):
         if self.testing:
@@ -509,10 +577,41 @@ class Adapter:
                 return return_code
 
             if self.send("MEASURE"):
-                return self.get_output()
+                parameters = self.program.settings.get_parameters.split()
+                points = self.program.settings.get_points()
+                output = ""
+                for param in range(len(parameters)):
+                    line = self.get_output(5, 1)    # z testovacich merani sa 1601 points vymeria cca za 3.5s
+                    if line is None:
+                        print("Nepodarilo sa precitat prve riadky pri merani")
+                        return ""
+                    output += line + "\n"
+
+                riadok = self.get_output(2, 1)  # staci? neviem ci sa hned posielaju data
+                while True:
+                    if riadok is None:
+                        print("Nepodarilo sa precitat hlavicku pri merani")
+                        return False
+                    output += riadok + "\n"
+                    if riadok.strip()[0] == "#":
+                        break
+                    riadok = self.get_output(0.2, 1)
+
+                data = self.get_output(2, points)
+                if riadok is None:
+                    print("Nepodarilo sa precitat riadky s datami pri merani")
+                    return False
+                output += data
+                return output
             else:
                 return None
         return False
+
+        # if self.send("MEASURE"):
+        #     return self.get_output()
+        # else:
+        #     return None
+    # return False
 
     def start_measurement(self):
         if self.testing:
@@ -575,15 +674,6 @@ class Adapter:
         return self.get_output()
 
     def enter_cmd_mode(self):
-        # if self.testing:
-        #     if self.connected:
-        #         if not self.in_cmd_mode:
-        #             print("Terminal mode ON")
-        #             self.in_cmd_mode = True
-        #         return True
-        #     else:
-        #         return False
-
         if self.connected:
             if not self.in_cmd_mode:
                 if self.send("CMD\n"):
@@ -595,14 +685,6 @@ class Adapter:
         return False
 
     def exit_cmd_mode(self):
-        # if self.testing:
-        #     if self.connected and self.in_cmd_mode:
-        #         print("Terminal mode OFF")
-        #         self.in_cmd_mode = False
-        #         return True
-        #     # else:
-        #     #     return False
-
         if self.connected:
             if self.in_cmd_mode:
                 if self.send("\n.\n"):  # este overit ci mozem takto z CMD ist von
@@ -634,17 +716,17 @@ class Adapter:
                     prve_slovo = prve_slovo.strip()
                     if prve_slovo in ("q", "a", "b", "?", "help"):
                         print("CAKAM NA ODPOVED")
-                        return self.get_output()
+                        timeout = 5
+                        start_time = time.time()
+                        while True:
+                            if not self.out_queue.empty():
+                                break
+                            if time.time() <= start_time + timeout:
+                                return None
+                        return self.get_output(2)
                     return True
                 else:
                     return None
-            print("not in cmd je False")
+            print("not in cmd_mode")
             return False
         return False
-
-# open_terminal()
-# close_terminal()
-# send_command(command)
-# ping()
-# restart_connection()
-# time.sleep() pouzivat vsade po kazdom prikaze alebo nejako inak?

@@ -7,6 +7,7 @@ import queue
 import time
 from settings import Settings
 from terminal import Terminal
+import tkinter as tk
 
 
 class Program:
@@ -28,9 +29,10 @@ class Program:
         while True:
             try:
                 function = "self." + self.function_queue.get()
+                print(function)
                 exec(function)
             except queue.Empty:
-                time.sleep(0.5)
+                time.sleep(0.2)
 
     def queue_function(self, function):
         self.function_queue.put(function)
@@ -41,7 +43,7 @@ class Program:
             self.gui.gpib.update_button_connected()
             self.gui.info.change_connect_label()
         else:
-            print('Nepodarilo sa pripojit')
+            tk.messagebox.showerror(title="Connection error", message="Can't connect to the device on that address.")
 
     # should be executed by self.work_thread only
     def disconnect(self):
@@ -54,11 +56,12 @@ class Program:
     # should be executed by self.work_thread only
     def save_state(self):
         state = self.adapter.get_state()
-        if not state and state is not None:
-            print("Ved ani nie si konektnuty")
-        elif state is None:
+        if state is None:
             print("Error pri save_state()")
-            # TODO prejde do stavu 1(nekonektnuty) lebo sa resetne hpctrl
+            self.gui.gpib.update_button_disconnected()
+            self.gui.info.change_connect_label()
+        elif not state:
+            print("Ved ani nie si konektnuty")
         else:
             self.project.set_state(state)
             self.gui.info.change_state_label()
@@ -85,34 +88,37 @@ class Program:
         print("Posielas stav: \n" + self.project.get_state())
 
         return_code = self.adapter.set_state(self.project.get_state())
-        if not return_code and return_code is not None:
-            print("Ved ani nie si konektnuty")
-        elif return_code is None:
+        if return_code is None:
             print("Error pri recall_state()")
-            # TODO prejde do stavu 1(nekonektnuty) lebo sa resetne hpctrl
+            self.gui.gpib.update_button_disconnected()
+            self.gui.info.change_connect_label()
+        elif not return_code:
+            print("Ved ani nie si konektnuty")
         else:
-            print('Podarilo sa poslat stav')
-            # TODO mozno GUI aby vypisalo nejaku spetnu vezbu?
+            tk.messagebox.showinfo(title="Recalled State", message="State sent to the device successfully!")
 
     # should be executed by self.work_thread only
     def preset(self):
         return_code = self.adapter.preset()
-        if not return_code and return_code is not None:
-            print("Ved ani nie si konektnuty")
-        elif return_code is None:
+        if return_code is None:
             print("Error pri recall_state()")
-            # TODO prejde do stavu 1(nekonektnuty) lebo sa resetne hpctrl
+            self.gui.gpib.update_button_disconnected()
+            self.gui.info.change_connect_label()
+        elif not return_code:
+            print("Ved ani nie si konektnuty")
         else:
-            print('Podarilo sa urobit preset()')
-            # TODO mozno GUI aby vypisalo nejaku spetnu vezbu?
+            tk.messagebox.showinfo(title="PRESET", message="Preset successful!")
 
     def save_calib(self):
         calib = self.adapter.get_calibration()
-        if not calib and calib is not None:
-            print("Ved ani nie si konektnuty")
-        elif calib is None:
+        if calib is None:
             print("Error pri save_calib()")
-            # TODO prejde do stavu 1(nekonektnuty) lebo sa resetne hpctrl
+            self.gui.gpib.update_button_disconnected()
+            self.gui.info.change_connect_label()
+        elif type(calib) == str and not calib:
+            tk.messagebox.showwarning(title="Empty calibration", message="The device is not calibrated.")
+        elif not calib:
+            print("Ved ani nie si konektnuty")
         else:
             self.project.set_calibration(calib)
             self.gui.info.change_calibration_label()
@@ -121,14 +127,14 @@ class Program:
         print("Posielas kalibraciu: \n" + self.project.get_calibration())
 
         return_code = self.adapter.set_calibration(self.project.get_calibration())
-        if not return_code and return_code is not None:
-            print("Ved ani nie si konektnuty")
-        elif return_code is None:
+        if return_code is None:
             print("Error pri load_calib()")
-            # TODO prejde do stavu 1(nekonektnuty) lebo sa resetne hpctrl
+            self.gui.gpib.update_button_disconnected()
+            self.gui.info.change_connect_label()
+        elif not return_code:
+            print("Ved ani nie si konektnuty")
         else:
-            print('Podarilo sa poslat kalibraciu')
-            # TODO mozno GUI aby vypisalo nejaku spetnu vezbu?
+            tk.messagebox.showinfo(title="Calibration Loaded", message="Calibration sent to the device successfully!")
 
     # should be executed by self.work_thread only
     def prepare_measurement(self):
@@ -149,53 +155,56 @@ class Program:
     def measure(self):
         self.prepare_measurement()
         if self.project.data is None:  # ak neboli vybrate ziadne S-parametre, vymazu sa data z pameti
-            # TODO prejde do stavu 2
+            self.gui.sweep.change_run()
             self.gui.window.after_idle(self.gui.sweep.refresh_frame)
-            # self.gui.sweep.refresh_frame()  # TODO refreshni Frame(vymazali sa data)
             return
 
         data = self.adapter.measure()
-
-        if not data and data is not None:
-            print("Ved ani nie si konektnuty")
-            self.project.data = None
-            return
-        elif data is None:
+        if data is None:
             print("Error pri merani, neprisli ziadne data")
-            # TODO prejde do stavu 1(nekonektnuty) lebo sa resetne hpctrl
+            self.gui.gpib.update_button_disconnected()
+            self.gui.info.change_connect_label()
             self.project.data = None
             return
-
-        # data = self.adapter.retrieve_measurement_data()
+        if type(data) == str and not data:
+            print("Neprisli ziadne data z adapteru, mozno treba restart")  # mozno nie je v Remote pristroj
+            tk.messagebox.showwarning(title="No Data", message="No data received.\n"
+                                                               "The device may be in Remote mode, try reconnecting.")
+            return
+        if not data:
+            print("Alebo nie si konektnuty, alebo riadky dat nezodpovedaju ocakavanym")
+            self.project.data = None
+            return
 
         data = data.strip()
         print("Data ktore prisli: \n" + data)
 
         self.project.data.add_measurement(data)
         self.gui.window.after_idle(self.gui.sweep.refresh_frame)
-        # self.gui.sweep.refresh_frame()  # TODO refreshni Frame
         print()
         print("pocet merani: " + str(self.project.data.number_of_measurements))
         print("parametre: " + str(self.project.data.parameters))
         print("data v pameti: " + str(self.project.data.measurements_list))
         print()
-        # TODO prejde do stavu 2
 
     # should be executed by self.work_thread only
     def start_measurement(self):
         self.prepare_measurement()
         if self.project.data is None:  # ak neboli vybrate ziadne S-parametre
-            # TODO prejde do stavu 2
+            self.gui.sweep.reset_frame()
+            self.gui.sweep.change_run()
             self.gui.window.after_idle(self.gui.sweep.refresh_frame)
-            # self.gui.sweep.refresh_frame()  # TODO refreshni Frame(vymazali sa data)
             return
 
         return_code = self.adapter.start_measurement()
-        if not return_code and return_code is not None:  # ak nebol konektnuty
+        if return_code is None:
+            self.gui.sweep.change_run()
+            self.gui.gpib.update_button_disconnected()
+            self.gui.info.change_connect_label()
             self.project.data = None
             return
-        elif return_code is None:
-            # TODO prejde do stavu 1
+        if not return_code:  # ak nebol konektnuty
+            self.gui.sweep.change_run()
             self.project.data = None
             return
 
@@ -212,16 +221,16 @@ class Program:
                     break
                 print("Error pri merani, neprisli ziadne data")
                 self.measuring = False
-                # TODO prejde do stavu 1
+                self.gui.gpib.update_button_disconnected()
+                self.gui.info.change_connect_label()
+                self.gui.sweep.change_run()
                 return
             print("Data ktore prisli: \n" + data)
 
             data = data.strip()
             self.project.data.add_measurement(data)
             print("idem na refresh")
-            # self.gui.window.after_idle(func=self.gui.sweep.refresh_frame)
             self.gui.window.after_idle(self.gui.sweep.refresh_frame)
-            # self.gui.sweep.refresh_frame()  # TODO refreshni Frame
             print()
             print("pocet merani: " + str(self.project.data.number_of_measurements))
             print("parametre: " + str(self.project.data.parameters))
@@ -238,12 +247,11 @@ class Program:
                 waited = True
 
         print("Ukoncene merania - uz necakam na data")
-        # TODO prejde do stavu 2
+        self.gui.sweep.change_run()
 
     # executed by GUI thread
     def end_measurement(self):
         def finish():
-            # TODO tu sa zmeni STOP button na RUN
             print("stopujem merania")
             self.adapter.end_measurement()
             time.sleep(0.2)  # chcem pockat kym HPCTRL vyprintuje meranie do std_out ak uz zacal
@@ -252,7 +260,6 @@ class Program:
 
         if not self.measuring:
             print("Ved som ani nic nemeral !!!")
-            # TODO nemal by sa zmenit STOP button
             return
 
         finish_thread = threading.Thread(target=finish)
@@ -269,16 +276,16 @@ class Program:
         for v1, v2 in measurement.values():
             value1.append(v1)
             value2.append(v2)
-
         return freq, value1, value2
 
     def open_terminal(self):
         return_code = self.adapter.enter_cmd_mode()
-        if not return_code and return_code is not None:
-            print("Ved ani nie si konektnuty")
-        elif return_code is None:
+        if return_code is None:
             print("Error pri enter_terminal()")
-            # TODO prejde do stavu 1(nekonektnuty) lebo sa resetne hpctrl
+            self.gui.gpib.update_button_disconnected()
+            self.gui.info.change_connect_label()
+        elif not return_code:
+            print("Ved ani nie si konektnuty")
         else:
             print('Podarilo sa vojst do terminal modu')
             self.terminal.open_new_window()
@@ -287,17 +294,19 @@ class Program:
         return_code = self.adapter.exit_cmd_mode()
         if return_code is None:
             print("Error pri close_terminal()")
-            # TODO prejde do stavu 1(nekonektnuty) lebo sa resetne hpctrl
+            self.gui.gpib.update_button_disconnected()
+            self.gui.info.change_connect_label()
         else:
             print('Podarilo sa vinst von z terminal modu')
 
     def terminal_send(self, message):
         return_code = self.adapter.cmd_send(message)
-        if not return_code and return_code is not None:
-            print("Ved ani nie si konektnuty, alebo si spravne nevosiel do terminalu predtym")
-        elif return_code is None:
+        if return_code is None:
             print("Error pri terminal_send()\n" + message)
-            # TODO prejde do stavu 1(nekonektnuty) lebo sa resetne hpctrl
+            self.gui.gpib.update_button_disconnected()
+            self.gui.info.change_connect_label()
+        elif not return_code:
+            print("Ved ani nie si konektnuty, alebo si spravne nevosiel do terminalu predtym")
         else:
             print("Podarilo sa poslat spravu:\n" + str(return_code))
             if type(return_code) != bool:
@@ -305,6 +314,23 @@ class Program:
                 self.terminal.print_message(return_code)
             else:
                 print("VRATILO BOOL?")
+
+    # should be executed by self.work_thread only
+    def adjust_calibration(self, port1, port2, vel_fact):
+        adjust_list = [port1, port2, vel_fact]
+        functions = [self.adapter.set_port1_length, self.adapter.set_port2_length, self.adapter.set_velocity_factor]
+        for i in range(len(functions)):
+            return_code = functions[i](adjust_list[i])
+            if return_code is None:
+                print("Error pri adjust_calibration()")
+                self.gui.gpib.update_button_disconnected()
+                self.gui.info.change_connect_label()
+            elif not return_code:
+                print("Ved ani nie si konektnuty")
+        # tk.messagebox.showinfo(title="ADJUST sent", message="Adjust data for calibration sent!")
+        self.settings.set_port1(float(port1))
+        self.settings.set_port2(float(port2))
+        self.settings.set_vel_factor(float(vel_fact))
 
     def quit_program(self):
         self.gui.window.quit()  # ukonci mainloop, takze __main__ skonci = cely program skonci bez chyby

@@ -156,13 +156,17 @@ class SweepGui:
         self.max_label = tk.Label(sweep_frame, text="/10", fg="#323338", bg='#f2f3fc', font=widget_label_font)
         self.max_label.grid(row=16, column=1, sticky=tk.W, padx=(30, 0))
 
+        self.frame_first_button = tk.Button(sweep_frame, text="<<", bg='#bfc6db', fg='#323338', font=widget_button_font,
+                                            command=self.first_frame)
+        self.frame_first_button.grid(row=16, column=2, columnspan=2, pady=2, sticky=tk.W)
+
         self.frame_down_button = tk.Button(sweep_frame, text="<", bg='#bfc6db', fg='#323338', font=widget_button_font,
                                            command=self.previous_frame)
-        self.frame_down_button.grid(row=16, column=2, pady=5, sticky=tk.W)
+        self.frame_down_button.grid(row=16, column=2, pady=5, padx=(40, 0), sticky=tk.W)
 
         self.frame_up_button = tk.Button(sweep_frame, text=">", bg='#bfc6db', fg='#323338', font=widget_button_font,
                                          command=self.next_frame)
-        self.frame_up_button.grid(row=16, column=2, padx=(30, 0), pady=2, sticky=tk.W)
+        self.frame_up_button.grid(row=16, column=2, padx=(70, 0), pady=2, sticky=tk.W)
 
         self.frame_first_button = tk.Button(sweep_frame, text="<<", bg='#bfc6db', fg='#323338', font=widget_button_font,
                                            command=self.first_frame)
@@ -230,18 +234,19 @@ class SweepGui:
 
     def stop_measure(self):
         print("GUI zastavujem meranie")
-        self.run_button["text"] = "Run"
         self.gui.program.end_measurement()
+        # self.run_button["text"] = "Run"
 
     def run_measure(self):
         self.send_settings()
-
-        # TODO pred meranim prejde do stavu 3(podla dokumentu v testovacich scenaroch)
         if self.continuous.get() == 0:
             self.gui.program.queue_function("measure()")
         else:
             self.run_button["text"] = "Stop"
             self.gui.program.queue_function("start_measurement()")
+
+    def change_run(self):
+        self.run_button["text"] = "Run"
 
     def send_settings(self):
         unit = "MHz"
@@ -307,6 +312,7 @@ class SweepGui:
 
     def reset_frame(self):
         self.current_frame = 0
+        self.frame_entry["state"] = tk.NORMAL
         self.frame_entry.delete(0, tk.END)
         self.frame_entry.insert(tk.END, "0")
         self.frame_entry["state"] = tk.DISABLED
@@ -341,7 +347,7 @@ class SweepGui:
         self.points_entry.insert(tk.END, self.gui.program.settings.get_points())
 
         params = self.gui.program.settings.get_parameters()
-        params_value = params.split(",")
+        params_value = params.split(" ")
         if "S11" in params_value:
             self.s11.set(1)
         else:
@@ -388,10 +394,13 @@ class SweepGui:
 
     def last_frame(self):
         self.on_last_frame = True
-        self.current_frame = self.gui.program.project.data.get_number_of_measurements()
-        self.refresh_frame()
+        if self.current_frame < self.gui.program.project.data.get_number_of_measurements():
+            self.current_frame = self.gui.program.project.data.get_number_of_measurements()
+            self.refresh_frame()
 
     def first_frame(self):
         self.on_last_frame = False
-        self.current_frame = 1
-        self.refresh_frame()
+        if self.current_frame > 1:
+            self.current_frame = 1
+            self.refresh_frame()
+    

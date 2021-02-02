@@ -85,37 +85,37 @@ class CalibrationGui:
     def disable_calibration_load(self):
         self.load_calib_button["state"] = tk.DISABLED
 
-    def adjust_calibration(self):
-        if data_validation.validate_velocity_factor(self.vel_fact_spin_box.get()):
+    def adjust(self):
+        all_good = True
+        vel_fact = self.vel_fact_spin_box.get()
+        if data_validation.validate_velocity_factor(vel_fact):
             self.vel_fact_spin_box["fg"] = "black"
         else:
             self.vel_fact_spin_box["fg"] = "red"
+            all_good = False
 
-        if data_validation.validate_port_length(self.port1_spin_box.get()):
+        port1 = self.port1_spin_box.get()
+        if data_validation.validate_port_length(port1):
             self.port1_spin_box["fg"] = "black"
         else:
             self.port1_spin_box["fg"] = "red"
+            all_good = False
 
-        if data_validation.validate_port_length(self.port2_spin_box.get()):
+        port2 = self.port2_spin_box.get()
+        if data_validation.validate_port_length(port2):
             self.port2_spin_box["fg"] = "black"
         else:
             self.port2_spin_box["fg"] = "red"
+            all_good = False
+
+        if all_good:
+            self.main_gui.program.queue_function(f"adjust_calibration({port1}, {port2}, {vel_fact})")
 
     def save_calibration(self):
         self.main_gui.program.queue_function("save_calib()")
 
     def load_calibration(self):
         self.main_gui.program.queue_function("load_calib()")
-
-    def adjust(self):
-        self.adjust_calibration()
-        self.main_gui.program.adapter.set_velocity_factor(self.vel_fact.get())
-        self.main_gui.program.adapter.set_port1_length(self.port1.get())
-        self.main_gui.program.adapter.set_port2_length(self.port2.get())
-
-        self.main_gui.program.settings.set_port1(str(self.port1.get()))
-        self.main_gui.program.settings.set_port2(str(self.port2.get()))
-        self.main_gui.program.settings.set_vel_factor(str(self.vel_fact.get()))
 
     def calibration_state_connected(self):
         self.save_calib_button["state"] = tk.NORMAL

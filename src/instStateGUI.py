@@ -1,6 +1,5 @@
 import tkinter as tk
 import tkinter.font as tk_font
-import threading
 
 
 class InstStateGui:
@@ -34,7 +33,6 @@ class InstStateGui:
 
     def preset(self):
         self.main_gui.program.queue_function("preset()")
-        tk.messagebox.showinfo(title="PRESET", message="Preset successful!")
 
     def allow_recall_state(self):
         self.recall_state_button["state"] = tk.NORMAL
