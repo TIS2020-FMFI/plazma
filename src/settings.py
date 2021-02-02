@@ -8,13 +8,14 @@ class Settings:
     default_freq_stop = 2.0
     default_points = 201
     default_parameter_format = "MA"
-    default_parameters = ""  # TODO checknut defaults
+    default_parameters = ""
     default_continuous = False
 
     def __init__(self):
         # defaults:
         self.address = self.default_address
         self.port1 = self.default_port1
+        self.port2 = self.default_port2
         self.vel_factor = self.default_vel_factor
         self.freq_unit = self.default_freq_unit
         self.freq_start = self.default_freq_start

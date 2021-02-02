@@ -16,7 +16,6 @@ def validate_address(value):
 
 def validate_port_length(value):
     # TODO overiť dĺžku - rozmedzie
-
     try:
         if 0 <= float(value) <= 1:
             return True
@@ -32,8 +31,15 @@ def validate_velocity_factor(value):
         return False
 
 
-def validate_start_stop(start, stop):
-    # TODO - zistit rozmedzie start,stop frekvencie
+def validate_start_stop(start, stop, freq_unit):
+    if freq_unit == 1:
+        print("unit is ghz", freq_unit)
+        if float(stop) > 3 or float(start) > 3:
+            print("return false")
+            return False
+    if freq_unit == 0:
+        if float(stop) > 3000 or float(start) > 3000:
+            return False
     if float(start) < 0 or float(stop) < 0:
         return False
     if float(start) < float(stop):

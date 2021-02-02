@@ -148,7 +148,7 @@ class FileManager:
                             s12 = False
                             s22 = False
                             s21 = False
-                            params_value = params.split(",")
+                            params_value = params.split(" ")
                             for item in params_value:
                                 if item == "S11":
                                     s11 = True

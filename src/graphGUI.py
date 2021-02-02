@@ -1,7 +1,6 @@
 import tkinter as tk
 import tkinter.font as tk_font
 from graphs import Graphs
-# from PIL import ImageTk, Image
 
 
 class GraphsGui:
@@ -19,7 +18,7 @@ class GraphsGui:
         self.graph1 = tk.LabelFrame(graph_frame, fg="#323338", bg='#f2f3fc', font=widget_title_font, relief=tk.RIDGE)
         self.graph1.grid(row=0, column=0, sticky=tk.N, rowspan=4)
 
-        self.graph1_plot = Graphs(self.graph1, self.main_gui.program,self.main_gui.fig_a, self.main_gui.fig_b)
+        self.graph1_plot = Graphs(self.graph1, self.main_gui.program, self.main_gui.fig_a, self.main_gui.fig_b)
 
         self.graph1_variable = tk.IntVar()
         self.graph1_XYY_radiobutton = tk.Radiobutton(self.graph1, text="XYY", bg='#f2f3fc', fg="#323338",
@@ -231,7 +230,6 @@ class GraphsGui:
             self.graph1_plot.set_s_param("S22")
 
         self.graph1_plot.draw_measurement(self.main_gui.sweep.current_frame-1)
-
 
     def refresh_all_graphs(self):
         self.graph1_plot_draw()
