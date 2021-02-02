@@ -168,6 +168,10 @@ class SweepGui:
                                          command=self.next_frame)
         self.frame_up_button.grid(row=16, column=2, padx=(70, 0), pady=2, sticky=tk.W)
 
+        self.frame_first_button = tk.Button(sweep_frame, text="<<", bg='#bfc6db', fg='#323338', font=widget_button_font,
+                                           command=self.first_frame)
+        self.frame_first_button.grid(row=16, column=2, columnspan=2, pady=2, padx=(60, 0), sticky=tk.W)
+
         self.frame_last_button = tk.Button(sweep_frame, text=">>", bg='#bfc6db', fg='#323338', font=widget_button_font,
                                            command=self.last_frame)
         self.frame_last_button.grid(row=16, column=2, columnspan=2, pady=2, padx=(100, 0), sticky=tk.W)
@@ -399,3 +403,4 @@ class SweepGui:
         if self.current_frame > 1:
             self.current_frame = 1
             self.refresh_frame()
+    

@@ -44,7 +44,6 @@ def validate_start_stop(start, stop, freq_unit):
         return False
     if float(start) < float(stop):
         return True
-
     return False
 
 

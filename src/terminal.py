@@ -79,15 +79,15 @@ class Terminal:
         self.text.see(tk.END)
         self.command.delete(0, tk.END)
         if txt.lower() == "help":
-            self.print_message("""\t    s str  ... send the string using gpib_puts()
-            q str  ... send a query and read a string
-                       response using gpib_query()
-            a      ... retrieve response with gpib_read_ASC()
-            c      ... continuous gpib_read_ASC() until next input
-            d n    ... continuous gpib_read_ASC() N-times
-            b      ... retrieve response with gpib_read_BIN()
-            ?      ... read and print status
-            HELP   ... print this help
+            self.print_message("""\t    s str  ... send the string using gpib_puts() 
+            q str  ... send a query and read a string 
+                       response using gpib_query() 
+            a      ... retrieve response with gpib_read_ASC() 
+            c      ... continuous gpib_read_ASC() until next input 
+            d n    ... continuous gpib_read_ASC() N-times 
+            b      ... retrieve response with gpib_read_BIN() 
+            ?      ... read and print status 
+            HELP   ... print this help 
             EXIT   ... close terminal""")
             return
         self.parent.queue_function(f"terminal_send('{txt}')")
