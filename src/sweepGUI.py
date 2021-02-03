@@ -168,10 +168,6 @@ class SweepGui:
                                          command=self.next_frame)
         self.frame_up_button.grid(row=16, column=2, padx=(70, 0), pady=2, sticky=tk.W)
 
-        self.frame_first_button = tk.Button(sweep_frame, text="<<", bg='#bfc6db', fg='#323338', font=widget_button_font,
-                                           command=self.first_frame)
-        self.frame_first_button.grid(row=16, column=2, columnspan=2, pady=2, padx=(60, 0), sticky=tk.W)
-
         self.frame_last_button = tk.Button(sweep_frame, text=">>", bg='#bfc6db', fg='#323338', font=widget_button_font,
                                            command=self.last_frame)
         self.frame_last_button.grid(row=16, column=2, columnspan=2, pady=2, padx=(100, 0), sticky=tk.W)
@@ -238,12 +234,17 @@ class SweepGui:
         # self.run_button["text"] = "Run"
 
     def run_measure(self):
+        self.gui.program.project.reset_data()
+        autosave = False
+        if self.autosave.get() == 1:
+            autosave = True
+            self.gui.project.save()
         self.send_settings()
         if self.continuous.get() == 0:
-            self.gui.program.queue_function("measure()")
+            self.gui.program.queue_function(f"measure({autosave})")
         else:
             self.run_button["text"] = "Stop"
-            self.gui.program.queue_function("start_measurement()")
+            self.gui.program.queue_function(f"start_measurement({autosave})")
 
     def change_run(self):
         self.run_button["text"] = "Run"
@@ -283,9 +284,6 @@ class SweepGui:
             self.gui.program.settings.set_continuous(False)
         else:
             self.gui.program.settings.set_continuous(True)
-
-        if self.autosave.get() == 1:
-            self.gui.project.save()
 
         self.gui.program.settings.set_address(self.gui.gpib.address_entry.get())
 
@@ -403,4 +401,3 @@ class SweepGui:
         if self.current_frame > 1:
             self.current_frame = 1
             self.refresh_frame()
-    

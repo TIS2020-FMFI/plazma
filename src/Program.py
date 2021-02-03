@@ -63,6 +63,7 @@ class Program:
         elif not state:
             print("Ved ani nie si konektnuty")
         else:
+            print("State: \n" + state)
             self.project.set_state(state)
             self.gui.info.change_state_label()
 
@@ -120,6 +121,7 @@ class Program:
         elif not calib:
             print("Ved ani nie si konektnuty")
         else:
+            print("Calibration: \n" + calib)
             self.project.set_calibration(calib)
             self.gui.info.change_calibration_label()
 
@@ -152,7 +154,7 @@ class Program:
         self.project.reset_data(s11, s12, s21, s22)
 
     # should be executed by self.work_thread only
-    def measure(self):
+    def measure(self, autosave=False):
         self.prepare_measurement()
         if self.project.data is None:  # ak neboli vybrate ziadne S-parametre, vymazu sa data z pameti
             self.gui.sweep.change_run()
@@ -166,7 +168,7 @@ class Program:
             self.gui.info.change_connect_label()
             self.project.data = None
             return
-        if type(data) == str and not data:
+        if data == "":
             print("Neprisli ziadne data z adapteru, mozno treba restart")  # mozno nie je v Remote pristroj
             tk.messagebox.showwarning(title="No Data", message="No data received.\n"
                                                                "The device may be in Remote mode, try reconnecting.")
@@ -181,6 +183,8 @@ class Program:
 
         self.project.data.add_measurement(data)
         self.gui.window.after_idle(self.gui.sweep.refresh_frame)
+        if autosave:
+            self.file_manager.save_last_measurement()
         print()
         print("pocet merani: " + str(self.project.data.number_of_measurements))
         print("parametre: " + str(self.project.data.parameters))
@@ -188,7 +192,7 @@ class Program:
         print()
 
     # should be executed by self.work_thread only
-    def start_measurement(self):
+    def start_measurement(self, autosave=False):
         self.prepare_measurement()
         if self.project.data is None:  # ak neboli vybrate ziadne S-parametre
             self.gui.sweep.reset_frame()
@@ -219,6 +223,13 @@ class Program:
                 if waited:
                     # stane sa ak som uz spracoval posledne data od HPCTRL
                     break
+                if data == "":
+                    print("Neprisli ziadne data z adapteru, mozno treba restart")  # mozno nie je v Remote pristroj
+                    tk.messagebox.showwarning(title="No Data", message="No data received.\n"
+                                                                       "The device may be in "
+                                                                       "Remote mode, try reconnecting.")
+                    self.gui.sweep.change_run()
+                    return
                 print("Error pri merani, neprisli ziadne data")
                 self.measuring = False
                 self.gui.gpib.update_button_disconnected()
@@ -229,8 +240,9 @@ class Program:
 
             data = data.strip()
             self.project.data.add_measurement(data)
-            print("idem na refresh")
             self.gui.window.after_idle(self.gui.sweep.refresh_frame)
+            if autosave:
+                self.file_manager.save_last_measurement()
             print()
             print("pocet merani: " + str(self.project.data.number_of_measurements))
             print("parametre: " + str(self.project.data.parameters))
