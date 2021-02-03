@@ -13,8 +13,8 @@ class Adapter:
     # vzdy defaultne vecie ako 0.05, pre pomalsie PC sa da zvacsit ak nieco pada
 
     def __init__(self, program):
-        # self.testing = True
-        self.testing = False
+        self.testing = True
+        # self.testing = False
         if self.testing:
             self.test = testing.Test()
 
@@ -256,14 +256,13 @@ class Adapter:
                 output += "\n" + self.get_output(1)
                 if not self.out_queue.empty():
                     print("Pri get_state: Queue nie je empty!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-                    print("Nasl. riadok v queue: " + self.out_queue.get_nowait())
+                    print("Nasl. riadok v queue:" + repr(self.out_queue.get_nowait()))
                 return output
             else:
                 return None
         return False
 
     def set_state(self, state):  # state = string
-        # TODO ked sa nieco zle posle...
         if state is None or state == "":
             print("Trying to send state, but state is empty")
             return False
@@ -277,7 +276,7 @@ class Adapter:
                 return False
 
         if self.connected:
-            if self.send("SETSTATE\n" + state):  # neviem ci takto pojde alebo musim dat dalsi send()?
+            if self.send("SETSTATE\n" + state):
                 return True
             else:
                 return None
@@ -316,7 +315,7 @@ class Adapter:
                 output += "\n" + self.get_output(1)
                 if not self.out_queue.empty():
                     print("Pri get_calibration: Queue nie je empty!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-                    print("Nasl. riadok v queue: " + self.out_queue.get_nowait())
+                    print("Nasl. riadok v queue:" + repr(self.out_queue.get_nowait()))
                 return output
             else:
                 return None
@@ -577,7 +576,7 @@ class Adapter:
                 return return_code
 
             if self.send("MEASURE"):
-                parameters = self.program.settings.get_parameters.split()
+                parameters = self.program.settings.get_parameters.strip().split()
                 points = self.program.settings.get_points()
                 output = ""
                 for param in range(len(parameters)):
@@ -587,7 +586,7 @@ class Adapter:
                         return ""
                     output += line + "\n"
 
-                riadok = self.get_output(2, 1)  # staci? neviem ci sa hned posielaju data
+                riadok = self.get_output(3, 1)  # staci? neviem ci sa hned posielaju data
                 while True:
                     if riadok is None:
                         print("Nepodarilo sa precitat hlavicku pri merani")
@@ -597,10 +596,13 @@ class Adapter:
                         break
                     riadok = self.get_output(0.2, 1)
 
-                data = self.get_output(2, points)
+                data = self.get_output(3, points)
                 if riadok is None:
                     print("Nepodarilo sa precitat riadky s datami pri merani")
                     return False
+                if not self.out_queue.empty():
+                    print("QUEUE NIE JE PRAZDNY PO MEASURE() !!!")
+                    print("Nasl. riadok v queue:" + repr(self.out_queue.get_nowait()))
                 output += data
                 return output
             else:
@@ -670,8 +672,37 @@ class Adapter:
             if data is not None:
                 self.test.data_order_number += 1
             return data
+        # return self.get_output()
 
-        return self.get_output()
+        parameters = self.program.settings.get_parameters.strip().split()
+        points = self.program.settings.get_points()
+        output = ""
+        for param in range(len(parameters)):
+            line = self.get_output(5, 1)  # z testovacich merani sa 1601 points vymeria cca za 3.5s
+            if line is None:
+                print("Nepodarilo sa precitat prve riadky pri merani - continous")
+                return ""
+            output += line + "\n"
+
+        riadok = self.get_output(3, 1)  # staci? neviem ci sa hned posielaju data
+        while True:
+            if riadok is None:
+                print("Nepodarilo sa precitat hlavicku pri merani - continous")
+                return None
+            output += riadok + "\n"
+            if riadok.strip()[0] == "#":
+                break
+            riadok = self.get_output(0.2, 1)
+
+        data = self.get_output(3, points)
+        if riadok is None:
+            print("Nepodarilo sa precitat riadky s datami pri merani - continous")
+            return None
+        if not self.out_queue.empty():
+            print("QUEUE NIE JE PRAZDNY PO retrieve_measurement_data() !!!")
+            print("Nasl. riadok v queue:" + repr(self.out_queue.get_nowait()))
+        output += data
+        return output
 
     def enter_cmd_mode(self):
         if self.connected:
@@ -716,14 +747,21 @@ class Adapter:
                     prve_slovo = prve_slovo.strip()
                     if prve_slovo in ("q", "a", "b", "?", "help"):
                         print("CAKAM NA ODPOVED")
-                        timeout = 5
-                        start_time = time.time()
-                        while True:
-                            if not self.out_queue.empty():
-                                break
-                            if time.time() <= start_time + timeout:
-                                return None
-                        return self.get_output(2)
+                        # timeout = 5
+                        # start_time = time.time()
+                        # while True:
+                        #     if not self.out_queue.empty():
+                        #         break
+                        #     if time.time() <= start_time + timeout:
+                        #         return None
+                        # return self.get_output(2)
+                        output = self.get_output(5, 1)
+                        if output is None:
+                            return None
+                        riadky = self.get_output(0.2)
+                        if riadky is not None:
+                            output += "\n" + riadky
+                        return output
                     return True
                 else:
                     return None

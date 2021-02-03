@@ -7,9 +7,11 @@ class FileManager:
     def __init__(self, program):
         self.description = ""
         self.program = program
+        self.path = None
 
     def save_project(self, path, project_name, description):
         filepath = os.path.join(path, project_name)
+        self.path = filepath
 
         now = datetime.now()
         time = datetime.timestamp(now)
@@ -173,3 +175,20 @@ class FileManager:
         self.program.project.reset_data()
         self.program.gui.info.change_data_label()
         return
+
+    def save_last_measurement(self):
+        if not self.program.project.exists_data():
+            return
+        filepath = self.path + "\\measurements"
+
+        meranie = self.program.project.data.get_number_of_measurements()
+        if meranie == 1:
+            os.mkdir(filepath)
+
+        data = self.program.project.data.print_measurement(meranie-1)
+        if data is not None:
+            name = "measurement" + str(meranie) + ".s2p"  # + data_time + ".s2p"
+            file_path = os.path.join(filepath, name)
+            f = open(file_path, "w")
+            f.write(data)
+            f.close()

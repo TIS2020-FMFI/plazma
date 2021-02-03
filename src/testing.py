@@ -4,7 +4,8 @@ class Test:
     # scenario = 2  # meranie S11,S22,  51 points, GHz
     # scenario = 3  # meranie S11, 1601 points, vypisuje frekvenciu v MHz
     # scenario = 4  # meranie vsetkych parametrov, 26 points, GHz
-    scenario = 5  # 14 merani za sebou, S21, 26 points, GHz
+    # scenario = 5  # 14 merani za sebou, S21, 26 points, GHz
+    scenario = 6  # veeela meranii, S11, 1601 points
 
     def __init__(self):
         self.address = 16
@@ -15,7 +16,12 @@ class Test:
         self.min_freq = self.default_min_freq
         self.max_freq = self.default_max_freq
         self.freq_unit = "GHz"
-        self.data = self.all_data[self.scenario]
+        if self.scenario == 6:
+            self.data = []
+            for i in range(50):
+                self.data.append(self.all_data[4])
+        else:
+            self.data = self.all_data[self.scenario]
         self.data_order_number = 0  # iba pre scenario s vela merani = ktore meranie nech mi da
 
     def set_state(self, state):
@@ -48,7 +54,7 @@ class Test:
     def get_data(self, more_measurement=False):
         if not more_measurement:
             if type(self.data) == list:
-                print("Zly scenar - chces viac merani ale v tomto scenari viac merani nemam !!!")
+                print("Zly scenar - chces jedno meranie ale v tomto scenari je ich viac !!!")
                 return
             return self.data
         if type(self.data) != list:
