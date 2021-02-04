@@ -121,6 +121,9 @@ class Adapter:
 
         while time.time() < get_started + timeout:
             if lines is not None and line_counter >= lines:
+                print("LINE timeout----------------------------------------")
+                print(out_str.strip())
+                print("LINE KONIEC-----------------------------------------")
                 return out_str.strip()
             if self.out_queue.empty():
                 time.sleep(0.001)
@@ -128,7 +131,7 @@ class Adapter:
                 out_str += self.out_queue.get_nowait()
                 line_counter += 1
 
-        print("read timeout")
+        print("READ timeout")
         out_str = out_str.strip()
         if out_str:
             return out_str
@@ -312,7 +315,7 @@ class Adapter:
                 output = self.get_output(5, 1)  # 5s ci staci na poslanie aj 12 kaliracii?
                 if output is None:
                     return None
-                output += "\n" + self.get_output(1)
+                # output += "\n" + self.get_output(1)
                 if not self.out_queue.empty():
                     print("Pri get_calibration: Queue nie je empty!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                     print("Nasl. riadok v queue:" + repr(self.out_queue.get_nowait()))
@@ -576,16 +579,20 @@ class Adapter:
                 return return_code
 
             if self.send("MEASURE"):
-                parameters = self.program.settings.get_parameters.strip().split()
+                parameters = self.program.settings.get_parameters().strip().split()
                 points = self.program.settings.get_points()
                 output = ""
+                print("PARAMETERS:")
+                print(parameters)
                 for param in range(len(parameters)):
-                    line = self.get_output(5, 1)    # z testovacich merani sa 1601 points vymeria cca za 3.5s
+                    print("Prechadzam: " + parameters[param])
+                    line = self.get_output(20, 1)    # z testovacich merani sa 1601 points vymeria cca za 3.5s
                     if line is None:
                         print("Nepodarilo sa precitat prve riadky pri merani")
                         return ""
                     output += line + "\n"
 
+                print("IDEM NA HLAVICKU")
                 riadok = self.get_output(3, 1)  # staci? neviem ci sa hned posielaju data
                 while True:
                     if riadok is None:
@@ -593,17 +600,24 @@ class Adapter:
                         return False
                     output += riadok + "\n"
                     if riadok.strip()[0] == "#":
+                        print("nasiel som #")
                         break
-                    riadok = self.get_output(0.2, 1)
+                    riadok = self.get_output(0.5, 1)
 
-                data = self.get_output(3, points)
+                print("----------------------------------")
+                print(points)
+                print("-----------------------------------")
+                data = self.get_output(20, points)
                 if riadok is None:
                     print("Nepodarilo sa precitat riadky s datami pri merani")
                     return False
+                output += data
                 if not self.out_queue.empty():
+                    riadok = self.get_output(0.2, 1)
+                    if riadok.strip() == "":
+                        return output
                     print("QUEUE NIE JE PRAZDNY PO MEASURE() !!!")
                     print("Nasl. riadok v queue:" + repr(self.out_queue.get_nowait()))
-                output += data
                 return output
             else:
                 return None
@@ -674,7 +688,7 @@ class Adapter:
             return data
         # return self.get_output()
 
-        parameters = self.program.settings.get_parameters.strip().split()
+        parameters = self.program.settings.get_parameters().strip().split()
         points = self.program.settings.get_points()
         output = ""
         for param in range(len(parameters)):
