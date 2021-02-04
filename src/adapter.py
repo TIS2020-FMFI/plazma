@@ -121,9 +121,9 @@ class Adapter:
 
         while time.time() < get_started + timeout:
             if lines is not None and line_counter >= lines:
-                print("LINE timeout----------------------------------------")
-                print(out_str.strip())
-                print("LINE KONIEC-----------------------------------------")
+                print("READ ALL LINES----------------------------------------")
+                print(repr(out_str.strip()))
+                print("LINE END----------------------------------------------")
                 return out_str.strip()
             if self.out_queue.empty():
                 time.sleep(0.001)
@@ -315,7 +315,9 @@ class Adapter:
                 output = self.get_output(5, 1)  # 5s ci staci na poslanie aj 12 kaliracii?
                 if output is None:
                     return None
-                # output += "\n" + self.get_output(1)
+                if output == "":  # ak je nenakalibrovany
+                    return output
+                output += "\n" + self.get_output(1)
                 if not self.out_queue.empty():
                     print("Pri get_calibration: Queue nie je empty!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                     print("Nasl. riadok v queue:" + repr(self.out_queue.get_nowait()))
@@ -587,6 +589,7 @@ class Adapter:
                 for param in range(len(parameters)):
                     print("Prechadzam: " + parameters[param])
                     line = self.get_output(20, 1)    # z testovacich merani sa 1601 points vymeria cca za 3.5s
+                    # ale 4.2.2021 pri teste nam s kratsim casom(10s) to neslo, takze zatial 20s !
                     if line is None:
                         print("Nepodarilo sa precitat prve riadky pri merani")
                         return ""
@@ -599,25 +602,25 @@ class Adapter:
                         print("Nepodarilo sa precitat hlavicku pri merani")
                         return False
                     output += riadok + "\n"
-                    if riadok.strip()[0] == "#":
+                    if len(riadok) > 0 and riadok[0] == "#":
                         print("nasiel som #")
                         break
-                    riadok = self.get_output(0.5, 1)
+                    riadok = self.get_output(1, 1)
 
-                print("----------------------------------")
+                print("---------------Points:-------------------")
                 print(points)
-                print("-----------------------------------")
-                data = self.get_output(20, points)
-                if riadok is None:
+                print("---------------Koniec Points-------------")
+                data = self.get_output(10, points)
+                if data is None:
                     print("Nepodarilo sa precitat riadky s datami pri merani")
                     return False
                 output += data
                 if not self.out_queue.empty():
-                    riadok = self.get_output(0.2, 1)
+                    riadok = self.get_output(1, 1)
                     if riadok.strip() == "":
                         return output
                     print("QUEUE NIE JE PRAZDNY PO MEASURE() !!!")
-                    print("Nasl. riadok v queue:" + repr(self.out_queue.get_nowait()))
+                    print("Nasl. riadok v queue:" + repr(riadok))
                 return output
             else:
                 return None
@@ -691,8 +694,12 @@ class Adapter:
         parameters = self.program.settings.get_parameters().strip().split()
         points = self.program.settings.get_points()
         output = ""
+        print("PARAMETERS:")
+        print(parameters)
         for param in range(len(parameters)):
-            line = self.get_output(5, 1)  # z testovacich merani sa 1601 points vymeria cca za 3.5s
+            print("Prechadzam: " + parameters[param])
+            line = self.get_output(20, 1)  # z testovacich merani sa 1601 points vymeria cca za 3.5s
+            # ale 4.2.2021 pri teste nam s kratsim casom(10s) to neslo, takze zatial 20s !
             if line is None:
                 print("Nepodarilo sa precitat prve riadky pri merani - continous")
                 return ""
@@ -704,17 +711,20 @@ class Adapter:
                 print("Nepodarilo sa precitat hlavicku pri merani - continous")
                 return None
             output += riadok + "\n"
-            if riadok.strip()[0] == "#":
+            if len(riadok) > 0 and riadok[0] == "#":
                 break
-            riadok = self.get_output(0.2, 1)
+            riadok = self.get_output(1, 1)
 
-        data = self.get_output(3, points)
+        data = self.get_output(10, points)
         if riadok is None:
             print("Nepodarilo sa precitat riadky s datami pri merani - continous")
             return None
         if not self.out_queue.empty():
+            riadok = self.get_output(1, 1)
+            if riadok.strip() == "":
+                return output
             print("QUEUE NIE JE PRAZDNY PO retrieve_measurement_data() !!!")
-            print("Nasl. riadok v queue:" + repr(self.out_queue.get_nowait()))
+            print("Nasl. riadok v queue:" + repr(riadok))
         output += data
         return output
 
@@ -769,12 +779,13 @@ class Adapter:
                         #     if time.time() <= start_time + timeout:
                         #         return None
                         # return self.get_output(2)
-                        output = self.get_output(5, 1)
+                        output = self.get_output(10, 1)
                         if output is None:
                             return None
-                        riadky = self.get_output(0.2)
-                        if riadky is not None:
-                            output += "\n" + riadky
+                        while not self.out_queue.empty():
+                            riadky = self.get_output(0.2)
+                            if riadky is not None:
+                                output += "\n" + riadky
                         return output
                     return True
                 else:

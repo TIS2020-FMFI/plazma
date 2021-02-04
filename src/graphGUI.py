@@ -160,7 +160,6 @@ class GraphsGui:
         self.graph4_S22_radiobutton.grid(row=9, column=0, padx=(70, 0), pady=(0, 0), sticky=tk.N + tk.W)
 
     def graph4_plot_draw(self):
-        print("kreslim graf č.4")
         if self.graph4_variable.get() == 0:
             self.graph4_plot.set_type("XYY")
         else:
@@ -178,7 +177,6 @@ class GraphsGui:
         self.graph4_plot.draw_measurement(self.main_gui.sweep.current_frame - 1)
 
     def graph3_plot_draw(self):
-        print("kreslim graf č.3")
         if self.graph3_variable.get() == 0:
             self.graph3_plot.set_type("XYY")
         else:
@@ -196,7 +194,6 @@ class GraphsGui:
         self.graph3_plot.draw_measurement(self.main_gui.sweep.current_frame - 1)
 
     def graph2_plot_draw(self):
-        print("kreslim graf č.2")
         if self.graph2_variable.get() == 0:
             self.graph2_plot.set_type("XYY")
         else:
@@ -214,7 +211,6 @@ class GraphsGui:
         self.graph2_plot.draw_measurement(self.main_gui.sweep.current_frame - 1)
 
     def graph1_plot_draw(self):
-        print("kreslim graf č.1")
         if self.graph1_variable.get() == 0:
             self.graph1_plot.set_type("XYY")
         else:

@@ -4,8 +4,8 @@ class Test:
     # scenario = 2  # meranie S11,S22,  51 points, GHz
     # scenario = 3  # meranie S11, 1601 points, vypisuje frekvenciu v MHz
     # scenario = 4  # meranie vsetkych parametrov, 26 points, GHz
-    # scenario = 5  # 14 merani za sebou, S21, 26 points, GHz
-    scenario = 6  # veeela meranii, S11, 1601 points
+    scenario = 5  # 14 merani za sebou, S21, 26 points, GHz
+    # scenario = 6  # veeela meranii, S11, 1601 points
 
     def __init__(self):
         self.address = 16

@@ -29,7 +29,6 @@ class Program:
         while True:
             try:
                 function = "self." + self.function_queue.get()
-                print(function)
                 exec(function)
             except queue.Empty:
                 time.sleep(0.2)
@@ -188,7 +187,14 @@ class Program:
         print()
         print("pocet merani: " + str(self.project.data.number_of_measurements))
         print("parametre: " + str(self.project.data.parameters))
-        print("data v pameti: " + str(self.project.data.measurements_list))
+        meranie = self.project.data.get_number_of_measurements() - 1
+        prva_freq = list(self.project.data.measurements_list[meranie][1])[0]
+        posledna_freq = list(self.project.data.measurements_list[meranie][1])[-1]
+        print("Data v pameti:")  # + str(self.project.data.measurements_list[meranie]))
+        print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        print("Start_freq: " + str(prva_freq))
+        print("Stop_freq: " + str(posledna_freq))
+        print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         print()
 
     # should be executed by self.work_thread only
@@ -246,11 +252,21 @@ class Program:
             print()
             print("pocet merani: " + str(self.project.data.number_of_measurements))
             print("parametre: " + str(self.project.data.parameters))
-            print("data v pameti: ")
-            for i, val in enumerate(self.project.data.measurements_list):
-                print(f"    {i+1}. Meranie: ")
-                print(f"        hlavicka: {repr(val[0])}")
-                print(f"        data: {val[1]}")
+
+            meranie = self.project.data.get_number_of_measurements() - 1
+            prva_freq = list(self.project.data.measurements_list[meranie][1])[0]
+            posledna_freq = list(self.project.data.measurements_list[meranie][1])[-1]
+            print("Data v pameti:")  # + str(self.project.data.measurements_list[meranie]))
+            print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            print("Start_freq: " + str(prva_freq))
+            print("Stop_freq: " + str(posledna_freq))
+
+            # print("data v pameti: ")
+            # for i, val in enumerate(self.project.data.measurements_list):
+            #     print(f"    {i+1}. Meranie: ")
+            #     print(f"        hlavicka: {repr(val[0])}")
+            #     print(f"        data: {val[1]}")
+            print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
             print()
 
             if waited:
@@ -320,7 +336,7 @@ class Program:
         elif not return_code:
             print("Ved ani nie si konektnuty, alebo si spravne nevosiel do terminalu predtym")
         else:
-            print("Podarilo sa poslat spravu:\n" + str(return_code))
+            print("Podarilo sa poslat spravu: " + str(message))
             if type(return_code) != bool:
                 print("Chcem vyprintovat spravu: " + return_code)
                 self.terminal.print_message(return_code)
