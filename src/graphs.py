@@ -187,6 +187,7 @@ class Graphs:
         else:
             self.empty = False
 
+
         if self.type == "XYY":
             self.last_type = self.type
 
