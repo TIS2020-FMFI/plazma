@@ -55,7 +55,6 @@ class Project:
         if param_11 or param_12 or param_21 or param_22:
             self.data = self.Data(param_11, param_12, param_21, param_22)
         else:
-            print("Nevybrate S-parametre, mazem data z pameti !!!")
             self.data = None
 
         # prípadne nastaviť self.data_type alebo aj number_of_parameters
