@@ -232,7 +232,8 @@ class SweepGui:
         autosave = False
         if self.autosave.get() == 1:
             autosave = True
-            self.gui.project.save()
+            if not self.gui.project.save():
+                return
         self.send_settings()
         if self.continuous.get() == 0:
             self.gui.program.queue_function(f"measure({autosave})")

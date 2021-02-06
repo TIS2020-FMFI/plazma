@@ -1,7 +1,7 @@
 class Settings:
     default_address = 16
-    default_port1 = 0
-    default_port2 = 0
+    default_port1 = 0.0
+    default_port2 = 0.0
     default_vel_factor = 1.00
     default_freq_unit = "GHz"
     default_freq_start = 1.0

@@ -34,6 +34,7 @@ class GraphsGui:
         self.graph1_S11_radiobutton = tk.Radiobutton(self.graph1, text="S11", bg='#f2f3fc', fg="#323338",
                                                      command=self.graph1_plot_draw, variable=self.graph1_s_variable,
                                                      value=0, font=widget_label_font)
+        self.graph1_S11_radiobutton.select()
         self.graph1_S12_radiobutton = tk.Radiobutton(self.graph1, text="S12", bg='#f2f3fc', fg="#323338",
                                                      command=self.graph1_plot_draw, variable=self.graph1_s_variable,
                                                      value=1, font=widget_label_font)
@@ -73,6 +74,7 @@ class GraphsGui:
         self.graph2_S12_radiobutton = tk.Radiobutton(self.graph2, text="S12", bg='#f2f3fc', fg="#323338",
                                                      command=self.graph2_plot_draw, variable=self.graph2_s_variable,
                                                      value=1, font=widget_label_font)
+        self.graph2_S12_radiobutton.select()
         self.graph2_S21_radiobutton = tk.Radiobutton(self.graph2, text="S21", bg='#f2f3fc', fg="#323338",
                                                      command=self.graph2_plot_draw, variable=self.graph2_s_variable,
                                                      value=2, font=widget_label_font)
@@ -111,6 +113,7 @@ class GraphsGui:
         self.graph3_S21_radiobutton = tk.Radiobutton(self.graph3, text="S21", bg='#f2f3fc', fg="#323338",
                                                      command=self.graph3_plot_draw, variable=self.graph3_s_variable,
                                                      value=2, font=widget_label_font)
+        self.graph3_S21_radiobutton.select()
         self.graph3_S22_radiobutton = tk.Radiobutton(self.graph3, text="S22", bg='#f2f3fc', fg="#323338",
                                                      command=self.graph3_plot_draw, variable=self.graph3_s_variable,
                                                      value=3, font=widget_label_font)
@@ -149,6 +152,7 @@ class GraphsGui:
         self.graph4_S22_radiobutton = tk.Radiobutton(self.graph4, text="S22", bg='#f2f3fc', fg="#323338",
                                                      command=self.graph4_plot_draw, variable=self.graph4_s_variable,
                                                      value=3, font=widget_label_font)
+        self.graph4_S22_radiobutton.select()
 
         self.graph4_S11_radiobutton.grid(row=8, column=0, padx=(10, 0), sticky=tk.N + tk.W)
         self.graph4_S12_radiobutton.grid(row=8, column=0, padx=(70, 0), sticky=tk.N + tk.W)
@@ -228,3 +232,10 @@ class GraphsGui:
         self.graph2_plot_draw()
         self.graph3_plot_draw()
         self.graph4_plot_draw()
+
+    def reset_all_graphs(self):
+        # iba kvoli prekreslovaniu grafov, vola sa v project.py po reset_data()
+        self.graph1_plot.reset_graph_data()
+        self.graph2_plot.reset_graph_data()
+        self.graph3_plot.reset_graph_data()
+        self.graph4_plot.reset_graph_data()

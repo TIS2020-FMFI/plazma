@@ -37,7 +37,7 @@ class ProjectGui:
     def save(self):
         path = tk.filedialog.askdirectory()
         if path == "":
-            return
+            return False
         name = self.project_name_entry.get()
         description = self.project_descrip_text.get(1.0, tk.END)
 
@@ -45,6 +45,7 @@ class ProjectGui:
             self.main_gui.sweep.send_settings()
         self.main_gui.program.file_manager.save_project(path, name, description)
         tk.messagebox.showinfo(title="Project", message="Project successfully saved!")
+        return True
 
     def load(self):
         path = tk.filedialog.askdirectory()

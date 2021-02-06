@@ -29,7 +29,6 @@ class Adapter:
         self.out_thread = None
         self.out_thread_killed = False
         self.start_hpctrl()
-        # self.in_queue = None
 
         #####################################################
 
@@ -48,7 +47,7 @@ class Adapter:
         out = self.process.stdout
         for line in iter(out.readline, b''):
             if self.out_thread_killed:
-                # out.close()
+                out.close()
                 return
             if line:
                 self.out_queue.put(line)
@@ -56,8 +55,6 @@ class Adapter:
                 time.sleep(0.001)
             print("enqueue:" + repr(line))
             # nekonecny cyklus, thread vzdy cita z pipe a hadze do out_queue po riadkoch
-        # out.close()
-        # time.sleep(1)
 
 ##    def get_output(self):
 ##        out_str = ''
@@ -136,6 +133,46 @@ class Adapter:
         if out_str:
             return out_str
         return None
+
+    def start_hpctrl(self):
+        print("zaciatok start")
+        path = "hpctrl-main/src/Debug/hpctrl.exe"
+        try:
+            self.process = subprocess.Popen([path, "-i"], stdin=subprocess.PIPE,
+                                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        except FileNotFoundError:
+            tk.messagebox.showerror(title="HPCTRL error", message="Wrong HPCTRL path!\n"
+                                                                  f"Expected to find HPCTRL here: \"./{path}\"")
+            quit()
+
+        self.out_queue = queue.Queue()
+
+        self.out_thread = threading.Thread(target=self.enqueue_output)
+        self.out_thread.daemon = True
+        self.out_thread.start()
+        self.out_thread_killed = False
+        print("Koniec start")
+
+    def kill_hpctrl(self):
+        print("zaciatok kill")
+        if self.process is not None:
+            self.send("exit")
+        if self.out_thread is not None:
+            self.out_thread_killed = True
+            self.out_thread.join()
+            print("out_thread joined")
+            self.out_thread = None
+        if self.process is not None:
+            self.process.terminate()
+            self.process.kill()
+            self.process = None
+        self.out_queue = None
+        print("Koniec kill")
+
+    def restart_hpctrl(self):
+        print("RESTARTUJEM ")
+        self.kill_hpctrl()  # moze zase zavolat restart
+        self.start_hpctrl()
         
     def hpctrl_is_responsive(self):
         if not self.send("ping"):
@@ -170,45 +207,6 @@ class Adapter:
                 self.restart_hpctrl()
             return False
 
-    def kill_hpctrl(self):
-        print("zaciatok kill")
-        if self.process is not None:
-            self.send("exit")
-        if self.out_thread is not None:
-            self.out_thread_killed = True
-            self.out_thread.join()
-            print("out_thread joined")
-            self.out_thread = None
-        if self.process is not None:
-            self.process.terminate()
-            self.process.kill()
-            self.process = None
-        self.out_queue = None
-        print("Koniec kill")
-
-    def start_hpctrl(self):
-        print("zaciatok start")
-        path = "hpctrl-main/src/Debug/hpctrl.exe"
-        try:
-            self.process = subprocess.Popen([path, "-i"], stdin=subprocess.PIPE,
-                                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-        except FileNotFoundError:
-            tk.messagebox.showerror(title="HPCTRL error", message="Wrong HPCTRL path!\n"
-                                                                  f"Expected to find HPCTRL here: \"./{path}\"")
-            quit()
-
-        self.out_queue = queue.Queue()
-
-        self.out_thread = threading.Thread(target=self.enqueue_output)
-        self.out_thread.daemon = True
-        self.out_thread.start()
-        print("Koniec start")
-
-    def restart_hpctrl(self):
-        print("RESTARTUJEM ")
-        self.kill_hpctrl()  # moze zase zavolat restart
-        self.start_hpctrl()
-
     def connect(self, address):
         print("CONNECT")
         if self.testing:
@@ -221,9 +219,12 @@ class Adapter:
 
         if self.send("CONNECT " + str(address)):
             if self.hpctrl_is_responsive():
-                self.address = address
-                self.connected = True
-                return True
+                if self.send("CMD\n"
+                             "s PORE ON\n"
+                             "."):
+                    self.address = address
+                    self.connected = True
+                    return True
 
         print("Error s HPCTRL pri connektuvani")
         return False
@@ -343,6 +344,7 @@ class Adapter:
         return False
 
     def set_port1_length(self, value):
+        value *= 0.000000000001
         print("Posielam port1: " + str(value))
         if self.testing:
             return True
@@ -361,6 +363,7 @@ class Adapter:
         return False
 
     def set_port2_length(self, value):
+        value *= 0.000000000001
         print("Posielam port2: " + str(value))
         if self.testing:
             return True
@@ -535,6 +538,12 @@ class Adapter:
             self.test.format = self.program.settings.get_parameter_format()
             return True
 
+        address = self.address
+        self.disconnect()
+        return_code = self.connect(address)
+        if not return_code:
+            return return_code
+
         functions = [self.set_data_format,
                      self.set_parameters,
                      self.set_frequency_unit,
@@ -545,9 +554,9 @@ class Adapter:
                      self.exit_cmd_mode]
 
         for f in functions:
-            result = f()
-            if not result:  # false alebo none
-                return result
+            return_code = f()
+            if not return_code:  # false alebo none
+                return return_code
         return True
 
     def measure(self):
@@ -566,9 +575,8 @@ class Adapter:
                 print("parameters: " + str(self.test.params))
                 print("format: " + self.test.format)
                 print("-------------------------------")
-                time.sleep(2)  # iba na kvoli simulacii testovania
+                time.sleep(1)  # iba na kvoli simulacii testovania
 
-                time.sleep(0.1)  # musim pockat aby mi nieco prislo,
                 # este aby som si bol isty ze mi hpctrl posle naraz cele meranie
                 return self.test.get_data()
             else:
@@ -684,7 +692,7 @@ class Adapter:
 
     def retrieve_measurement_data(self):
         if self.testing:
-            time.sleep(2)
+            # time.sleep(1)  # iba kvoli testing
             data = self.test.get_data(more_measurement=True)
             if data is not None:
                 self.test.data_order_number += 1

@@ -37,7 +37,7 @@ class CalibrationGui:
                                         fg='#323338', bg="#f2f3fc", font=widget_label_bold_font)
         port_extension_label.grid(row=2, column=0, columnspan=3, sticky=tk.W + tk.N, padx=5)
 
-        port1_length_label = tk.Label(calibration_frame, text="PORT1 Length/(ns):",
+        port1_length_label = tk.Label(calibration_frame, text="PORT1 Length/(μs):",
                                       fg='#323338', bg="#f2f3fc", font=widget_port_font)
         port1_length_label.grid(row=3, column=0, sticky=tk.W + tk.N, padx=5)
 
@@ -49,7 +49,7 @@ class CalibrationGui:
         self.port1_spin_box["state"] = tk.DISABLED
         self.port1.set(self.main_gui.program.settings.get_port1())
 
-        port2_length_label = tk.Label(calibration_frame, text="PORT2 Length/(ns): ", fg='#323338', bg="#f2f3fc",
+        port2_length_label = tk.Label(calibration_frame, text="PORT2 Length/(μs): ", fg='#323338', bg="#f2f3fc",
                                       font=widget_port_font)
         port2_length_label.grid(row=4, column=0, sticky=tk.W + tk.N, padx=5)
 
