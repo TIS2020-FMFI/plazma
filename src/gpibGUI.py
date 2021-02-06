@@ -30,12 +30,9 @@ class GpibGui:
                               fg="#b3b3b5", bg="#f2f3fc")
         line_label.grid(row=1, column=0, columnspan=3, sticky=tk.W + tk.N, padx=10)
 
-        connect_label = tk.Label(gpib_frame, text="Connect:", fg="#323338", bg="#f2f3fc", font=widget_label_font)
-        connect_label.grid(row=2, column=1, sticky=tk.W + tk.N, padx=18, pady=10)
-
-        self.connect_button = tk.Button(gpib_frame, text="ON", bg="#5bb38a", fg='#323338', font=widget_button_font)
+        self.connect_button = tk.Button(gpib_frame, text="CONNECT", bg='#bfc6db', fg='#323338', font=widget_button_font)
         self.connect_button["command"] = self.start_connect
-        self.connect_button.grid(row=2, column=2, padx=10)
+        self.connect_button.grid(row=2, column=1,padx=(100, 0),pady=(5,0))
 
         line_label = tk.Label(gpib_frame, text=self.main_gui.line_count * "_",
                               fg="#b3b3b5", bg="#f2f3fc")
@@ -63,7 +60,7 @@ class GpibGui:
         print("GUI: Otváram GPIB terminál.")
 
     def start_connect(self):
-        if self.connect_button["text"] == "ON":
+        if self.connect_button["text"] == "CONNECT":
             if data_validation.validate_address(self.address_entry.get()):
                 self.address_entry["bg"] = "white"
 
@@ -76,15 +73,11 @@ class GpibGui:
             self.main_gui.program.queue_function("disconnect()")
 
     def update_button_connected(self):
-        print("Pripájam prístroj")
-        self.connect_button['text'] = "OFF"
-        self.connect_button["bg"] = "#b5555a"
+        self.connect_button['text'] = "DISCONNECT"
         self.main_gui.state_connected()
 
     def update_button_disconnected(self):
-        print("Odpájam prístroj")
-        self.connect_button["text"] = "ON"
-        self.connect_button["bg"] = "#5bb38a"
+        self.connect_button["text"] = "CONNECT"
         self.main_gui.state_disconnected()
 
     def load_project_settings(self):

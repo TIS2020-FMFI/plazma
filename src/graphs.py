@@ -159,7 +159,6 @@ class Graphs:
 
             self.ax2 = self.fig.add_subplot(111, projection='smith')
             if not data:
-                # TODO co robit ked mame nakreslit prazdny?  bez dat to neprechadza
                 data.append(0)
             self.ax2.plot(data, color="red", datatype=SmithAxes.S_PARAMETER)
 
@@ -231,6 +230,8 @@ class Graphs:
             self.toolbarFrame.grid(row=1, column=0)
             self.toolbar = NavigationToolbar2Tk(self.canvas, self.toolbarFrame)
         else:
+            D2R = 0.0174532925
+            self.param_format = self.program.settings.get_parameter_format()
             self.last_type = self.type
             plt.close(self.fig)
             self.fig, self.ax1 = plt.subplots(1, figsize=(self.a, self.b))
@@ -241,13 +242,29 @@ class Graphs:
                 if temp is not None:
                     freq, y1, y2 = temp
                     for i in range(len(y1)):
-                        # self.val1.append(y1[i] + y2[i] * 1j)
-                        val1.append(y1[i] + y2[i] * 1j)
+                        if self.param_format == "MA":
+                            print("kreslim MA to real")
+                            ang = y2[i] * D2R
+                            mag = y1[i]
+                            real = math.cos(ang) * mag;
+                            imag = math.sin(ang) * mag;
+                        elif self.param_format == "DB":
+                            print("kreslim db to real")
+                            ang = y2[i] * D2R;
+                            mag = pow(10.0, y1[i] / 20.0);
+                            real = math.cos(ang) * mag;
+                            imag = math.sin(ang) * mag;
+                        else:
+                            real = y1[i]
+                            imag = y2[i]
+
+                        val1.append(real + imag * 1j)
 
             SmithAxes.update_scParams({"axes.normalize.label": False})
+            SmithAxes.update_scParams({"plot.marker.start": None})
+            SmithAxes.update_scParams({"plot.marker.default": None})
             self.ax2 = self.fig.add_subplot(111, projection='smith')
             if not val1:
-                # TODO co robit ked mame nakreslit prazdny?  bez dat to neprechadza
                 val1.append(0)
             self.ax2.plot(val1, color="red", datatype=SmithAxes.S_PARAMETER)
             self.canvas = FigureCanvasTkAgg(self.fig, master=self.gui)
@@ -266,6 +283,6 @@ class Graphs:
             inv = other.transData.inverted()
             ax_coord = inv.transform(display_coord)
             coords = [ax_coord, (x, y)]
-            return ('L: {:<}  R: {:<}'
-                    .format(*['({:.4f}, {:.5f})'.format(x, y) for x, y in coords]))
+            return ('L: {:<}\nR: {:<}'
+                    .format(*['({:.5f}, {:.7f})'.format(x, y) for x, y in coords]))
         return format_coord
