@@ -11,7 +11,6 @@ class FileManager:
 
     def save_project(self, path, project_name, description):
         filepath = os.path.join(path, project_name)
-        self.path = filepath
 
         now = datetime.now()
         time = datetime.timestamp(now)
@@ -23,6 +22,7 @@ class FileManager:
             filepath += " " + str(date)
           
         os.mkdir(filepath)
+        self.path = filepath
 
         # Description
         name = "description.txt"

@@ -24,8 +24,7 @@ class Program:
         self.work_thread.daemon = True
         self.work_thread.start()
         self.measuring = False
-
-        self.free = True
+        self.gui_thread_is_free = True
 
     def execute_functions(self):
         while True:
@@ -194,8 +193,8 @@ class Program:
         posledna_freq = list(self.project.data.measurements_list[meranie][1])[-1]
         print("Data v pameti:")  # + str(self.project.data.measurements_list[meranie]))
         print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        print("Start_freq: " + str(prva_freq))
-        print("Stop_freq: " + str(posledna_freq))
+        print("Start_freq[from]: " + str(prva_freq))
+        print("Stop_freq[to]: " + str(posledna_freq))
         print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         print()
 
@@ -246,29 +245,20 @@ class Program:
                 return
             print("Data ktore prisli: \n" + data)
 
-##################################################################################            
-
             data = data.strip()
             self.project.data.add_measurement(data)
-            if self.free:
+            if self.gui_thread_is_free:  # aby gui reagoval na klikanie pocas merania
                 time.sleep(0.2)
-                self.gui.window.after_idle(self.bla1)
+                self.gui.window.after_idle(self.toggle_gui_free)
                 self.gui.window.after_idle(self.gui.sweep.refresh_frame)
-                self.gui.window.after_idle(self.bla2)
-
+                self.gui.window.after_idle(self.toggle_gui_free)
             if autosave:
                 self.file_manager.save_last_measurement()
             print()
             print("pocet merani: " + str(self.project.data.number_of_measurements))
             print("parametre: " + str(self.project.data.parameters))
-##
-##            meranie = self.project.data.get_number_of_measurements() - 1
-##            prva_freq = list(self.project.data.measurements_list[meranie][1])[0]
-##            posledna_freq = list(self.project.data.measurements_list[meranie][1])[-1]
-##            print("Data v pameti:")  # + str(self.project.data.measurements_list[meranie]))
-##            print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-##            print("Start_freq: " + str(prva_freq))
-##            print("Stop_freq: " + str(posledna_freq))
+            print("Data v pameti:")  # + str(self.project.data.measurements_list[meranie]))
+            print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
             print("data v pameti: ")
             for i, val in enumerate(self.project.data.measurements_list):
@@ -284,17 +274,11 @@ class Program:
                 waited = True
 
         print("Ukoncene merania - uz necakam na data")
-        self.gui.window.after_idle(self.bla1)
         self.gui.window.after_idle(self.gui.sweep.refresh_frame)
-        self.gui.window.after_idle(self.bla2)
-                
         self.gui.sweep.change_run()
 
-    def bla1(self):
-        self.free = False
-
-    def bla2(self):
-        self.free = True
+    def toggle_gui_free(self):
+        self.gui_thread_is_free = not self.gui_thread_is_free
 
     # executed by GUI thread
     def end_measurement(self):

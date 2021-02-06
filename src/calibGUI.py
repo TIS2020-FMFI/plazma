@@ -37,26 +37,25 @@ class CalibrationGui:
                                         fg='#323338', bg="#f2f3fc", font=widget_label_bold_font)
         port_extension_label.grid(row=2, column=0, columnspan=3, sticky=tk.W + tk.N, padx=5)
 
-        port1_length_label = tk.Label(calibration_frame, text="PORT1 Length/(m):",
+        port1_length_label = tk.Label(calibration_frame, text="PORT1 Length/(μs):",
                                       fg='#323338', bg="#f2f3fc", font=widget_port_font)
         port1_length_label.grid(row=3, column=0, sticky=tk.W + tk.N, padx=5)
 
         self.port1 = tk.StringVar()
-        self.port1_spin_box = tk.Spinbox(calibration_frame, textvariable=self.port1, from_=0.0000, command=self.adjust,
-                                         to=1.0000, increment=0.0001, format="%.4f", justify=tk.RIGHT,
+        self.port1_spin_box = tk.Spinbox(calibration_frame, textvariable=self.port1, from_=0, command=self.adjust,
+                                         to=1000000000000, increment=1, justify=tk.RIGHT,
                                          font=widget_port_font)
         self.port1_spin_box.grid(row=3, column=1, sticky=tk.W, pady=3)
         self.port1_spin_box["state"] = tk.DISABLED
         self.port1.set(self.main_gui.program.settings.get_port1())
 
-        port2_length_label = tk.Label(calibration_frame, text="PORT2 Length/(m): ", fg='#323338', bg="#f2f3fc",
+        port2_length_label = tk.Label(calibration_frame, text="PORT2 Length/(μs): ", fg='#323338', bg="#f2f3fc",
                                       font=widget_port_font)
         port2_length_label.grid(row=4, column=0, sticky=tk.W + tk.N, padx=5)
 
         self.port2 = tk.StringVar()
-        self.port2_spin_box = tk.Spinbox(calibration_frame, textvariable=self.port2, command=self.adjust,
-                                         from_=0.0000, to=1.0000, increment=0.0001, format="%.4f",
-                                         justify=tk.RIGHT, font=widget_port_font)
+        self.port2_spin_box = tk.Spinbox(calibration_frame, textvariable=self.port2, from_=0, command=self.adjust,
+                                         to=1000000000000, increment=1, justify=tk.RIGHT, font=widget_port_font)
         self.port2_spin_box.grid(row=4, column=1, sticky=tk.W, pady=3)
         self.port2_spin_box["state"] = tk.DISABLED
         self.port2.set(self.main_gui.program.settings.get_port2())
@@ -67,7 +66,7 @@ class CalibrationGui:
 
         self.vel_fact = tk.StringVar()
         self.vel_fact_spin_box = tk.Spinbox(calibration_frame, textvariable=self.vel_fact, command=self.adjust,
-                                            from_=0.00, to=1.00, increment=0.01, format="%.2f",
+                                            from_=0.000, to=10.000, increment=0.001, format="%.3f",
                                             justify=tk.RIGHT, font=widget_port_font)
         self.vel_fact_spin_box.grid(row=5, column=1, sticky=tk.W, pady=3)
         self.vel_fact_spin_box["state"] = tk.DISABLED

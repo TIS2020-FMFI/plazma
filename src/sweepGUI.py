@@ -220,25 +220,20 @@ class SweepGui:
 
         if measure:
             if self.run_button["text"] == "Run":
-                print("GUI start measure")
                 self.run_measure()
             else:
-                print("GUI stop measure")
                 self.stop_measure()
-        else:
-            print("bad input")
 
     def stop_measure(self):
-        print("GUI zastavujem meranie")
         self.gui.program.end_measurement()
-        # self.run_button["text"] = "Run"
 
     def run_measure(self):
         self.gui.program.project.reset_data()
         autosave = False
         if self.autosave.get() == 1:
             autosave = True
-            self.gui.project.save()
+            if not self.gui.project.save():
+                return
         self.send_settings()
         if self.continuous.get() == 0:
             self.gui.program.queue_function(f"measure({autosave})")
@@ -255,7 +250,6 @@ class SweepGui:
             unit = "GHz"
         self.gui.program.settings.set_freq_unit(unit)
 
-        print("posielam settings")
         self.gui.program.settings.set_freq_start(float(self.start_entry.get()))
         self.gui.program.settings.set_freq_stop(float(self.stop_entry.get()))
         self.gui.program.settings.set_points(int(float(self.points_entry.get())))  # musia byt oba
@@ -269,7 +263,6 @@ class SweepGui:
             params += "S12 "
         if self.s22.get():
             params += "S22 "
-        print("params: ", params)
         self.gui.program.settings.set_parameters(params)
 
         if self.measure_variable.get() == 0:

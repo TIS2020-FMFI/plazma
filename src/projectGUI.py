@@ -37,7 +37,7 @@ class ProjectGui:
     def save(self):
         path = tk.filedialog.askdirectory()
         if path == "":
-            return
+            return False
         name = self.project_name_entry.get()
         description = self.project_descrip_text.get(1.0, tk.END)
 
@@ -45,6 +45,7 @@ class ProjectGui:
             self.main_gui.sweep.send_settings()
         self.main_gui.program.file_manager.save_project(path, name, description)
         tk.messagebox.showinfo(title="Project", message="Project successfully saved!")
+        return True
 
     def load(self):
         path = tk.filedialog.askdirectory()
@@ -52,11 +53,8 @@ class ProjectGui:
             return
         self.main_gui.program.file_manager.load_project(path)
 
-        # Nastavovanie jednotlivých údajov v GUI
-
         self.main_gui.gpib.load_project_settings()
 
-        #  self.main_gui.state.load_project_state()
         self.main_gui.info.change_state_label()
 
         self.project_name_entry.delete(0, tk.END)

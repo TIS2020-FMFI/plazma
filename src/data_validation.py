@@ -14,18 +14,17 @@ def validate_address(value):
         return False
 
 
-def validate_port_length(value):
-    # TODO overiť dĺžku - rozmedzie
+def validate_velocity_factor(value):
     try:
-        if 0 <= float(value) <= 1:
+        if 0 <= float(value) <= 10:
             return True
     except ValueError:
         return False
 
 
-def validate_velocity_factor(value):
+def validate_port_length(value):
     try:
-        if 0 <= float(value) <= 1:
+        if 0 <= float(value) <= 1000000000000:
             return True
     except ValueError:
         return False
