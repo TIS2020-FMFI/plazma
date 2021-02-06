@@ -25,6 +25,8 @@ class Program:
         self.work_thread.start()
         self.measuring = False
 
+        self.free = True
+
     def execute_functions(self):
         while True:
             try:
@@ -244,28 +246,35 @@ class Program:
                 return
             print("Data ktore prisli: \n" + data)
 
+##################################################################################            
+
             data = data.strip()
             self.project.data.add_measurement(data)
-            self.gui.window.after_idle(self.gui.sweep.refresh_frame)
+            if self.free:
+                time.sleep(0.2)
+                self.gui.window.after_idle(self.bla1)
+                self.gui.window.after_idle(self.gui.sweep.refresh_frame)
+                self.gui.window.after_idle(self.bla2)
+
             if autosave:
                 self.file_manager.save_last_measurement()
             print()
             print("pocet merani: " + str(self.project.data.number_of_measurements))
             print("parametre: " + str(self.project.data.parameters))
+##
+##            meranie = self.project.data.get_number_of_measurements() - 1
+##            prva_freq = list(self.project.data.measurements_list[meranie][1])[0]
+##            posledna_freq = list(self.project.data.measurements_list[meranie][1])[-1]
+##            print("Data v pameti:")  # + str(self.project.data.measurements_list[meranie]))
+##            print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+##            print("Start_freq: " + str(prva_freq))
+##            print("Stop_freq: " + str(posledna_freq))
 
-            meranie = self.project.data.get_number_of_measurements() - 1
-            prva_freq = list(self.project.data.measurements_list[meranie][1])[0]
-            posledna_freq = list(self.project.data.measurements_list[meranie][1])[-1]
-            print("Data v pameti:")  # + str(self.project.data.measurements_list[meranie]))
-            print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-            print("Start_freq: " + str(prva_freq))
-            print("Stop_freq: " + str(posledna_freq))
-
-            # print("data v pameti: ")
-            # for i, val in enumerate(self.project.data.measurements_list):
-            #     print(f"    {i+1}. Meranie: ")
-            #     print(f"        hlavicka: {repr(val[0])}")
-            #     print(f"        data: {val[1]}")
+            print("data v pameti: ")
+            for i, val in enumerate(self.project.data.measurements_list):
+                print(f"    {i+1}. Meranie: ")
+                print(f"        hlavicka: {repr(val[0])}")
+                print(f"        data: {val[1]}")
             print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
             print()
 
@@ -275,7 +284,17 @@ class Program:
                 waited = True
 
         print("Ukoncene merania - uz necakam na data")
+        self.gui.window.after_idle(self.bla1)
+        self.gui.window.after_idle(self.gui.sweep.refresh_frame)
+        self.gui.window.after_idle(self.bla2)
+                
         self.gui.sweep.change_run()
+
+    def bla1(self):
+        self.free = False
+
+    def bla2(self):
+        self.free = True
 
     # executed by GUI thread
     def end_measurement(self):
