@@ -52,11 +52,8 @@ class ProjectGui:
             return
         self.main_gui.program.file_manager.load_project(path)
 
-        # Nastavovanie jednotlivých údajov v GUI
-
         self.main_gui.gpib.load_project_settings()
 
-        #  self.main_gui.state.load_project_state()
         self.main_gui.info.change_state_label()
 
         self.project_name_entry.delete(0, tk.END)
