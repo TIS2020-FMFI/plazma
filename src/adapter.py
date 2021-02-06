@@ -575,9 +575,8 @@ class Adapter:
                 print("parameters: " + str(self.test.params))
                 print("format: " + self.test.format)
                 print("-------------------------------")
-                time.sleep(2)  # iba na kvoli simulacii testovania
+                time.sleep(1)  # iba na kvoli simulacii testovania
 
-                time.sleep(0.1)  # musim pockat aby mi nieco prislo,
                 # este aby som si bol isty ze mi hpctrl posle naraz cele meranie
                 return self.test.get_data()
             else:
@@ -693,7 +692,7 @@ class Adapter:
 
     def retrieve_measurement_data(self):
         if self.testing:
-            time.sleep(2)
+            # time.sleep(1)  # iba kvoli testing
             data = self.test.get_data(more_measurement=True)
             if data is not None:
                 self.test.data_order_number += 1

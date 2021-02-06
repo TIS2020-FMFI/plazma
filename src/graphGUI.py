@@ -232,3 +232,10 @@ class GraphsGui:
         self.graph2_plot_draw()
         self.graph3_plot_draw()
         self.graph4_plot_draw()
+
+    def reset_all_graphs(self):
+        # iba kvoli prekreslovaniu grafov, vola sa v project.py po reset_data()
+        self.graph1_plot.reset_graph_data()
+        self.graph2_plot.reset_graph_data()
+        self.graph3_plot.reset_graph_data()
+        self.graph4_plot.reset_graph_data()

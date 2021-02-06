@@ -2,10 +2,10 @@ class Test:
     # scenario = 0  # cannot connect
     # scenario = 1  # meranie S11,S22,  201 points, GHz
     # scenario = 2  # meranie S11,S22,  51 points, GHz
-    scenario = 3  # meranie S11, 1601 points, vypisuje frekvenciu v MHz
+    # scenario = 3  # meranie S11, 1601 points, vypisuje frekvenciu v MHz
     # scenario = 4  # meranie vsetkych parametrov, 26 points, GHz
     # scenario = 5  # 14 merani za sebou, S21, 26 points, GHz
-    # scenario = 6  # veeela meranii, S11, 1601 points
+    scenario = 6  # veeela meranii, S11, 1601 points
 
     def __init__(self):
         self.address = 16
@@ -18,7 +18,7 @@ class Test:
         self.freq_unit = "GHz"
         if self.scenario == 6:
             self.data = []
-            for i in range(50):
+            for i in range(500000):
                 self.data.append(self.all_data[4])
         else:
             self.data = self.all_data[self.scenario]

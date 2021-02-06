@@ -22,6 +22,7 @@ class Graphs:
         self.b = b
         self.empty = True
         self.last_type = self.type
+        self.last_measurement_index = -1
 
         self.fig, self.ax1 = plt.subplots(1, figsize=(a, b))
         self.ax2 = self.ax1.twinx()
@@ -174,6 +175,7 @@ class Graphs:
     #         self.toolbar = NavigationToolbar2Tk(self.canvas, self.toolbarFrame)
 
     def draw_measurement(self, measurement_index=-1):
+        # neprekresluj ak som prazdny
         if measurement_index == -1 and self.empty and self.type == self.last_type:
             return
         temp = None
@@ -186,6 +188,10 @@ class Graphs:
             self.empty = True
         else:
             self.empty = False
+
+        if 0 <= measurement_index == self.last_measurement_index and self.type == self.last_type:
+            return
+        self.last_measurement_index = measurement_index
 
         if self.type == "XYY":
             self.last_type = self.type
@@ -276,6 +282,10 @@ class Graphs:
             self.toolbarFrame = Frame(master=self.gui)
             self.toolbarFrame.grid(row=1, column=0)
             self.toolbar = NavigationToolbar2Tk(self.canvas, self.toolbarFrame)
+
+    def reset_graph_data(self):
+        # vola sa pri resetovani dat v project.py iba kvoli prekreslovaniu grafov
+        self.last_measurement_index = -1
 
     def make_format(self, current, other):
         def format_coord(x, y):

@@ -56,6 +56,7 @@ class Project:
             self.data = self.Data(param_11, param_12, param_21, param_22)
         else:
             self.data = None
+        self.program.gui.graphs.reset_all_graphs()
 
         # prípadne nastaviť self.data_type alebo aj number_of_parameters
 

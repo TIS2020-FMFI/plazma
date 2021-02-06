@@ -247,11 +247,26 @@ class Program:
 
             data = data.strip()
             self.project.data.add_measurement(data)
+
             if self.gui_thread_is_free:  # aby gui reagoval na klikanie pocas merania
-                time.sleep(0.2)
-                self.gui.window.after_idle(self.toggle_gui_free)
-                self.gui.window.after_idle(self.gui.sweep.refresh_frame)
-                self.gui.window.after_idle(self.toggle_gui_free)
+                # time.sleep(0.2)
+                self.gui.window.after(1, self.toggle_gui_free)
+                self.gui.window.after(1, self.gui_graph_refresh)
+
+                # self.gui.window.after(1, self.gui.sweep.refresh_frame)
+                # self.gui.window.after(1000, self.toggle_gui_free)
+
+                # self.gui.window.after_idle(self.toggle_gui_free)
+                # self.gui.window.after_idle(self.gui.sweep.refresh_frame)
+                # self.gui.window.after_idle(self.toggle_gui_free)
+                print("THE END GUI ----------------------------------------------------------------------------------")
+            else:
+                print("----------------------------------------------------------------------------------\n"
+                      "----------------------------------------------------------------------------------\n"
+                      "----------------------------------------------------------------------------------\n"
+                      "----------------------------------------------------------------------------------\n"
+                      "----------------------------------------------------------------------------------\n"
+                      "----------------------------------------------------------------------------------")
             if autosave:
                 self.file_manager.save_last_measurement()
             print()
@@ -274,11 +289,17 @@ class Program:
                 waited = True
 
         print("Ukoncene merania - uz necakam na data")
-        self.gui.window.after_idle(self.gui.sweep.refresh_frame)
+        self.gui.window.after(1, self.gui.sweep.refresh_frame)
+        # self.gui.window.after_idle(self.gui.sweep.refresh_frame)
         self.gui.sweep.change_run()
 
     def toggle_gui_free(self):
         self.gui_thread_is_free = not self.gui_thread_is_free
+
+        # run by main thread
+    def gui_graph_refresh(self):
+        self.gui.sweep.refresh_frame()
+        self.gui.window.after(200, self.toggle_gui_free)
 
     # executed by GUI thread
     def end_measurement(self):
