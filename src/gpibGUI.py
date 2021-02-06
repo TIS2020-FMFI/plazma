@@ -30,9 +30,10 @@ class GpibGui:
                               fg="#b3b3b5", bg="#f2f3fc")
         line_label.grid(row=1, column=0, columnspan=3, sticky=tk.W + tk.N, padx=10)
 
-        self.connect_button = tk.Button(gpib_frame, text="CONNECT", bg='#bfc6db', fg='#323338', font=widget_button_font)
+        self.connect_button = tk.Button(gpib_frame, text="  CONNECT  ", bg='#bfc6db', fg='#323338',
+                                        font=widget_button_font)
         self.connect_button["command"] = self.start_connect
-        self.connect_button.grid(row=2, column=1,padx=(100, 0),pady=(5,0))
+        self.connect_button.grid(row=2, column=1, padx=(100, 0), pady=(5, 0))
 
         line_label = tk.Label(gpib_frame, text=self.main_gui.line_count * "_",
                               fg="#b3b3b5", bg="#f2f3fc")
@@ -57,17 +58,14 @@ class GpibGui:
 
     def open_gpib_terminal(self):
         self.main_gui.program.queue_function("open_terminal()")
-        print("GUI: Otváram GPIB terminál.")
 
     def start_connect(self):
-        if self.connect_button["text"] == "CONNECT":
+        if self.connect_button["text"] == "  CONNECT  ":
             if data_validation.validate_address(self.address_entry.get()):
                 self.address_entry["bg"] = "white"
 
-                print("Pripájam sa na adresu: ", self.address_entry.get())
                 self.main_gui.program.queue_function(f"connect({self.address_entry.get()})")
             else:
-                print("oprav adresu, zly format")
                 self.address_entry["bg"] = "#d44242"
         else:
             self.main_gui.program.queue_function("disconnect()")
@@ -77,7 +75,7 @@ class GpibGui:
         self.main_gui.state_connected()
 
     def update_button_disconnected(self):
-        self.connect_button["text"] = "CONNECT"
+        self.connect_button["text"] = "  CONNECT  "
         self.main_gui.state_disconnected()
 
     def load_project_settings(self):

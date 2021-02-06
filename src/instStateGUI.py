@@ -54,11 +54,9 @@ class InstStateGui:
             self.recall_state_button["state"] = tk.NORMAL
 
     def save_state(self):
-        print("GUI:ukladám stav prístroja do pamäte")
         self.main_gui.program.queue_function("save_state()")
 
     def recall_state(self):
-        print("GUI:načítavam stav z pamäte do prístroja")
         self.main_gui.program.queue_function("recall_state()")
 
 
