@@ -30,8 +30,6 @@ class Terminal:
         self.text.tag_config('command', foreground="chartreuse")
         self.text.grid(row=0, column=0, columnspan=3, sticky="N" + "S" + "E" + "W")
         self.text.bind("<Key>", lambda e: "break")
-        for i in self.all:
-            self.text.insert(tk.END, "\n" + i[0], i[1])
 
         scrollbar = tk.Scrollbar(new_window)
         self.text.config(yscrollcommand=scrollbar.set)
@@ -56,6 +54,10 @@ class Terminal:
         new_window.protocol("WM_DELETE_WINDOW", self.close_window)
         self.window = new_window
 
+        for i in self.all:
+            self.text.insert(tk.END, "\n" + i[0], i[1])
+        self.text.see(tk.END)
+
     def close_window(self):
         print("ZATVARAM TEMRINAL !!!")
         self.window.grab_release()  # to return to normal
@@ -70,6 +72,13 @@ class Terminal:
 
         if txt.lower() == "exit":
             self.close_window()
+            return
+
+        if txt.lower() == "clear":
+            self.all = []
+            self.list = []
+            self.text.delete(1.0, tk.END)
+            self.command.delete(0, tk.END)
             return
 
         self.list.append(txt)
