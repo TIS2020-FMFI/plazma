@@ -17,12 +17,13 @@ class Graphs:
         self.gui = gui
         self.program = program
         self.type = "XYY"
-        self.s_param = "S11"
+        self.s_param = None
         self.a = a
         self.b = b
         self.empty = True
         self.last_type = self.type
         self.last_measurement_index = -1
+        self.last_s_param = None
 
         self.fig, self.ax1 = plt.subplots(1, figsize=(a, b))
         self.ax2 = self.ax1.twinx()
@@ -189,9 +190,11 @@ class Graphs:
         else:
             self.empty = False
 
-        if 0 <= measurement_index == self.last_measurement_index and self.type == self.last_type:
+        if (0 <= measurement_index == self.last_measurement_index
+                and self.type == self.last_type and self.s_param == self.last_s_param):
             return
         self.last_measurement_index = measurement_index
+        self.last_s_param = self.s_param
 
         if self.type == "XYY":
             self.last_type = self.type
