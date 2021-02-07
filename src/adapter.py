@@ -178,7 +178,7 @@ class Adapter:
         if not self.send("ping"):
             return False
 
-        out = self.get_output(1, 1)
+        out = self.get_output(2, 1)
         if out is None:
             self.restart_hpctrl()  # restartujem ho, lebo nereaguje
             return False
@@ -478,7 +478,18 @@ class Adapter:
 
         if self.connected:
             if self.send("s POIN " + str(value) + "\n"):
-                return True
+                # return True
+                if self.send("q POIN?"):
+                    new_value = self.get_output(2, 1)
+                    if new_value is not None:
+                        print("POINTS SOM CHCEM NASTAVIT NA: " + str(value))
+                        new_value = int(float(new_value))
+                        print("ALE PRISTROJ NASTAVIL NA: " + str(new_value))
+                        self.program.settings.set_points(new_value)
+                        return True
+                    return None
+                else:
+                    return None
             else:
                 return None
         return False
@@ -536,7 +547,7 @@ class Adapter:
             self.test.set_points(self.program.settings.get_points())
             self.test.params = self.program.settings.get_parameters()
             self.test.format = self.program.settings.get_parameter_format()
-            return True
+            # return True
 
         address = self.address
         self.disconnect()
@@ -777,7 +788,7 @@ class Adapter:
                     print("ADAPTER message:" + message)
                     print("ADAPTER message:" + prve_slovo)
                     prve_slovo = prve_slovo.strip()
-                    if prve_slovo in ("q", "a", "b", "?", "help"):
+                    if prve_slovo in ("q", "a", "c", "d", "b", "?", "help"):
                         print("CAKAM NA ODPOVED")
                         # timeout = 5
                         # start_time = time.time()

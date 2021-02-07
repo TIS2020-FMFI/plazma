@@ -162,6 +162,7 @@ class Program:
             return
 
         data = self.adapter.measure()
+        self.gui.window.after_idle(self.gui.sweep.refresh_points)
         if data is None:
             print("Error pri merani, neprisli ziadne data")
             self.gui.gpib.update_button_disconnected()
@@ -208,6 +209,7 @@ class Program:
             return
 
         return_code = self.adapter.start_measurement()
+        self.gui.window.after_idle(self.gui.sweep.refresh_points)
         if return_code is None:
             self.gui.sweep.change_run()
             self.gui.gpib.update_button_disconnected()

@@ -244,6 +244,10 @@ class SweepGui:
     def change_run(self):
         self.run_button["text"] = "Run"
 
+    def refresh_points(self):
+        self.points_entry.delete(0, tk.END)
+        self.points_entry.insert(tk.END, self.gui.program.settings.get_points())
+
     def send_settings(self):
         unit = "MHz"
         if self.freq_variable.get() == 1:
