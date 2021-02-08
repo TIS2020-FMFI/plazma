@@ -59,7 +59,6 @@ class Terminal:
         self.text.see(tk.END)
 
     def close_window(self):
-        print("ZATVARAM TERMINAL !!!")
         self.window.grab_release()  # to return to normal
         self.window.destroy()
         self.window = None
@@ -69,11 +68,9 @@ class Terminal:
         txt = self.command.get().strip()
         if len(txt) < 1:
             return
-
         if txt.lower() == "exit":
             self.close_window()
             return
-
         if txt.lower() == "clear":
             self.all = []
             self.list = []

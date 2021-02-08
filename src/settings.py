@@ -1,4 +1,5 @@
 class Settings:
+    # defaults:
     default_address = 16
     default_port1 = 0.0
     default_port2 = 0.0
@@ -12,7 +13,6 @@ class Settings:
     default_continuous = False
 
     def __init__(self):
-        # defaults:
         self.address = self.default_address
         self.port1 = self.default_port1
         self.port2 = self.default_port2

@@ -40,7 +40,6 @@ class ProjectGui:
             return False
         name = self.project_name_entry.get()
         description = self.project_descrip_text.get(1.0, tk.END)
-
         if not self.main_gui.program.project.exists_data():
             self.main_gui.sweep.send_settings()
         self.main_gui.program.file_manager.save_project(path, name, description)
@@ -52,11 +51,8 @@ class ProjectGui:
         if path == "":
             return
         self.main_gui.program.file_manager.load_project(path)
-
         self.main_gui.gpib.load_project_settings()
-
         self.main_gui.info.change_state_label()
-
         self.project_name_entry.delete(0, tk.END)
         name = os.path.basename(path)
         self.project_name_entry.insert(tk.END, name)

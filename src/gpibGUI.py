@@ -1,14 +1,12 @@
 import tkinter as tk
 import tkinter.font as tk_font
 import data_validation
-# from terminal import Terminal
 
 
 class GpibGui:
     def __init__(self, main_gui):
         self.main_gui = main_gui
 
-        # self.terminal = Terminal(self)
         widget_title_font = tk_font.Font(family="Tw Cen MT", size=self.main_gui.title_font_size, weight="bold")
         widget_label_font = tk_font.Font(family="Tw Cen MT", size=self.main_gui.label_font)
         widget_button_font = tk_font.Font(family="Tw Cen MT", size=self.main_gui.label_font)

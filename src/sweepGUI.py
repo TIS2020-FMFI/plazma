@@ -178,7 +178,6 @@ class SweepGui:
         self.run_button["state"] = tk.DISABLED
 
         self.reset_frame()
-
         sweep_frame["width"] = 4000
         sweep_frame["height"] = 4000
 
@@ -190,7 +189,6 @@ class SweepGui:
 
         validation1 = data_validation.validate_float(self.start_entry.get())
         validation2 = data_validation.validate_float(self.stop_entry.get())
-
         if validation1 and validation2:
             if data_validation.validate_start_stop(start, stop, self.freq_variable.get()):
                 self.start_entry["bg"] = "white"

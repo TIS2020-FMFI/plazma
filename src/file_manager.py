@@ -17,7 +17,6 @@ class FileManager:
         date = datetime.fromtimestamp(time)
         date = str(date)
         date = date.replace(":", "-")
-        
         if os.path.exists(filepath):
             filepath += " " + str(date)
           
@@ -187,7 +186,7 @@ class FileManager:
 
         data = self.program.project.data.print_measurement(meranie-1)
         if data is not None:
-            name = "measurement" + str(meranie) + ".s2p"  # + data_time + ".s2p"
+            name = "measurement" + str(meranie) + ".s2p"
             file_path = os.path.join(filepath, name)
             f = open(file_path, "w")
             f.write(data)
