@@ -536,7 +536,7 @@ class Adapter:
 
     def retrieve_measurement_data(self):
         if self.testing:
-            # time.sleep(1)  # iba kvoli testing
+            time.sleep(1)  # iba kvoli testing
             data = self.test.get_data(more_measurement=True)
             if data is not None:
                 self.test.data_order_number += 1
