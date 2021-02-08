@@ -34,17 +34,21 @@ class Adapter:
                 self.out_queue.put(line)
             else:
                 time.sleep(0.001)
+            print("enqueue" + str(line))
             # nekonecny cyklus, thread vzdy cita z pipe a hadze do out_queue po riadkoch
 
     def get_output(self, timeout, lines=None):
         out_str = ''
         get_started = time.time()
         line_counter = 0
+        print(line_counter, lines)
         while time.time() < get_started + timeout:
             if lines is not None and line_counter >= lines:
+                print("IM DONE")
                 return out_str.strip()
             if self.out_queue.empty():
-                time.sleep(0.001)
+                print("sleep")
+                time.sleep(0.001)   # 0.001
             else:
                 out_str += self.out_queue.get_nowait()
                 line_counter += 1
@@ -545,12 +549,17 @@ class Adapter:
         parameters = self.program.settings.get_parameters().strip().split()
         points = self.program.settings.get_points()
         output = ""
+        print(len(parameters))
+        print(parameters)
         for param in range(len(parameters)):
-            line = self.get_output(20, 1)  # z testovacich merani sa 1601 points vymeria cca za 3.5s
+            print("PARAM")
+            line = self.get_output(5, 1)  # z testovacich merani sa 1601 points vymeria cca za 3.5s
             # ale 4.2.2021 pri teste nam s kratsim casom(10s) to neslo, takze zatial 20s !
+            print("NEIN NEIN NEIN")
             if line is None:
                 return ""
             output += line + "\n"
+        print("PARAM DONE")
 
         riadok = self.get_output(3, 1)  # staci? neviem ci sa hned posielaju data
         while True:
@@ -560,6 +569,7 @@ class Adapter:
             if len(riadok) > 0 and riadok[0] == "#":
                 break
             riadok = self.get_output(1, 1)
+        print("HLAVICKA DONE")
 
         data = self.get_output(10, points)
         if riadok is None:

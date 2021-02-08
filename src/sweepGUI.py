@@ -226,6 +226,7 @@ class SweepGui:
         self.gui.program.end_measurement()
 
     def run_measure(self):
+        self.run_button["state"] = tk.DISABLED
         self.gui.program.project.reset_data()
         autosave = False
         if self.autosave.get() == 1:
@@ -238,6 +239,7 @@ class SweepGui:
         else:
             self.run_button["text"] = "Stop"
             self.gui.program.queue_function(f"start_measurement({autosave})")
+            self.run_button["state"] = tk.NORMAL
 
     def change_run(self):
         self.run_button["text"] = "Run"

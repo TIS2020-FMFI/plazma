@@ -153,6 +153,7 @@ class Program:
         self.gui.window.after_idle(self.gui.sweep.refresh_frame)
         if autosave:
             self.file_manager.save_last_measurement()
+        self.gui.sweep.run_button["state"] = tk.NORMAL
 
     # should be executed by self.work_thread only
     def start_measurement(self, autosave=False):
@@ -232,6 +233,8 @@ class Program:
         finish_thread.start()
 
     def get_data_for_graph(self, measurement_index, s_param):
+        if self.project.data is None:
+            return None
         measurement = self.project.data.get_measurement(s_param, measurement_index)
         if measurement is None:
             return None
