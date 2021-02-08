@@ -202,6 +202,7 @@ class Graphs:
             plt.close(self.fig)
             self.canvas.get_tk_widget().grid_forget()
             self.toolbar.grid_forget()
+            self.toolbarFrame.destroy()
             self.fig, self.ax1 = plt.subplots(1, figsize=(self.a, self.b))
             self.ax2 = self.ax1.twinx()
 
@@ -234,7 +235,6 @@ class Graphs:
             self.plot_widget = self.canvas.get_tk_widget()
             self.plot_widget.grid(row=0, column=0)
 
-            self.toolbarFrame.destroy()
             self.toolbarFrame = Frame(master=self.gui)
             self.toolbarFrame.grid(row=1, column=0)
             self.toolbar = NavigationToolbar2Tk(self.canvas, self.toolbarFrame)
@@ -245,6 +245,7 @@ class Graphs:
             plt.close(self.fig)
             self.fig, self.ax1 = plt.subplots(1, figsize=(self.a, self.b))
             self.fig.clear()
+            self.toolbarFrame.destroy()
             val1 = []
             if measurement_index != -1:
                 temp = self.program.get_data_for_graph(measurement_index, self.s_param)
@@ -252,13 +253,11 @@ class Graphs:
                     freq, y1, y2 = temp
                     for i in range(len(y1)):
                         if param_format == "MA":
-                            print("kreslim MA to real")
                             ang = y2[i] * D2R
                             mag = y1[i]
                             real = math.cos(ang) * mag
                             imag = math.sin(ang) * mag
                         elif param_format == "DB":
-                            print("kreslim db to real")
                             ang = y2[i] * D2R
                             mag = pow(10.0, y1[i] / 20.0)
                             real = math.cos(ang) * mag
@@ -281,7 +280,6 @@ class Graphs:
             self.plot_widget = self.canvas.get_tk_widget()
             self.plot_widget.grid(row=0, column=0)
 
-            self.toolbarFrame.destroy()
             self.toolbarFrame = Frame(master=self.gui)
             self.toolbarFrame.grid(row=1, column=0)
             self.toolbar = NavigationToolbar2Tk(self.canvas, self.toolbarFrame)

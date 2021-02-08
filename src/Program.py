@@ -371,10 +371,14 @@ class Program:
 
     # should be executed by self.work_thread only
     def adjust_calibration(self, port1, port2, vel_fact):
+        print("adjust_calibration " + str(port1))
+        self.settings.set_port1(float(port1))
+        self.settings.set_port2(float(port2))
+        self.settings.set_vel_factor(float(vel_fact))        
         adjust_list = [port1, port2, vel_fact]
         functions = [self.adapter.set_port1_length, self.adapter.set_port2_length, self.adapter.set_velocity_factor]
         for i in range(len(functions)):
-            return_code = functions[i](adjust_list[i])
+            return_code = functions[i]()  # (adjust_list[i])
             if return_code is None:
                 print("Error pri adjust_calibration()")
                 self.gui.gpib.update_button_disconnected()
@@ -382,9 +386,6 @@ class Program:
             elif not return_code:
                 print("Ved ani nie si konektnuty")
         # tk.messagebox.showinfo(title="ADJUST sent", message="Adjust data for calibration sent!")
-        self.settings.set_port1(float(port1))
-        self.settings.set_port2(float(port2))
-        self.settings.set_vel_factor(float(vel_fact))
 
     def quit_program(self):
         self.gui.window.quit()  # ukonci mainloop, takze __main__ skonci = cely program skonci bez chyby

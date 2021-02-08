@@ -219,8 +219,8 @@ class Adapter:
 
         if self.send("CONNECT " + str(address)):
             if self.hpctrl_is_responsive():
-                if self.send("CMD\n"
-                             "s PORE ON\n"
+                if self.send("LOGON\nCMD\n"
+#                             "s PORE ON\n"
                              "."):
                     self.address = address
                     self.connected = True
@@ -296,7 +296,7 @@ class Adapter:
                 return False
 
         if self.connected:
-            if self.send("RESET"):
+            if self.send("FACTRESET"):
                 return True
             else:
                 return None
@@ -343,7 +343,8 @@ class Adapter:
                 return None
         return False
 
-    def set_port1_length(self, value):
+    def set_port1_length(self):
+        value = self.program.settings.get_port1()
         value *= 0.000000000001
         print("Posielam port1: " + str(value))
         if self.testing:
@@ -362,7 +363,8 @@ class Adapter:
                 return None
         return False
 
-    def set_port2_length(self, value):
+    def set_port2_length(self):
+        value = self.program.settings.get_port2()
         value *= 0.000000000001
         print("Posielam port2: " + str(value))
         if self.testing:
@@ -381,7 +383,8 @@ class Adapter:
                 return None
         return False
 
-    def set_velocity_factor(self, value):
+    def set_velocity_factor(self):
+        value = self.program.settings.get_vel_factor()
         print("Posielam vel_fact: " + str(value))
         if self.testing:
             return True
@@ -554,6 +557,7 @@ class Adapter:
         return_code = self.connect(address)
         if not return_code:
             return return_code
+        time.sleep(1)
 
         functions = [self.set_data_format,
                      self.set_parameters,
@@ -562,6 +566,9 @@ class Adapter:
                      self.set_start_frequency,
                      self.set_stop_frequency,
                      self.set_points,
+                     self.set_port1_length,
+                     self.set_port2_length,
+                     self.set_velocity_factor,
                      self.exit_cmd_mode]
 
         for f in functions:
