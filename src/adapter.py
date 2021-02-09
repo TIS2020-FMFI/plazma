@@ -161,10 +161,20 @@ class Adapter:
 
         if self.connected:
             if self.send("GETSTATE"):
-                output = self.get_output(4, 1)
+                output = self.get_output(10, 1)  # 5s ci staci na poslanie aj 12 kaliracii?
                 if output is None:
-                    return None
-                output += "\n" + self.get_output(1)
+                    return None                    
+                get_state_started = time.time()
+                while True:
+                    new_line = self.get_output(0.5, 1)
+                    if new_line == "":
+                        break
+                    if new_line is None:
+                        if time.time() > get_state_started + self.CALIBRATION_TIMEOUT:
+                            return None
+                        else:
+                            continue
+                    output += "\n" + new_line
                 return output
             else:
                 return None

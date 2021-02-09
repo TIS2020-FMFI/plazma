@@ -10,3 +10,18 @@ V hpctrl-main/src/Debug by mal takto vzniknúť hpctrl.exe, ktorý spolu s gpibl
 Na vytvorenie plazma.exe je použitá pythonovská knižnica Pyinstaller. Viac: https://pyinstaller.readthedocs.io/en/stable/.
 Stačí otvoriť CMD v plazma/src priečinku, a spustiť príkaz:
 Pyinstaller Program.py -n Plazma -w -i plazma.ico
+
+Treba nainštalovať ovládač ku GPIB zariadeniu.
+Do cieľového adresára treba nakopírovať súbory: 
+
+gpiblib.dll
+prologix.exe
+winvfx16.dll
+connect.ini
+
+z balíka GPIB Toolkit, http://www.ke5fx.com/gpib/readme.htm   
+a hpctrl.exe (linka na github vyššie)
+
+Pred prvým spustením treba odštartovať PROLOGIX.EXE a nastaviť GPIB zariadenie, a vybrať "update CONNECT.INI". 
+
+Potom program odštartujete PLAZMA.EXE

@@ -91,14 +91,14 @@ class Program:
         calib = self.adapter.get_calibration()
         if calib is None:
             self.gui.gpib.update_button_disconnected()
-            self.gui.info.change_connect_label()
+            self.gui.info.change_connect_label()            
         elif type(calib) == str and not calib:
             tk.messagebox.showwarning(title="Empty calibration", message="The device is not calibrated.")
         elif not calib:
             pass
         else:
             self.project.set_calibration(calib)
-            self.gui.info.change_calibration_label()
+        self.gui.info.change_calibration_label()
 
     def load_calib(self):
         return_code = self.adapter.set_calibration(self.project.get_calibration())
