@@ -7,6 +7,9 @@ import tkinter as tk
 
 
 class Adapter:
+
+    CALIBRATION_TIMEOUT = 12    # seconds
+
     def __init__(self, program):
         # self.testing = True
         self.testing = False
@@ -54,6 +57,10 @@ class Adapter:
             return out_str
         return None
 
+    def clear_input_queue(self):
+        while not self.out_queue.empty():
+            self.out_queue.get_nowait()
+
     def start_hpctrl(self):
         path = "hpctrl.exe"
         try:
@@ -89,10 +96,11 @@ class Adapter:
         self.start_hpctrl()
         
     def hpctrl_is_responsive(self):
+        self.clear_input_queue()
         if not self.send("ping"):
             return False
-        out = self.get_output(2, 1)
-        if out is None:
+        out = self.get_output(4, 1)        
+        if out is None:            
             self.restart_hpctrl()  # restartujem ho, lebo nereaguje
             return False
         if out.strip() == "!unknown command ping":
@@ -124,7 +132,7 @@ class Adapter:
         if self.send("LOGON\nCONNECT " + str(address)):
             if self.hpctrl_is_responsive():
                 if self.send("CMD\n"
-#                             "s PORE ON\n"
+                             "s PORE ON\n"
                              "."):
                     self.address = address
                     self.connected = True
@@ -204,12 +212,22 @@ class Adapter:
 
         if self.connected:
             if self.send("GETCALIB"):
-                output = self.get_output(5, 1)  # 5s ci staci na poslanie aj 12 kaliracii?
+                output = self.get_output(10, 1)  # 5s ci staci na poslanie aj 12 kaliracii?
                 if output is None:
                     return None
                 if output == "":  # ak je nenakalibrovany
                     return output
-                output += "\n" + self.get_output(1)
+                get_calib_started = time.time()
+                while True:
+                    new_line = self.get_output(0.5, 1)
+                    if new_line == "":
+                        break
+                    if new_line is None:
+                        if time.time() > get_calib_started + self.CALIBRATION_TIMEOUT:
+                            return None
+                        else:
+                            continue
+                    output += "\n" + new_line
                 return output
             else:
                 return None
@@ -363,7 +381,7 @@ class Adapter:
             if self.send("s POIN " + str(value) + "\n"):
                 # return True
                 if self.send("q POIN?"):
-                    new_value = self.get_output(2, 1)
+                    new_value = self.get_output(4, 1)
                     if new_value is not None:
                         new_value = int(float(new_value))
                         self.program.settings.set_points(new_value)
@@ -432,7 +450,7 @@ class Adapter:
         return_code = self.connect(address)
         if not return_code:
             return return_code
-        time.sleep(1)
+        time.sleep(1.7)
         functions = [self.set_data_format,
                      self.set_parameters,
                      self.set_frequency_unit,

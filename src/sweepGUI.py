@@ -225,21 +225,26 @@ class SweepGui:
     def stop_measure(self):
         self.gui.program.end_measurement()
 
-    def run_measure(self):
+    def run_measure(self):        
         self.run_button["state"] = tk.DISABLED
         self.gui.program.project.reset_data()
         autosave = False
         if self.autosave.get() == 1:
             autosave = True
             if not self.gui.project.save():
+                self.run_button["state"] = tk.NORMAL 
                 return
+        self.reset_frame()        
+        self.gui.info.waiting_data_label()
         self.send_settings()
         if self.continuous.get() == 0:
-            self.gui.program.queue_function(f"measure({autosave})")
+            self.disable_measurement_checkboxes()
+            self.gui.program.queue_function(f"measure({autosave})")            
         else:
             self.run_button["text"] = "Stop"
+            self.disable_measurement_checkboxes()
             self.gui.program.queue_function(f"start_measurement({autosave})")
-            self.run_button["state"] = tk.NORMAL
+            self.run_button["state"] = tk.NORMAL            
 
     def change_run(self):
         self.run_button["text"] = "Run"
@@ -398,3 +403,11 @@ class SweepGui:
         if self.current_frame > 1:
             self.current_frame = 1
             self.refresh_frame()
+
+    def disable_measurement_checkboxes(self):
+        self.continuous_checkbutton["state"] = tk.DISABLED
+        self.autosave_checkbutton["state"] = tk.DISABLED
+
+    def enable_measurement_checkboxes(self):
+        self.continuous_checkbutton["state"] = tk.NORMAL
+        self.autosave_checkbutton["state"] = tk.NORMAL

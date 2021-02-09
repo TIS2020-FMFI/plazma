@@ -111,6 +111,7 @@ class CalibrationGui:
             self.main_gui.program.queue_function(f"adjust_calibration({port1}, {port2}, {vel_fact})")
 
     def save_calibration(self):
+        self.main_gui.info.waiting_calibration_label()
         self.main_gui.program.queue_function("save_calib()")
 
     def load_calibration(self):

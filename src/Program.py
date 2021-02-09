@@ -87,7 +87,7 @@ class Program:
         else:
             tk.messagebox.showinfo(title="PRESET", message="Preset successful!")
 
-    def save_calib(self):
+    def save_calib(self):        
         calib = self.adapter.get_calibration()
         if calib is None:
             self.gui.gpib.update_button_disconnected()
@@ -131,21 +131,25 @@ class Program:
         if self.project.data is None:  # ak neboli vybrate ziadne S-parametre, vymazu sa data z pameti
             self.gui.sweep.change_run()
             self.gui.window.after_idle(self.gui.sweep.refresh_frame)
+            self.gui.sweep.enable_measurement_checkboxes()
+            self.gui.sweep.run_button["state"] = tk.NORMAL        
             return
 
         data = self.adapter.measure()
         self.gui.window.after_idle(self.gui.sweep.refresh_points)
-        if data is None:
-            self.gui.gpib.update_button_disconnected()
-            self.gui.info.change_connect_label()
-            self.project.data = None
-            return
+        
         if data == "":
             tk.messagebox.showwarning(title="No Data", message="No data received.\n"
                                                                "The device may be in Remote mode, try reconnecting.")
+            self.gui.sweep.enable_measurement_checkboxes()
+            self.gui.sweep.run_button["state"] = tk.NORMAL        
             return
-        if not data:
+        if not data:            
+            self.gui.gpib.update_button_disconnected()
+            self.gui.info.change_connect_label()
             self.project.data = None
+            self.gui.sweep.enable_measurement_checkboxes()
+            self.gui.sweep.run_button["state"] = tk.NORMAL        
             return
 
         data = data.strip()
@@ -154,6 +158,7 @@ class Program:
         if autosave:
             self.file_manager.save_last_measurement()
         self.gui.sweep.run_button["state"] = tk.NORMAL
+        self.gui.sweep.enable_measurement_checkboxes()
 
     # should be executed by self.work_thread only
     def start_measurement(self, autosave=False):
@@ -162,6 +167,7 @@ class Program:
             self.gui.sweep.reset_frame()
             self.gui.sweep.change_run()
             self.gui.window.after_idle(self.gui.sweep.refresh_frame)
+            self.gui.sweep.enable_measurement_checkboxes()        
             return
 
         return_code = self.adapter.start_measurement()
@@ -170,11 +176,13 @@ class Program:
             self.gui.sweep.change_run()
             self.gui.gpib.update_button_disconnected()
             self.gui.info.change_connect_label()
+            self.gui.sweep.enable_measurement_checkboxes()        
             self.project.data = None
             return
         if not return_code:  # ak nebol konektnuty
             self.gui.sweep.change_run()
             self.project.data = None
+            self.gui.sweep.enable_measurement_checkboxes()        
             return
 
         self.measuring = True
@@ -184,16 +192,21 @@ class Program:
             if data is None or data == "":
                 if waited:
                     break
+                if not self.measuring and not waited:   # malo by byt thread-safe
+                    waited = True
+                    continue
                 if data == "":
                     tk.messagebox.showwarning(title="No Data", message="No data received.\n"
                                                                        "The device may be in "
                                                                        "Remote mode, try reconnecting.")
                     self.gui.sweep.change_run()
+                    self.gui.sweep.enable_measurement_checkboxes()
                     return
                 self.measuring = False
                 self.gui.gpib.update_button_disconnected()
                 self.gui.info.change_connect_label()
                 self.gui.sweep.change_run()
+                self.gui.sweep.enable_measurement_checkboxes()
                 return
 
             data = data.strip()
@@ -209,6 +222,7 @@ class Program:
                 waited = True
         self.gui.window.after(1, self.gui.sweep.refresh_frame)
         self.gui.sweep.change_run()
+        self.gui.sweep.enable_measurement_checkboxes()
 
         # executed by GUI thread
     def toggle_gui_free(self):

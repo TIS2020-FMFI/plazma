@@ -148,3 +148,10 @@ class InfoGui:
             self.measurements_data["text"] = "measured"
         else:
             self.measurements_data["text"] = "NULL"
+
+    def waiting_data_label(self):
+        self.measurements_data["text"] = "wait please..."
+        
+    def waiting_calibration_label(self):
+        self.calib_load_label["text"] = "wait please..."
+        
