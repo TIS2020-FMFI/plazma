@@ -47,18 +47,15 @@ class Test:
 
     def set_freq_unit(self, unit):
         if unit not in ("GHz", "MHz"):
-            print("Zly format jednotky frekvencie !!!")
             return
         self.freq_unit = unit
 
     def get_data(self, more_measurement=False):
         if not more_measurement:
             if type(self.data) == list:
-                print("Zly scenar - chces jedno meranie ale v tomto scenari je ich viac !!!")
                 return
             return self.data
         if type(self.data) != list:
-            print("Zly scenar - chces viac merani ale v tomto scenari viac merani nemam !!!")
             return
         return self.data[self.data_order_number]
 
@@ -79,7 +76,6 @@ class Test:
         self.points = self.default_points
         self.min_freq = self.default_min_freq
         self.max_freq = self.default_max_freq
-        print("Vykonávam preset prístroja")
 
     params = ""
     format = "RI"

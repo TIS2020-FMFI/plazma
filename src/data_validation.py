@@ -32,9 +32,7 @@ def validate_port_length(value):
 
 def validate_start_stop(start, stop, freq_unit):
     if freq_unit == 1:
-        print("unit is ghz", freq_unit)
         if float(stop) > 3 or float(start) > 3:
-            print("return false")
             return False
     if freq_unit == 0:
         if float(stop) > 3000 or float(start) > 3000:

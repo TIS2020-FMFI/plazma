@@ -21,25 +21,13 @@ class Gui:
 
         self.resize_by_screen()
 
-        # GPIB
+        # Widgets
         self.gpib = GpibGui(self)
-
-        # INSTRUMENT STATE
         self.state = InstStateGui(self)
-
-        # PROJECT
         self.project = ProjectGui(self)
-
-        # INFO
         self.info = InfoGui(self)
-
-        # CALIBRATIONPART
         self.calibration = CalibrationGui(self)
-
-        # SWEEP
         self.sweep = SweepGui(self)
-
-        # GRAPHS
         self.graphs = GraphsGui(self)
 
     def resize_by_screen(self):

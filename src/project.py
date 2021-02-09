@@ -2,15 +2,9 @@ class Project:
     def __init__(self, program):
         self.START_OF_THE_LINE_WITH_PARAMS = "!    Params:"
         self.program = program
-
-        self.state = None   # string
-
-        self.calibration = None  # string
-        self.calib_type = None  # string ale iba tie typy co mozu byt
-        # self.port1 = 0
-        # self.port2 = 0
-        # self.velocity_factor = 0
-
+        self.state = None
+        self.calibration = None
+        self.calib_type = None
         self.data = None    # typu Data()
 
     def set_state(self, state):
@@ -29,11 +23,9 @@ class Project:
         return self.calib_type
 
     def set_calibration(self, calibration):
-        # self.calib_type = self.program.adapter.get_calibration_type()
         calibration = calibration.strip()
         index = calibration.find("\n")
         self.calib_type = calibration[:index]
-        print("TYP: " + self.calib_type)
         self.calibration = calibration
 
     def get_calibration(self):
@@ -43,22 +35,13 @@ class Project:
         if self.data is None:
             return False
         return True
-
-    # def adjust_calibration(self, port1, port2, velocity):
-    #     # kontrola ci nieco z toho uz nie je nastavene
-    #     # poslat do pristroja
-    #     # nastavit self.port1 = port1...
-    #     pass
  
     def reset_data(self, param_11=False, param_12=False, param_21=False, param_22=False):
-        # zavolá sa, po stlačení tlačidla run, bude sa volať z Program.py, ktorý bude tiež volať metódu z adapter.py 
         if param_11 or param_12 or param_21 or param_22:
             self.data = self.Data(param_11, param_12, param_21, param_22)
         else:
             self.data = None
         self.program.gui.graphs.reset_all_graphs()
-
-        # prípadne nastaviť self.data_type alebo aj number_of_parameters
 
     def get_params_string_from_data(self, data):
         data_lines = data.split("\n")
@@ -73,9 +56,8 @@ class Project:
         def __init__(self, param_11, param_12, param_21, param_22):
             self.number_of_measurements = 0
             self.parameters = {"S11": param_11, "S12": param_12, "S21": param_21,
-                               "S22": param_22}  # dict()  self.parameters["S11"] = True
-            self.measurements_list = []  # [(hlavicka1, meranie1_list), (hlavicka2, meranie2_list), ...]
-            # self.data_type = None  # real/imag....
+                               "S22": param_22}
+            self.measurements_list = []  # [(hlavicka1, meranie1_dict), (hlavicka2, meranie2_dict), ...]
 
         def get_number_of_measurements(self):
             return self.number_of_measurements
@@ -99,11 +81,9 @@ class Project:
             for line in lines:
                 line.strip()
                 if len(line) == 0:
-                    print("Prisiel prazdny riadok do data !!!")
                     continue
                 if line[0] in ('!', '#'):
                     header.append(line)
-
                 else:
                     line_list = line.split()
                     values = {}
@@ -111,7 +91,6 @@ class Project:
                     for param in true_params:
                         values[param] = (line_list[index], line_list[index + 1])
                         index += 2
-                        
                     data_dict[line_list[0]] = values
 
             self.measurements_list.append(('\n'.join(header), data_dict))
@@ -135,6 +114,3 @@ class Project:
                     result += ' ' + value1 + ' ' + value2
                 result += '\n'
             return result
-
-#        def set_data_type(self, type):
-#            pass

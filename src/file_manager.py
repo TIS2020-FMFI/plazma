@@ -17,7 +17,6 @@ class FileManager:
         date = datetime.fromtimestamp(time)
         date = str(date)
         date = date.replace(":", "-")
-        
         if os.path.exists(filepath):
             filepath += " " + str(date)
           
@@ -91,14 +90,14 @@ class FileManager:
                 for line in f:
                     value = line.split("=")[-1].strip()
                     zoznam.append(value)
-            self.program.settings.set_address(zoznam[0])
-            self.program.settings.set_port1(zoznam[1])
-            self.program.settings.set_port2(zoznam[2])
-            self.program.settings.set_vel_factor(zoznam[3])
+            self.program.settings.set_address(int(zoznam[0]))
+            self.program.settings.set_port1(float(zoznam[1]))
+            self.program.settings.set_port2(float(zoznam[2]))
+            self.program.settings.set_vel_factor(float(zoznam[3]))
             self.program.settings.set_freq_unit(zoznam[4])
-            self.program.settings.set_freq_start(zoznam[5])
-            self.program.settings.set_freq_stop(zoznam[6])
-            self.program.settings.set_points(zoznam[7])
+            self.program.settings.set_freq_start(float(zoznam[5]))
+            self.program.settings.set_freq_stop(float(zoznam[6]))
+            self.program.settings.set_points(int(zoznam[7]))
             self.program.settings.set_parameters(zoznam[8])
             self.program.settings.set_parameter_format(zoznam[9])
             if zoznam[10] == "True":
@@ -187,7 +186,7 @@ class FileManager:
 
         data = self.program.project.data.print_measurement(meranie-1)
         if data is not None:
-            name = "measurement" + str(meranie) + ".s2p"  # + data_time + ".s2p"
+            name = "measurement" + str(meranie) + ".s2p"
             file_path = os.path.join(filepath, name)
             f = open(file_path, "w")
             f.write(data)
