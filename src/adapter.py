@@ -63,8 +63,9 @@ class Adapter:
 
     def start_hpctrl(self):
         path = "hpctrl.exe"
+        CREATE_NO_WINDOW = 0x08000000
         try:
-            self.process = subprocess.Popen([path, "-i"], stdin=subprocess.PIPE,
+            self.process = subprocess.Popen([path, "-i"], stdin=subprocess.PIPE, creationflags=CREATE_NO_WINDOW,
                                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         except FileNotFoundError:
             tk.messagebox.showerror(title="HPCTRL error", message="Wrong HPCTRL path!\n"
