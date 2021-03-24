@@ -41,9 +41,9 @@ class Gui:
             self.pady_1 = 10
             self.pady_2 = 35
             self.padx = 10
-            self.fig_a = 4.8
-            self.fig_b = 3.35
-            self.fig_padx = 400
+            self.fig_a = 6
+            self.fig_b = 3.34
+            self.fig_padx = 520
             self.sweep_pady = 20
             self.minus = 0
             self.project_weight = 29

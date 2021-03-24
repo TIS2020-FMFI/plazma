@@ -11,8 +11,8 @@ class Adapter:
     CALIBRATION_TIMEOUT = 12    # seconds
 
     def __init__(self, program):
-        # self.testing = True
-        self.testing = False
+        self.testing = True
+        #self.testing = False
         if self.testing:
             self.test = testing.Test()
 
