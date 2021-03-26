@@ -23,16 +23,27 @@ class ProjectGui:
 
         self.project_descrip_text = tk.Text(project_frame, height=5, width=self.main_gui.project_weight,
                                             fg="#323338", font=widget_label_font)
-        self.project_descrip_text.grid(row=1, column=0, columnspan=4, padx=10, pady=10)
+        self.project_descrip_text.grid(row=1, column=0, columnspan=4, padx=10, pady=(5,0))
         self.project_descrip_text.insert(tk.END, "Enter project description")
 
-        save_project_button = tk.Button(project_frame, text="SAVE", bg='#bfc6db', fg='#323338',
+        save_project_button = tk.Button(project_frame, text="SAVE PROJECT", bg='#bfc6dc', fg='#323338',
                                         command=self.save, font=widget_button_font)
-        save_project_button.grid(row=2, column=1, pady=10)
+        save_project_button.grid(row=2, column=0,columnspan=5, padx=(15,0), pady=5,sticky=tk.N + tk.W)
 
-        load_project_button = tk.Button(project_frame, text="LOAD", bg='#bfc6db', fg='#323338',
+        load_project_button = tk.Button(project_frame, text="LOAD PROJECT", bg='#bfc6dc', fg='#323338',
                                         command=self.load, font=widget_button_font)
-        load_project_button.grid(row=2, column=2, pady=10)
+        load_project_button.grid(row=2, column=0,columnspan=5, padx=(150,0), pady=5,sticky=tk.N + tk.W,)
+
+        calib_label = tk.Label(project_frame, text="Calibration:", fg="#323338", bg='#f2f3fc', font=widget_label_font)
+        calib_label.grid(row=3, column=0, sticky=tk.W, pady=(13,7), padx=20)
+
+        save_cal_button = tk.Button(project_frame, text="SAVE", bg='#bfc6db', fg='#323338',
+                                        command=self.save, font=widget_button_font)
+        save_cal_button.grid(row=3, column=0,columnspan=5, padx=(155, 8), pady=(13,7), sticky=tk.N + tk.W)
+
+        load_cal_button = tk.Button(project_frame, text="LOAD", bg='#bfc6db', fg='#323338',
+                                        command=self.load, font=widget_button_font)
+        load_cal_button.grid(row=3, column=0, columnspan=5,padx=(215, 2), pady=(13,7),sticky=tk.N + tk.W)
 
     def save(self):
         path = tk.filedialog.askdirectory()
@@ -79,49 +90,49 @@ class InfoGui:
 
         self.connect_info_label = tk.Label(info_frame, text=" • Disconnected ", fg="#d44242", bg='#f2f3fc',
                                            font=widget_label_font)
-        self.connect_info_label.place(x=10, y=10)
+        self.connect_info_label.place(x=10, y=1)
 
         self.device_label = tk.Label(info_frame, text="from device", fg="#323338", bg='#f2f3fc', font=widget_label_font)
-        self.device_label.place(x=120, y=10)
+        self.device_label.place(x=120, y=1)
 
         self.calibration_label = tk.Label(info_frame, text="Calibration", fg="#323338", bg='#f2f3fc',
                                           font=widget_label_font)
-        self.calibration_label.place(x=15, y=50)
+        self.calibration_label.place(x=15, y=30)
 
         self.calib_load_label = tk.Label(info_frame, text="NULL", fg="#323338", bg='#f2f3fc', font=widget_label_font)
-        self.calib_load_label.place(x=170, y=50)
+        self.calib_load_label.place(x=170, y=30)
 
         self.calibration_type_label = tk.Label(info_frame, text="Calibration type", fg="#323338", bg='#f2f3fc',
                                                font=widget_label_font)
-        self.calibration_type_label.place(x=15, y=70)
+        self.calibration_type_label.place(x=15, y=50)
 
         self.calib_type_load_label = tk.Label(info_frame, text="NULL", fg="#323338", bg='#f2f3fc',
                                               font=widget_label_font)
-        self.calib_type_load_label.place(x=170, y=70)
+        self.calib_type_load_label.place(x=170, y=50)
 
         self.state_label = tk.Label(info_frame, text="State", fg="#323338", bg='#f2f3fc', font=widget_label_font)
-        self.state_label.place(x=15, y=110-self.main_gui.minus)
+        self.state_label.place(x=15, y=85-self.main_gui.minus)
 
         self.state_load_label = tk.Label(info_frame, text="NULL", fg="#323338", bg='#f2f3fc', font=widget_label_font)
-        self.state_load_label.place(x=170, y=110-self.main_gui.minus)
+        self.state_load_label.place(x=170, y=85-self.main_gui.minus)
 
         self.measurements_label = tk.Label(info_frame, text="Data", fg="#323338", bg='#f2f3fc', font=widget_label_font)
-        self.measurements_label.place(x=15, y=150-self.main_gui.minus)
+        self.measurements_label.place(x=15, y=115-self.main_gui.minus)
 
         self.measurements_data = tk.Label(info_frame, text="NULL", fg="#323338", bg='#f2f3fc', font=widget_label_font)
-        self.measurements_data.place(x=170, y=150-self.main_gui.minus)
+        self.measurements_data.place(x=170, y=115-self.main_gui.minus)
 
     def change_connect_label(self):
         if self.connect_info_label["text"] == " • Disconnected ":
             self.connect_info_label["text"] = " • Connected "
             self.connect_info_label["fg"] = "green"
             self.device_label["text"] = "to device"
-            self.device_label.place(x=105, y=10)
+            self.device_label.place(x=105, y=1)
         else:
             self.connect_info_label["text"] = " • Disconnected "
             self.connect_info_label["fg"] = "#d44242"
             self.device_label["text"] = "from device"
-            self.device_label.place(x=120, y=10)
+            self.device_label.place(x=120, y=1)
 
     def change_state_label(self):
         if self.main_gui.program.project.get_state() is not None:

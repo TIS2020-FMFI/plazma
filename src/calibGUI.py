@@ -74,7 +74,7 @@ class CalibrationGui:
 
         self.adjust_cal_button = tk.Button(calibration_frame, text="Adjust Calibration",
                                            font=widget_port_font, bg='#bfc6db')
-        self.adjust_cal_button.grid(row=6, column=1, sticky=tk.W, pady=5)
+        self.adjust_cal_button.grid(row=6, column=1, sticky=tk.W, pady=(7,10))
         self.adjust_cal_button["command"] = self.adjust
         self.adjust_cal_button["state"] = tk.DISABLED
 

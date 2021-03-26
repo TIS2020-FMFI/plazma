@@ -37,9 +37,9 @@ class Gui:
             self.label_font_small = 11
             self.line_count = 53
             self.info_weight = 295
-            self.info_height = 207
+            self.info_height = 175
             self.pady_1 = 10
-            self.pady_2 = 35
+            self.pady_2 = 45
             self.padx = 10
             self.fig_a = 6
             self.fig_b = 3.34
@@ -85,9 +85,9 @@ class Gui:
             self.label_font_small = 8
             self.line_count = 45
             self.info_weight = 255
-            self.info_height = 190
+            self.info_height = 150
             self.pady_1 = 0
-            self.pady_2 = 20
+            self.pady_2 = 30
             self.padx = 5
             self.fig_a = 3.0
             self.fig_b = 2.5
