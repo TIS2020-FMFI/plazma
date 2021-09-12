@@ -11,8 +11,8 @@ class Adapter:
     CALIBRATION_TIMEOUT = 12    # seconds
 
     def __init__(self, program):
-        # self.testing = True
-        self.testing = False
+        self.testing = True
+        # self.testing = False
         if self.testing:
             self.test = testing.Test()
 
@@ -63,9 +63,8 @@ class Adapter:
 
     def start_hpctrl(self):
         path = "hpctrl.exe"
-        CREATE_NO_WINDOW = 0x08000000
         try:
-            self.process = subprocess.Popen([path, "-i"], stdin=subprocess.PIPE, creationflags=CREATE_NO_WINDOW,
+            self.process = subprocess.Popen([path, "-i"], stdin=subprocess.PIPE,
                                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         except FileNotFoundError:
             tk.messagebox.showerror(title="HPCTRL error", message="Wrong HPCTRL path!\n"
@@ -161,20 +160,10 @@ class Adapter:
 
         if self.connected:
             if self.send("GETSTATE"):
-                output = self.get_output(10, 1)  # 5s ci staci na poslanie aj 12 kaliracii?
+                output = self.get_output(4, 1)
                 if output is None:
-                    return None                    
-                get_state_started = time.time()
-                while True:
-                    new_line = self.get_output(0.5, 1)
-                    if new_line == "":
-                        break
-                    if new_line is None:
-                        if time.time() > get_state_started + self.CALIBRATION_TIMEOUT:
-                            return None
-                        else:
-                            continue
-                    output += "\n" + new_line
+                    return None
+                output += "\n" + self.get_output(1)
                 return output
             else:
                 return None

@@ -52,12 +52,22 @@ class Project:
                 return line
         return ""
 
+    def valid_parameters(self, parameters):
+        if not self.exists_data():
+            return False
+        for param in parameters:
+            if not self.data.parameters[param]:
+                return False
+        self.data.last_param_check = parameters
+        return True
+
     class Data:
         def __init__(self, param_11, param_12, param_21, param_22):
             self.number_of_measurements = 0
             self.parameters = {"S11": param_11, "S12": param_12, "S21": param_21,
                                "S22": param_22}
             self.measurements_list = []  # [(hlavicka1, meranie1_dict), (hlavicka2, meranie2_dict), ...]
+            self.last_param_check = None
 
         def get_number_of_measurements(self):
             return self.number_of_measurements
@@ -72,12 +82,18 @@ class Project:
                 if val:
                     true_params.append(key)
             true_params.sort()
-            if "S12" in true_params and "S21" in true_params:
+            if "S12" in true_params and "S21" in true_params:  # correct order: ['S11', 'S21', 'S12', 'S22']
                 i_s12 = true_params.index("S12")
                 i_s21 = true_params.index("S21")
                 true_params[i_s12] = "S21"
                 true_params[i_s21] = "S12"
-                    
+
+            skip_param = []
+            for p in ["S11", "S21", "S12", "S22"]:
+                if self.last_param_check is not None:
+                    if p in true_params and p not in self.last_param_check:
+                        skip_param.append(p)
+
             for line in lines:
                 line.strip()
                 if len(line) == 0:
@@ -89,6 +105,9 @@ class Project:
                     values = {}
                     index = 1
                     for param in true_params:
+                        if param in skip_param:
+                            values[param] = ("0", "0")
+                            continue
                         values[param] = (line_list[index], line_list[index + 1])
                         index += 2
                     data_dict[line_list[0]] = values
@@ -107,10 +126,13 @@ class Project:
                 return None
 
         def print_measurement(self, measurement_index=0):
+            print(self.measurements_list[measurement_index][1])
             result = self.measurements_list[measurement_index][0] + '\n'
             for key, val in self.measurements_list[measurement_index][1].items():
                 result += key
                 for value1, value2 in val.values():
                     result += ' ' + value1 + ' ' + value2
                 result += '\n'
+
+            print(result)
             return result

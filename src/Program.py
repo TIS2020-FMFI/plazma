@@ -91,14 +91,14 @@ class Program:
         calib = self.adapter.get_calibration()
         if calib is None:
             self.gui.gpib.update_button_disconnected()
-            self.gui.info.change_connect_label()            
+            self.gui.info.change_connect_label()
         elif type(calib) == str and not calib:
             tk.messagebox.showwarning(title="Empty calibration", message="The device is not calibrated.")
         elif not calib:
             pass
         else:
             self.project.set_calibration(calib)
-        self.gui.info.change_calibration_label()
+            self.gui.info.change_calibration_label()
 
     def load_calib(self):
         return_code = self.adapter.set_calibration(self.project.get_calibration())
@@ -123,12 +123,24 @@ class Program:
             s21 = True
         if "S22" in parameters:
             s22 = True
+
+        if not parameters:
+            tk.messagebox.showerror(title="Wrong parameters", message="No parameters selected.")
+            return False
+        if self.project.exists_data():
+            if self.project.valid_parameters(parameters):
+                return True
+            tk.messagebox.showerror(title="Wrong S parameters", message="Project can only contain "
+                                                                        "measurements with same S parameters "
+                                                                        "as first measurement.\n"
+                                                                        "Change parameters or clear project.")
+            return False
         self.project.reset_data(s11, s12, s21, s22)
+        return True
 
     # should be executed by self.work_thread only
     def measure(self, autosave=False):
-        self.prepare_measurement()
-        if self.project.data is None:  # ak neboli vybrate ziadne S-parametre, vymazu sa data z pameti
+        if not self.prepare_measurement() or self.project.data is None:  # ak neboli vybrate ziadne S-parametre
             self.gui.sweep.change_run()
             self.gui.window.after_idle(self.gui.sweep.refresh_frame)
             self.gui.sweep.enable_measurement_checkboxes()
@@ -162,12 +174,11 @@ class Program:
 
     # should be executed by self.work_thread only
     def start_measurement(self, autosave=False):
-        self.prepare_measurement()
-        if self.project.data is None:  # ak neboli vybrate ziadne S-parametre
-            self.gui.sweep.reset_frame()
+        if not self.prepare_measurement() or self.project.data is None:  # ak neboli vybrate ziadne S-parametre
             self.gui.sweep.change_run()
             self.gui.window.after_idle(self.gui.sweep.refresh_frame)
-            self.gui.sweep.enable_measurement_checkboxes()        
+            self.gui.sweep.enable_measurement_checkboxes()
+            self.gui.sweep.run_button["state"] = tk.NORMAL
             return
 
         return_code = self.adapter.start_measurement()

@@ -7,10 +7,15 @@ class FileManager:
     def __init__(self, program):
         self.description = ""
         self.program = program
-        self.path = None
+        self.autosave_path = ""
+        self.autosave_name = ""
 
-    def save_project(self, path, project_name, description):
+    def save_project(self, path, project_name, description, autosave=False):
+        if autosave:
+            self.autosave_path = path
         filepath = os.path.join(path, project_name)
+        if autosave:
+            self.autosave_name = project_name
 
         now = datetime.now()
         time = datetime.timestamp(now)
@@ -19,9 +24,10 @@ class FileManager:
         date = date.replace(":", "-")
         if os.path.exists(filepath):
             filepath += " " + str(date)
+            if autosave:
+                self.autosave_name += " " + str(date)
           
         os.mkdir(filepath)
-        self.path = filepath
 
         # Description
         name = "description.txt"
@@ -175,13 +181,55 @@ class FileManager:
         self.program.gui.info.change_data_label()
         return
 
+    def save_calib(self, path):
+        # name = "calibration"
+        # file_path = os.path.join(path, name)
+        file_path = path
+        if os.path.exists(file_path):
+            now = datetime.now()
+            time = datetime.timestamp(now)
+            date = datetime.fromtimestamp(time)
+            date = str(date)
+            date = date.replace(":", "-")
+            file_path = file_path[:-4]
+            file_path += " " + str(date)
+
+        if file_path[-4:] != ".txt":
+            file_path += ".txt"
+
+        # Calibration
+        calibration = self.program.project.get_calibration()
+        if calibration is not None:
+            f = open(file_path, "w")
+            f.write(calibration)
+            f.close()
+            return True
+        else:
+            return False
+
+    def load_calib(self, path):
+        # Calibration
+        # filepath = path + "/" + "calibration.txt"
+        filepath = path
+        try:
+            calibration = ""
+            with open(filepath) as f:
+                for line in f:
+                    calibration += line
+            self.program.project.set_calibration(calibration)
+            return True
+        except FileNotFoundError:
+            self.program.project.reset_calib()
+            self.program.gui.info.change_calibration_label()
+            return False
+
     def save_last_measurement(self):
         if not self.program.project.exists_data():
             return
-        filepath = self.path + "\\measurements"
+        filepath = self.autosave_path + "\\" + self.autosave_name + "\\measurements"
 
         meranie = self.program.project.data.get_number_of_measurements()
-        if meranie == 1:
+        if not os.path.exists(filepath):
             os.mkdir(filepath)
 
         data = self.program.project.data.print_measurement(meranie-1)

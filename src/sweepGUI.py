@@ -173,13 +173,25 @@ class SweepGui:
         self.frame_last_button.grid(row=16, column=2, columnspan=2, pady=2, padx=(100, 0), sticky=tk.W)
 
         self.run_button = tk.Button(sweep_frame, text="Run", bg='#bfc6db', fg='#323338', font=widget_button_font,
-                                    width=15, command=self.start_measure)
-        self.run_button.grid(row=17, column=1, columnspan=3, pady=20-self.gui.minus, sticky=tk.W)
+                                    width=14, command=self.start_measure)
+        self.run_button.grid(row=17, column=1, columnspan=3, pady=20-self.gui.minus, padx=(69,0), sticky=tk.W)
         self.run_button["state"] = tk.DISABLED
+
+
+        self.clear_button = tk.Button(sweep_frame, text="Clear", bg='#bfc6db', fg='#323338', font=widget_button_font,
+                                    width=5, command=self.clear)
+        self.clear_button.grid(row=17, column=0, columnspan=1, padx=(30,0), sticky=tk.W)
+        self.clear_button["state"] = tk.DISABLED
 
         self.reset_frame()
         sweep_frame["width"] = 4000
         sweep_frame["height"] = 4000
+
+    def clear(self):
+        self.reset_frame()
+        self.gui.program.project.reset_data()
+        self.refresh_frame()
+        self.gui.program.file_manager.autosave_path = ""
 
     def start_measure(self):
         measure = True
@@ -227,14 +239,14 @@ class SweepGui:
 
     def run_measure(self):        
         self.run_button["state"] = tk.DISABLED
-        self.gui.program.project.reset_data()
+        # self.gui.program.project.reset_data()
         autosave = False
         if self.autosave.get() == 1:
             autosave = True
-            if not self.gui.project.save():
+            if not self.gui.project.save(autosave):
                 self.run_button["state"] = tk.NORMAL 
                 return
-        self.reset_frame()        
+        # self.reset_frame()
         self.gui.info.waiting_data_label()
         self.send_settings()
         if self.continuous.get() == 0:
@@ -327,11 +339,13 @@ class SweepGui:
         self.autosave_checkbutton["state"] = tk.NORMAL
         self.continuous_checkbutton["state"] = tk.NORMAL
         self.run_button["state"] = tk.NORMAL
+        self.clear_button["state"] = tk.NORMAL
 
     def sweep_state_disconnected(self):
         self.autosave_checkbutton["state"] = tk.DISABLED
         self.continuous_checkbutton["state"] = tk.DISABLED
         self.run_button["state"] = tk.DISABLED
+        self.clear_button["state"] = tk.DISABLED
 
     def load_project_sweep(self):
         if self.gui.program.settings.get_freq_unit() == "MHz":

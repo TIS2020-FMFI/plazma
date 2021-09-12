@@ -78,6 +78,13 @@ class Terminal:
             self.command.delete(0, tk.END)
             return
 
+        if txt.lower() == "clear":
+            self.all = []
+            self.list = []
+            self.text.delete(1.0, tk.END)
+            self.command.delete(0, tk.END)
+            return
+
         self.list.append(txt)
         self.all.append(('\u25B6' + txt, 'command'))
         self.current = None

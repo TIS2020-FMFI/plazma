@@ -8,6 +8,7 @@ class Test:
     scenario = 6  # veeela meranii, S11, 1601 points
 
     def __init__(self):
+        self.KELKVO_MERANIA = 0
         self.address = 16
         self.connected = False
         self.state = self.default_state
